@@ -4,4 +4,4 @@ Integrate Tally With Erpnext
 
 #### License
 
-mit
+mit# ts_tally_integration
