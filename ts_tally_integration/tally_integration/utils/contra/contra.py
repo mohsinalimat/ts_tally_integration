@@ -5,7 +5,7 @@ from datetime import datetime
 
 @frappe.whitelist(allow_guest = True)
 def get_contra():
-    journal_doc = frappe.db.get_all('Journal Entry',filters={'voucher_type': 'Contra Entry'},fields=['*'])
+    journal_doc = frappe.db.get_all('Journal Entry',filters={'name': 'ACC-JV-2024-00001'},fields=['*'])
     
     all_vouchers = []
 
@@ -13,12 +13,17 @@ def get_contra():
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
         company_num = frappe.db.get_value('Company', {'name': doc['company']}, 'idx')
         address = frappe.db.get_all('Address',filters={'name': link[0]['parent']} if link else {}, fields=['gst_state', 'city'])
-        journal_child = frappe.db.get_all('Journal Entry Account', filters={'parent': doc['name']},fields=['*'])
+        journal_child = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
 
         vouchers = []
 
         for entry in journal_child:
-            parent_acc = frappe.db.get_value('Account', entry['account'], 'parent_account')
+            account_type = frappe.db.get_value('Account', entry['account'], 'account_type')
+            if account_type == 'Cash':
+                parent_acc = "Cash-in-Hand"
+            elif account_type == 'Bank':
+                parent_acc = "Bank Accounts"
+
             cr_dr = "Dr" if entry['debit_in_account_currency'] else "Cr"
             amount = entry['debit_in_account_currency'] or entry['credit_in_account_currency']
 
@@ -30,7 +35,7 @@ def get_contra():
                 "VoucherNumber": doc['name'],
                 "VoucherDate": doc['posting_date'].strftime('%Y%m%d'),
                 "VoucherType": doc['voucher_type'],
-                "VoucherTypeParent": "Journal Entry",
+                "VoucherTypeParent": "Contra",
                 "LedgerName": entry['account'],
                 "LedgerParent": parent_acc,
                 "LedgerAddress": "",
