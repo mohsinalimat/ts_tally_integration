@@ -18,14 +18,29 @@ def get_payment_entry_supplier():
         pay_doc = frappe.get_doc("Payment Entry", doc.name)
         supplier = frappe.get_doc("Supplier", pay_doc.party)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
+        acc_doc = frappe.get_doc("Account", doc.paid_from)
+        company = frappe.get_doc("Company", doc.company)
+        if supplier.gst_category == "Unregistered":
+            gst_category = "Unregistered/Vendor"
+        elif supplier.gst_category == "Registered Regular":
+            gst_category = "Regular"
+        elif supplier.gst_category == "Registered Composition":
+            gst_category = "Composition"
+        elif supplier.gst_category == "SEZ":
+            gst_category = "Regular - SEZ"
+        else:
+            gst_category = supplier.gst_category
+
+        company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
+
         doc_dic_supplier = {
             "Autoid": "",
-            "CompanyNumber": doc.company,
+            "CompanyNumber": str(company_idx),
             "TallyMasterid": 1,
             "Voucherid": doc.name,
             "VoucherNumber": doc.name,
             "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-            "VoucherType":doc.payment_type,
+            "VoucherType":"Payment",
             "VoucherTypeParent": "Payment",
             "LedgerName": supplier.supplier_name,
             "LedgerParent": "Sundry Creditors",
@@ -34,17 +49,17 @@ def get_payment_entry_supplier():
             "LedgerCountry": supplier_add.country if supplier_add.country else "", 
             "LedgerPincode": supplier_add.pincode if supplier_add.pincode else "",
             "LedgerMobile": supplier.mobile_no if supplier.mobile_no else "",
-            "LedgerGstReg": supplier.gst_category if supplier.gst_category else "",
+            "LedgerGstReg": gst_category if gst_category else "",
             "LedgerGstin": supplier.gstin if supplier.gstin else "",
             "LedgerPan": supplier.pan if supplier.pan else None,
             "BillName": "",
             "BillDate": "",
-            "PlaceOfSupply": "",
+            "PlaceOfSupply": doc.place_of_supply if doc.place_of_supply else "",
             "TransactionDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
             "CrDr": "Dr",
             "Amount": str(doc.paid_amount),
             "CostCategory1": "",
-            "CostCentre1": doc.cost_center if doc.cost_center else '',
+            "CostCentre1": doc.cost_center.split(" - ")[0] if doc.cost_center else "",
             "CostCategory2": "",
             "CostCentre2": "" ,
             "CostCategory3": "",
@@ -63,15 +78,15 @@ def get_payment_entry_supplier():
 
         doc_dic_supplier1 = {
             "Autoid": "",
-            "CompanyNumber": doc.company,
+            "CompanyNumber": str(company_idx),
             "TallyMasterid": 1,
             "Voucherid": doc.name,
             "VoucherNumber": doc.name,
             "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-            "VoucherType": doc.payment_type,
+            "VoucherType": "Payment",
             "VoucherTypeParent": "Payment",
-            "LedgerName": doc.mode_of_payment,
-            "LedgerParent": doc.paid_from,
+            "LedgerName": (acc_doc.name).split(" - ")[0],
+            "LedgerParent": (acc_doc.parent_account).split(" - ")[0],
             "LedgerAddress": "",
             "LedgerState": "",
             "LedgerCountry": "",
@@ -87,7 +102,7 @@ def get_payment_entry_supplier():
             "CrDr": "Cr",
             "Amount": str(doc.paid_amount),
             "CostCategory1": "",
-            "CostCentre1": doc.cost_center if doc.cost_center else "",
+            "CostCentre1": doc.cost_center.split(" - ")[0] if doc.cost_center else "",
             "CostCategory2": "",
             "CostCentre2": "",
             "CostCategory3": "",
