@@ -1,10 +1,9 @@
 import frappe
-import json
 from datetime import datetime
 
 @frappe.whitelist(allow_guest = True)
 def get_sales():
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-24-00013', 'is_return': 0},fields=['*'])
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-24-00014', 'is_return': 0},fields=['*'])
     all_vouchers = []
     for doc in sales_doc:
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
@@ -19,6 +18,8 @@ def get_sales():
             cus_ship_address = frappe.db.get_all('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
 
         company_details = frappe.db.get_all('Company', filters = {'name': doc.company}, fields = ['*'])
+
+        company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
         gstin = frappe.db.get_all('Customer', filters = {'name':doc.customer}, fields = ['gstin','gst_category', 'primary_address'])
 
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
@@ -30,7 +31,7 @@ def get_sales():
 
             sales_entry = {
                 "Autoid": "711",
-                "CompanyNumber": company_details[0]['idx'],
+                "CompanyNumber": str(company_idx),
                 "TallyMasterid": 1,
                 "Voucherid": "",
                 "VoucherNumber": doc.name,

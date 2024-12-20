@@ -11,7 +11,10 @@ def get_contra():
 
     for doc in journal_doc:
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
-        company_num = frappe.db.get_value('Company', {'name': doc['company']}, 'idx')
+
+
+        company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
+
         address = frappe.db.get_all('Address',filters={'name': link[0]['parent']} if link else {}, fields=['gst_state', 'city'])
         journal_child = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
 
@@ -29,14 +32,14 @@ def get_contra():
 
             ledger_entry = {
                 "Autoid": "13259",
-                "CompanyNumber": company_num,
+                "CompanyNumber": str(company_idx),
                 "TallyMasterid": 1,
                 "Voucherid": "",
                 "VoucherNumber": doc['name'],
                 "VoucherDate": doc['posting_date'].strftime('%Y%m%d'),
                 "VoucherType": doc['voucher_type'],
                 "VoucherTypeParent": "Contra",
-                "LedgerName": entry['account'],
+                "LedgerName": (entry['account']).split(" - ")[0],
                 "LedgerParent": parent_acc,
                 "LedgerAddress": "",
                 "LedgerState": "",
