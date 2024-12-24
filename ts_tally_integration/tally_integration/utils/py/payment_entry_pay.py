@@ -20,16 +20,12 @@ def get_payment_entry_supplier():
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
         acc_doc = frappe.get_doc("Account", doc.paid_from)
         company = frappe.get_doc("Company", doc.company)
-        if supplier.gst_category == "Unregistered":
-            gst_category = "Unregistered/Vendor"
-        elif supplier.gst_category == "Registered Regular":
-            gst_category = "Regular"
-        elif supplier.gst_category == "Registered Composition":
-            gst_category = "Composition"
-        elif supplier.gst_category == "SEZ":
-            gst_category = "Regular - SEZ"
-        else:
-            gst_category = supplier.gst_category
+        gst_category = {
+            "Unregistered": "Unregistered/Consumer",
+            "Registered Regular": "Regular",
+            "Registered Composition": "Composition",
+            "SEZ": "Regular - SEZ"
+        }.get(supplier.gst_category, supplier.gst_category)
 
         company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
 

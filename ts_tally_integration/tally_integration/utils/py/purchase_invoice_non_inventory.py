@@ -11,6 +11,7 @@ def get_purchase_invoice():
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
+        get_tagged_accounts_amount(doc.name)
         list_of_purchases.append(purchase_invoice_json(get_tagged_accounts_amount(doc.name), supplier, supplier_add, doc))
     return list_of_purchases
 
@@ -36,15 +37,13 @@ def get_tagged_accounts_amount(purchase_invoice_name):
 
 def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
 
-    supplier = supplier
-    supplier_add = supplier_add
     document = frappe.get_doc("Purchase Invoice", doc.name)
     company = frappe.get_doc("Company", doc.company)
     company_address_billing = frappe.get_doc("Address", get_company_address(doc.company)[0]) if document.billing_address else ""
     company_address_shipping = frappe.get_doc("Address", get_company_address(doc.company)[0]) if document.shipping_address else ""
-     
+    cost_center = frappe.get_doc("Cost Center", doc.cost_center) if document.cost_center else ""
     gst_category = {
-        "Unregistered": "Unregistered/Vendor",
+        "Unregistered": "Unregistered/Consumer",
         "Registered Regular": "Regular",
         "Registered Composition": "Composition",
         "SEZ": "Regular - SEZ"
@@ -65,13 +64,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
     }.get(company_address_shipping.gst_category, company_address_shipping.gst_category)
 
     list_of_purchase_invoices = []
+    company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
     
     for key, value in tagged_acc.items():
         if value['credit'] > 0:
             if "Creditors" in key:
                 doc_json = {
                         "Autoid": "",
-                        "CompanyNumber": company.name,
+                        "CompanyNumber": str(company_idx),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
@@ -92,7 +92,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "BillDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": "Cr",
                         "CostCategory": "",
-                        "CostCentre": (document.cost_center).split(" - ")[0] if document.cost_center else "",
+                        "CostCentre": (cost_center.company) if cost_center else "",
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -156,11 +156,12 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Narration": document.remarks if document.remarks else "",
                     }
                 list_of_purchase_invoices.append(doc_json)
+            
             else:
                 parrent_acc = frappe.get_doc("Account", key)
                 doc_json = {
                         "Autoid": "",
-                        "CompanyNumber": company.name,
+                        "CompanyNumber": str(company_idx),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
@@ -181,7 +182,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "BillDate": "",
                         "CrDr": "Cr",
                         "CostCategory": "",
-                        "CostCentre": (document.cost_center).split(" - ")[0] if document.cost_center else "",
+                        "CostCentre": (cost_center.company) if cost_center else "",
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -250,7 +251,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
             if 'Creditors' in key:
                 doc_json = {
                         "Autoid": "",
-                        "CompanyNumber": company.name,
+                        "CompanyNumber": str(company_idx),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
@@ -271,7 +272,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "BillDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": "Dr",
                         "CostCategory": "",
-                        "CostCentre": (document.cost_center).split(" - ")[0] if document.cost_center else "",
+                        "CostCentre": (cost_center.company) if cost_center else "",
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -335,12 +336,13 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Narration": document.remarks if document.remarks else "",
                     }
                 list_of_purchase_invoices.append(doc_json)
-            elif "Stock Received But Not Billed" in key:
+            
+            elif "Stock Received But Not Billed" in key or "Cost of Goods Sold" in key:
                 parrent_acc = frappe.get_doc("Account", key)
                 if 'Input GST Out-state' in document.taxes_and_charges:
                         doc_json ={
                             "Autoid": "",
-                            "CompanyNumber": company.name,
+                            "CompanyNumber": str(company_idx),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
@@ -361,7 +363,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "BillDate": "",
                             "CrDr": "Dr",
                             "CostCategory": "",
-                            "CostCentre": (document.cost_center).split(" - ")[0] if document.cost_center else "",
+                            "CostCentre": (cost_center.company) if cost_center else "",
                             "Stockitem": "",
                             "Godown": "",
                             "BatchNo": "",
@@ -411,13 +413,13 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "GstHsnName":"",
                             "GstHsnDescription":"",
                             "CgstGstRateDutyhead":"CGST",
-                            "CgstGstRateValuationtype":"",
+                            "CgstGstRateValuationtype":"Based on Value",
                             "CgstGstRate":str(document.taxes[0].rate/2) if document.taxes[0].rate else "",
                             "SgstGstRateDutyhead":"SGST",
-                            "SgstGstRateValuationtype":"",
+                            "SgstGstRateValuationtype":"Based on Value",
                             "SgstGstRate":str(document.taxes[0].rate/2) if document.taxes[0].rate else "",
                             "IgstGstRateDutyhead":"IGST",
-                            "IgstGstRateValuationtype":"",
+                            "IgstGstRateValuationtype":"Based on Value",
                             "IgstGstRate":str(document.taxes[0].rate) if document.taxes[0].rate else "",
                             "Reference": "",
                             "ReferenceDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
@@ -429,7 +431,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 elif 'Input GST In-state' in document.taxes_and_charges:
                         doc_json ={
                             "Autoid": "",
-                            "CompanyNumber": company.name,
+                            "CompanyNumber": str(company_idx),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
@@ -450,7 +452,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "BillDate": "",
                             "CrDr": "Dr",
                             "CostCategory": "",
-                            "CostCentre": (document.cost_center).split(" - ")[0] if document.cost_center else "",
+                            "CostCentre": (cost_center.company) if cost_center else "",
                             "Stockitem": "",
                             "Godown": "",
                             "BatchNo": "",
@@ -500,13 +502,13 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "GstHsnName":"",
                             "GstHsnDescription":"",
                             "CgstGstRateDutyhead":"CGST",
-                            "CgstGstRateValuationtype":"",
+                            "CgstGstRateValuationtype":"Based on Value",
                             "CgstGstRate":str(document.taxes[0].rate) if document.taxes[0].rate else "",
                             "SgstGstRateDutyhead":"SGST",
-                            "SgstGstRateValuationtype":"",
+                            "SgstGstRateValuationtype":"Based on Value",
                             "SgstGstRate":str(document.taxes[1].rate) if document.taxes[1].rate else "",
                             "IgstGstRateDutyhead":"IGST",
-                            "IgstGstRateValuationtype":"",
+                            "IgstGstRateValuationtype":"Based on Value",
                             "IgstGstRate":str(document.taxes[0].rate + document.taxes[1].rate) if document.taxes[0].rate and document.taxes[1].rate else "",
                             "Reference": "",
                             "ReferenceDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
@@ -518,7 +520,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 else:
                         doc_json ={
                             "Autoid": "",
-                            "CompanyNumber": company.name,
+                            "CompanyNumber": str(company_idx),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
@@ -539,7 +541,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "BillDate": "",
                             "CrDr": "Dr",
                             "CostCategory": "",
-                            "CostCentre": (document.cost_center).split(" - ")[0] if document.cost_center else "",
+                            "CostCentre": (cost_center.company) if cost_center else "",
                             "Stockitem": "",
                             "Godown": "",
                             "BatchNo": "",
@@ -608,7 +610,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 parrent_acc = frappe.get_doc("Account", key)
                 doc_json ={
                     "Autoid": "",
-                    "CompanyNumber": company.name,
+                    "CompanyNumber": str(company_idx),
                     "TallyMasterid": 1,
                     "Voucherid": document.name,
                     "VoucherNumber": document.name,
@@ -616,7 +618,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     "VoucherType": "Purchase",
                     "VoucherTypeParent": "Purchase",
                     "LedgerName": (key).split(" - ")[0],
-                    "LedgerParent": (parrent_acc.parent_account).split(" - ")[0] if parrent_acc.parent_account else "",
+                    "LedgerParent": "Duties & Taxes" if parrent_acc.account_type == "Tax" or "Tax Assets" in parrent_acc.parent_account  else (parrent_acc.parent_account).split(" - ")[0],
                     "LedgerAddress":"",
                     "LedgerState": "",
                     "LedgerCountry": "",
@@ -629,7 +631,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     "BillDate": "",
                     "CrDr": "Dr",
                     "CostCategory": "",
-                    "CostCentre": (document.cost_center).split(" - ")[0] if document.cost_center else "",
+                    "CostCentre": (cost_center.company) if cost_center else "",
                     "Stockitem": "",
                     "Godown": "",
                     "BatchNo": "",
