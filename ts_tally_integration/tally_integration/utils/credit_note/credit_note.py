@@ -2,8 +2,8 @@ import frappe
 from datetime import datetime
 
 @frappe.whitelist(allow_guest = True)
-def get_sales():
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-24-00016','is_return':0},fields=['*'])
+def credit_note():
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-24-00017', 'is_return':1},fields=['*'])
     all_vouchers = []
     for doc in sales_doc:
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
@@ -31,7 +31,6 @@ def get_sales():
         }.get(gstin.gst_category, gstin.gst_category)
 
 
-
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         vouchers = []
 
@@ -49,6 +48,10 @@ def get_sales():
                 ledgername = invoice['account']
                 parent_acc = "Bank Accounts"
 
+            elif account_type == 'Round Off':
+                ledgername = invoice['account']
+                parent_acc = "Indirect Expenses"
+
             elif account_type == 'Stock':
                 ledgername = invoice['account']
                 parent_acc = "Stock In hand"
@@ -65,10 +68,6 @@ def get_sales():
                 ledgername = invoice['account']
                 parent_acc = "Duties & Taxes"
 
-            elif account_type == 'Round Off':
-                ledgername = 'Roundoff'
-                parent_acc = "Indirect Expenses"
-
 
 
             sales_entry = {
@@ -79,7 +78,7 @@ def get_sales():
                 "VoucherNumber": doc.name,
                 "VoucherDate": doc.posting_date,
                 "VoucherType": 'sales',
-                "VoucherTypeParent": "Sales",
+                "VoucherTypeParent": "Sales Account",
                 "LedgerName": ledgername.split(" - ")[0],
                 "LedgerParent": parent_acc,
                 "LedgerAddress": address[0]['city'] if address else "",
@@ -126,7 +125,7 @@ def get_sales():
                 "BuyerState": cus_address[0]['state'] if cus_address else "",
                 "BuyerCountry": cus_address[0]['country'] if cus_address else "",
                 "BuyerGstReg": gst_category,
-                "BuyerGSTIN": gstin.gstin,
+                "BuyerGSTIN": cus_address[0]['gstin'] if cus_address else "",
                 "BuyerPincode": cus_address[0]['pincode'] if cus_address else "",
 
                 "ConsigneeName": cus_ship_address[0]['address_title'] if cus_ship_address else "",
@@ -138,10 +137,9 @@ def get_sales():
                 "ConsigneeGSTIN": cus_ship_address[0]['gstin'] if cus_ship_address else "",
                 "ConsigneePincode": cus_ship_address[0]['pincode'] if cus_ship_address else "",
 
-
                 "PlaceOfSupply": cus_ship_address[0]['state'] if cus_ship_address else "",
-                                "CmpGstRegistrationType":gst_category,
-                                "CmpGstin":gstin.gstin,
+                                "CmpGstRegistrationType":"",
+                                "CmpGstin":"",
                                 "CmpGstState":"",
                                 "GstOvrdnTaxability":"",
                                 "GstOvrdnTypeofsupply":"",
@@ -159,7 +157,6 @@ def get_sales():
                 "Narration": ""
             }
 
-
             vouchers.append(sales_entry)
         all_vouchers.append({
             "status": True,
@@ -169,3 +166,4 @@ def get_sales():
         })
 
     return all_vouchers
+
