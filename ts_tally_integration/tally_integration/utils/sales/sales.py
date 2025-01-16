@@ -51,6 +51,7 @@ def get_sales():
                 sales_item = frappe.db.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
                 for item in sales_item:
+                        hsn_desc = frappe.db.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
 
                         sales_entry = {
                             "Autoid": "711",
@@ -58,7 +59,7 @@ def get_sales():
                             "TallyMasterid": 1,
                             "Voucherid": doc.name,
                             "VoucherNumber": doc.name,
-                            "VoucherDate": doc.posting_date,
+                            "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "VoucherType": 'sales',
                             "VoucherTypeParent": "Sales",
                             "LedgerName": ledgername.split(" - ")[0],
@@ -129,7 +130,7 @@ def get_sales():
                                             "GstOvrdnTaxability":"Taxable",
                                             "GstOvrdnTypeofsupply":"Goods",
                                             "GstHsnName":item['gst_hsn_code'],
-                                            "GstHsnDescription":item['description'],
+                                            "GstHsnDescription":hsn_desc,
                                             "CgstGstRateDutyhead":"CGST",
                                             "CgstGstRateValuationtype":"Based on Value",
                                             "CgstGstRate":item['cgst_rate'],
@@ -138,7 +139,7 @@ def get_sales():
                                             "SgstGstRate":item['sgst_rate'],
                                             "IgstGstRateDutyhead":"IGST",
                                             "IgstGstRateValuationtype":"Based on Value",
-                                            "IgstGstRate":item['igst_rate'],
+                                            "IgstGstRate":item['sgst_rate'] + item['cgst_rate'],
                             "Narration": ""
                         }
 
@@ -179,7 +180,7 @@ def get_sales():
                 "TallyMasterid": 1,
                 "Voucherid": doc.name,
                 "VoucherNumber": doc.name,
-                "VoucherDate": doc.posting_date,
+                "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                 "VoucherType": 'sales',
                 "VoucherTypeParent": "Sales",
                 "LedgerName": ledgername.split(" - ")[0],
