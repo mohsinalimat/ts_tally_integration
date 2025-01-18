@@ -27,7 +27,11 @@ def get_payment_entry_customer():
         }.get(cust.gst_category, cust.gst_category)
         
         company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
-        
+        parent_account = ""
+        if "cash" == acc_doc.account_type.lower():
+            parent_account = "Cash-In-Hand"
+        elif "bank" == acc_doc.account_type.lower():
+            parent_account = "Bank Accounts"
         doc_dic_cust = {
                 "Autoid": "",
                 "CompanyNumber": str(company_idx),
@@ -66,7 +70,7 @@ def get_payment_entry_customer():
                 "BranchCode": "",
                 "Location": "",
                 "State": "",
-                "Narration": doc.remarks if doc.remarks else None,
+                "Narration": doc.remarks.replace("\n", ". ") if doc.remarks else None
             }
 
         list_of_payment_entries.append(doc_dic_cust)
@@ -81,7 +85,7 @@ def get_payment_entry_customer():
                 "VoucherType": "Receipt",
                 "VoucherTypeParent": "Receipt",
                 "LedgerName": (acc_doc.name).split(" - ")[0],
-                "LedgerParent": (acc_doc.parent_account).split(" - ")[0],
+                "LedgerParent":parent_account if parent_account!="" else (acc_doc.parent_account).split(" - ")[0],
                 "LedgerAddress": "",
                 "LedgerState": "",
                 "LedgerCountry": "",
@@ -109,7 +113,7 @@ def get_payment_entry_customer():
                 "BranchCode": "",
                 "Location": "",
                 "State": "",
-                "Narration": doc.remarks if doc.remarks else None,
+                "Narration": doc.remarks.replace("\n", ". ") if doc.remarks else None
             }
 
         list_of_payment_entries.append(doc_dic_cust1)
