@@ -732,6 +732,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
             elif "Stock In Hand" in key or "Cost of Goods Sold" in key:
                 parrent_acc = frappe.get_doc("Account", key)
                 for row in document.items:
+                    batch_no = frappe.get_value("Batch", {'item': row.item_code, 'reference_name': document.name}, 'name')
                     if key == row.expense_account:
                         if 'Input GST Out-state' in document.taxes_and_charges:
                             doc_json ={
@@ -760,7 +761,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
                                 "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
-                                "BatchNo": row.batch_no if row.batch_no else "Primary batch",
+                                "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
                                 "Discount": "",
@@ -822,7 +823,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                                 "CmpGstin": company.gstin if company.gstin else "",
                                 "CmpGstState": company_address_billing.state if company_address_billing.state else "",
-                                "GstOvrdnTaxability":row.gst_treatment if row.gst_treatment else "",
+                                "GstOvrdnTaxability": "Exempt" if row.gst_treatment == "Exempted" else row.gst_treatment or "",
                                 "GstOvrdnTypeofsupply":"Goods",
                                 "GstHsnName":row.gst_hsn_code if row.gst_hsn_code else "",
                                 "GstHsnDescription":frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
@@ -869,7 +870,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
                                 "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
-                                "BatchNo": row.batch_no if row.batch_no else "Primary batch",
+                                "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
                                 "Discount": "",
@@ -931,7 +932,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                                 "CmpGstin": company.gstin if company.gstin else "",
                                 "CmpGstState": company_address_billing.state if company_address_billing.state else "",
-                                "GstOvrdnTaxability":row.gst_treatment if row.gst_treatment else "",
+                                "GstOvrdnTaxability": "Exempt" if row.gst_treatment == "Exempted" else row.gst_treatment or "",
                                 "GstOvrdnTypeofsupply":"Goods",
                                 "GstHsnName":row.gst_hsn_code if row.gst_hsn_code else "",
                                 "GstHsnDescription":frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
@@ -978,7 +979,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
                                 "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
-                                "BatchNo": row.batch_no if row.batch_no else "Primary batch",
+                                "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
                                 "Discount": "",
@@ -1040,7 +1041,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                                 "CmpGstin": company.gstin if company.gstin else "",
                                 "CmpGstState": company_address_billing.state if company_address_billing.state else "",
-                                "GstOvrdnTaxability":row.gst_treatment if row.gst_treatment else "",
+                                "GstOvrdnTaxability": "Exempt" if row.gst_treatment == "Exempted" else row.gst_treatment or "",
                                 "GstOvrdnTypeofsupply":"Goods",
                                 "GstHsnName":row.gst_hsn_code if row.gst_hsn_code else "",
                                 "GstHsnDescription":frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
