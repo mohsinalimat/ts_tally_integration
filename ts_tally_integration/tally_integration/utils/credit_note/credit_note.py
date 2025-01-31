@@ -1,9 +1,10 @@
 import frappe
 from datetime import datetime
 
+
 @frappe.whitelist(allow_guest = True)
 def credit_note():
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-24-00017','is_return':1, 'update_stock':1},fields=['*'])
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-25-00016','is_return':1},fields=['*'])
     all_vouchers = []
     for doc in sales_doc:
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
@@ -25,7 +26,6 @@ def credit_note():
 
         cust_gstin = frappe.get_doc('Customer', doc.customer)
 
-
         gst_category = {
             "Unregistered": "Unregistered/Consumer",
             "Registered Regular": "Regular",
@@ -44,6 +44,7 @@ def credit_note():
             cr_dr = "Cr" if 'credit' in invoice and invoice['credit'] else "Dr"
 
             account_type = frappe.db.get_value('Account', invoice['account'], 'account_type')
+
             if account_type == 'Income Account':
                 ledgername = invoice['account']
                 parent_acc = "Sales Accounts"
@@ -51,6 +52,7 @@ def credit_note():
                 sales_item = frappe.db.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
                 for item in sales_item:
+                        hsn_desc = frappe.db.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
 
                         sales_entry = {
                             "Autoid": "711",
@@ -58,20 +60,20 @@ def credit_note():
                             "TallyMasterid": 1,
                             "Voucherid": doc.name,
                             "VoucherNumber": doc.name,
-                            "VoucherDate": doc.posting_date,
-                            "VoucherType": 'sales',
+                            "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                            "VoucherType": 'Credit Note',
                             "VoucherTypeParent": "Credit Note",
                             "LedgerName": ledgername.split(" - ")[0],
                             "LedgerParent": parent_acc,
 
-                            "LedgerAddress": cus_address[0]['city'] if cus_address else "",
-                            "LedgerState": cus_address[0]['state'] if cus_address else "",
-                            "LedgerCountry": cus_address[0]['country'] if cus_address else "",
-                            "LedgerPincode": cus_address[0]['pincode'],
-                            "LedgerMobile": cus_address[0]['phone'],
-                            "LedgerGstReg": gst_category,
-                            "LedgerPan": customer[0]['pan'],
-                            "LedgerGstin": cust_gstin.gstin,
+                            "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                            "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                            "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
                             "BillName": "711",
                             "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
@@ -84,7 +86,7 @@ def credit_note():
                             "Quantity": "",
                             "Rate": "",
                             "Discount": "",
-                            "Amount": item['amount'],
+                            "Amount": abs(item['amount']),
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
@@ -102,43 +104,42 @@ def credit_note():
                             "BillOfLandingDate": "",
                             "VehicleNo": "",
 
-                            "BuyerName": doc.customer,
-                            "BuyerMailingName": doc.customer,
-                            "BuyerAddress1": cus_address[0]['address_line1'] if cus_address else "",
-                            "BuyerAddress2": cus_address[0]['address_line1'] if cus_address else "",
-                            "BuyerState": cus_address[0]['state'] if cus_address else "",
-                            "BuyerCountry": cus_address[0]['country'] if cus_address else "",
-                            "BuyerGstReg": gst_category,
-                            "BuyerGSTIN": cust_gstin.gstin,
-                            "BuyerPincode": cus_address[0]['pincode'] if cus_address else "",
+                            "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                            "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                            "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                            "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                            "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
 
-                            "ConsigneeName": cus_ship_address[0]['address_title'] if cus_ship_address else "",
-                            "ConsigneeMailingName":cus_ship_address[0]['address_title'] if cus_ship_address else "",
-                            "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if cus_ship_address else "",
-                            "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if cus_ship_address else "",
-                            "ConsigneeState": cus_ship_address[0]['state'] if cus_ship_address else "",
-                            "ConsigneeCountry": cus_ship_address[0]['country'] if cus_ship_address else "",
-                            "ConsigneeGSTIN": cust_gstin.gstin,
-                            "ConsigneePincode": cus_ship_address[0]['pincode'] if cus_ship_address else "",
+                            "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                            "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
 
-
-                            "PlaceOfSupply": cus_ship_address[0]['state'] if cus_ship_address else "",
                                             "CmpGstRegistrationType":gst_category,
                                             "CmpGstin":company_details[0]['gstin'],
                                             "CmpGstState":address[0]['state'],
-                                            "GstOvrdnTaxability":"Taxable",
+                                            "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
                                             "GstOvrdnTypeofsupply":"Goods",
                                             "GstHsnName":item['gst_hsn_code'],
-                                            "GstHsnDescription":item['description'],
+                                            "GstHsnDescription":hsn_desc,
                                             "CgstGstRateDutyhead":"CGST",
                                             "CgstGstRateValuationtype":"Based on Value",
                                             "CgstGstRate":item['cgst_rate'],
-                                            "SgstGstRateDutyhead":"SGST",
+                                            "SgstGstRateDutyhead":"SGST/UTGST",
                                             "SgstGstRateValuationtype":"Based on Value",
                                             "SgstGstRate":item['sgst_rate'],
                                             "IgstGstRateDutyhead":"IGST",
                                             "IgstGstRateValuationtype":"Based on Value",
-                                            "IgstGstRate":item['igst_rate'],
+                                            "IgstGstRate":item['sgst_rate'] + item['cgst_rate'],
                             "Narration": ""
                         }
 
@@ -146,124 +147,677 @@ def credit_note():
                 sales_item_processed = True  
 
                 if sales_item_processed:
-                    continue  
+                    continue
 
-            elif account_type == 'Bank':
-                ledgername = invoice['account']
-                parent_acc = "Bank Accounts"
-
-            elif account_type == 'Stock':
-                ledgername = invoice['account']
-                parent_acc = "Stock In hand"
-
-            elif account_type == 'Receivable':
-                ledgername = doc.customer
-                parent_acc = "Sundry Debtors"
-
-            elif account_type == 'Cost of Goods Sold':
-                ledgername = invoice['account']
-                parent_acc = "Cost of Goods Sold"
+                                # --------------------------------- The BELOW block of code is only for TAX ---------------------------------------------
 
             elif account_type == 'Tax':
                 ledgername = invoice['account']
                 parent_acc = "Duties & Taxes"
 
+                sales_item = frappe.db.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
+
+                for item in sales_item:
+
+                    if item['cgst_rate']:
+                        sales_entry = {
+                            "Autoid": "711",
+                            "CompanyNumber": str(company_idx),
+                            "TallyMasterid": 1,
+                            "Voucherid": doc.name,
+                            "VoucherNumber": doc.name,
+                            "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                            "VoucherType": 'Credit Note',
+                            "VoucherTypeParent": "Credit Note",
+                            "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['cgst_rate']}",
+                            "LedgerParent": parent_acc,
+
+                            "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                            "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                            "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                            "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+
+                            "BillName": "711",
+                            "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                            "CrDr": cr_dr,
+                            "CostCategory": "",
+                            "CostCentre": doc.company,
+                            "Stockitem": "",
+                            "Godown": "",
+                            "BatchNo": "",
+                            "Quantity": "",
+                            "Rate": "",
+                            "Discount": "",
+                            "Amount": abs(item['cgst_amount']),
+                            "OrderNo": "",
+                            "OrderDate": "",
+                            "TrackingNo": "",
+                            "TrackingDate": "",
+                            "TermsOfPayment": "",
+                            "OtherRef": "",
+                            "TermsOfDelivery1": "",
+                            "TermsOfDelivery2": "",
+                            "DispatchDocNo": "",
+                            "ReceiptDocNo": "",
+                            "DispatchedThrough": "",
+                            "Destination": "",
+                            "CarrierName": "",
+                            "BillOfLanding": "",
+                            "BillOfLandingDate": "",
+                            "VehicleNo": "",
+
+                            "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                            "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                            "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                            "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                            "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                            "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
+
+                            "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                            "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                            "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
+
+                                            "CmpGstRegistrationType":gst_category,
+                                            "CmpGstin":company_details[0]['gstin'],
+                                            "CmpGstState":address[0]['state'],
+                                            "GstOvrdnTaxability":"",
+                                            "GstOvrdnTypeofsupply":"",
+                                            "GstHsnName":"",
+                                            "GstHsnDescription":"",
+                                            "CgstGstRateDutyhead":"",
+                                            "CgstGstRateValuationtype":"",
+                                            "CgstGstRate":"",
+                                            "SgstGstRateDutyhead":"",
+                                            "SgstGstRateValuationtype":"",
+                                            "SgstGstRate":"",
+                                            "IgstGstRateDutyhead":"",
+                                            "IgstGstRateValuationtype":"",
+                                            "IgstGstRate":"",
+                            "Narration": ""
+                        }
+
+                    if item['sgst_rate']:
+                        sales_entry = {
+                                "Autoid": "711",
+                                "CompanyNumber": str(company_idx),
+                                "TallyMasterid": 1,
+                                "Voucherid": doc.name,
+                                "VoucherNumber": doc.name,
+                                "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                                "VoucherType": 'Credit Note',
+                                "VoucherTypeParent": "Credit Note",
+                                "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['sgst_rate']}",
+                                "LedgerParent": parent_acc,
+
+                                "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                                "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                                "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                                "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                                "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                                "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                                "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                                "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+
+                                "BillName": "711",
+                                "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                                "CrDr": cr_dr,
+                                "CostCategory": "",
+                                "CostCentre": doc.company,
+                                "Stockitem": "",
+                                "Godown": "",
+                                "BatchNo": "",
+                                "Quantity": "",
+                                "Rate": "",
+                                "Discount": "",
+                                "Amount": abs(item['sgst_amount']),
+                                "OrderNo": "",
+                                "OrderDate": "",
+                                "TrackingNo": "",
+                                "TrackingDate": "",
+                                "TermsOfPayment": "",
+                                "OtherRef": "",
+                                "TermsOfDelivery1": "",
+                                "TermsOfDelivery2": "",
+                                "DispatchDocNo": "",
+                                "ReceiptDocNo": "",
+                                "DispatchedThrough": "",
+                                "Destination": "",
+                                "CarrierName": "",
+                                "BillOfLanding": "",
+                                "BillOfLandingDate": "",
+                                "VehicleNo": "",
+
+                                "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                                "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                                "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                                "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                                "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                                "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                                "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                                "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                                "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
+
+                                "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                                "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                                "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                                "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                                "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                                "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                                "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                                "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                                "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
+
+                                                "CmpGstRegistrationType":gst_category,
+                                                "CmpGstin":company_details[0]['gstin'],
+                                                "CmpGstState":address[0]['state'],
+                                                "GstOvrdnTaxability":"",
+                                                "GstOvrdnTypeofsupply":"",
+                                                "GstHsnName":"",
+                                                "GstHsnDescription":"",
+                                                "CgstGstRateDutyhead":"",
+                                                "CgstGstRateValuationtype":"",
+                                                "CgstGstRate":"",
+                                                "SgstGstRateDutyhead":"",
+                                                "SgstGstRateValuationtype":"",
+                                                "SgstGstRate":"",
+                                                "IgstGstRateDutyhead":"",
+                                                "IgstGstRateValuationtype":"",
+                                                "IgstGstRate":"",
+                                "Narration": ""
+                            }
+
+                        vouchers.append(sales_entry)
+
+                # --------------------------------- The ABOVE block of code is only for TAX ---------------------------------------------
+
+
+            elif account_type == 'Bank':
+                ledgername = invoice['account']
+                parent_acc = "Bank Accounts"
+
+                sales_entry = {
+                    "Autoid": "711",
+                    "CompanyNumber": str(company_idx),
+                    "TallyMasterid": 1,
+                    "Voucherid": doc.name,
+                    "VoucherNumber": doc.name,
+                    "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "VoucherType": 'Credit Note',
+                    "VoucherTypeParent": "Credit Note",
+                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerParent": parent_acc,
+
+                    "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+
+                    "BillName": "711",
+                    "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "CrDr": cr_dr,
+                    "CostCategory": "",
+                    "CostCentre": doc.company,
+                    "Stockitem": "",
+                    "Godown": "",
+                    "BatchNo": "",
+                    "Quantity": "",
+                    "Rate": "",
+                    "Discount": "",
+                    "Amount": abs(amount),
+                    "OrderNo": "",
+                    "OrderDate": "",
+                    "TrackingNo": "",
+                    "TrackingDate": "",
+                    "TermsOfPayment": "",
+                    "OtherRef": "",
+                    "TermsOfDelivery1": "",
+                    "TermsOfDelivery2": "",
+                    "DispatchDocNo": "",
+                    "ReceiptDocNo": "",
+                    "DispatchedThrough": "",
+                    "Destination": "",
+                    "CarrierName": "",
+                    "BillOfLanding": "",
+                    "BillOfLandingDate": "",
+                    "VehicleNo": "",
+
+                    "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                    "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
+
+                    "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
+
+                                    "CmpGstRegistrationType":gst_category,
+                                    "CmpGstin":company_details[0]['gstin'],
+                                    "CmpGstState":address[0]['state'],
+                                    "GstOvrdnTaxability":"",
+                                    "GstOvrdnTypeofsupply":"",
+                                    "GstHsnName":"",
+                                    "GstHsnDescription":"",
+                                    "CgstGstRateDutyhead":"",
+                                    "CgstGstRateValuationtype":"",
+                                    "CgstGstRate":"",
+                                    "SgstGstRateDutyhead":"",
+                                    "SgstGstRateValuationtype":"",
+                                    "SgstGstRate":"",
+                                    "IgstGstRateDutyhead":"",
+                                    "IgstGstRateValuationtype":"",
+                                    "IgstGstRate":"",
+                    "Narration": ""
+                }
+
+                vouchers.append(sales_entry)
+
+            elif account_type == 'Stock':
+                ledgername = invoice['account']
+                parent_acc = "Stock In hand"
+
+                sales_entry = {
+                    "Autoid": "711",
+                    "CompanyNumber": str(company_idx),
+                    "TallyMasterid": 1,
+                    "Voucherid": doc.name,
+                    "VoucherNumber": doc.name,
+                    "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "VoucherType": 'Credit Note',
+                    "VoucherTypeParent": "Credit Note",
+                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerParent": parent_acc,
+
+                    "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+
+                    "BillName": "711",
+                    "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "CrDr": cr_dr,
+                    "CostCategory": "",
+                    "CostCentre": doc.company,
+                    "Stockitem": "",
+                    "Godown": "",
+                    "BatchNo": "",
+                    "Quantity": "",
+                    "Rate": "",
+                    "Discount": "",
+                    "Amount": abs(amount),
+                    "OrderNo": "",
+                    "OrderDate": "",
+                    "TrackingNo": "",
+                    "TrackingDate": "",
+                    "TermsOfPayment": "",
+                    "OtherRef": "",
+                    "TermsOfDelivery1": "",
+                    "TermsOfDelivery2": "",
+                    "DispatchDocNo": "",
+                    "ReceiptDocNo": "",
+                    "DispatchedThrough": "",
+                    "Destination": "",
+                    "CarrierName": "",
+                    "BillOfLanding": "",
+                    "BillOfLandingDate": "",
+                    "VehicleNo": "",
+
+                    "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                    "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
+
+                    "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
+
+                                    "CmpGstRegistrationType":gst_category,
+                                    "CmpGstin":company_details[0]['gstin'],
+                                    "CmpGstState":address[0]['state'],
+                                    "GstOvrdnTaxability":"",
+                                    "GstOvrdnTypeofsupply":"",
+                                    "GstHsnName":"",
+                                    "GstHsnDescription":"",
+                                    "CgstGstRateDutyhead":"",
+                                    "CgstGstRateValuationtype":"",
+                                    "CgstGstRate":"",
+                                    "SgstGstRateDutyhead":"",
+                                    "SgstGstRateValuationtype":"",
+                                    "SgstGstRate":"",
+                                    "IgstGstRateDutyhead":"",
+                                    "IgstGstRateValuationtype":"",
+                                    "IgstGstRate":"",
+                    "Narration": ""
+                }
+
+                vouchers.append(sales_entry)
+
+            elif account_type == 'Receivable':
+                ledgername = doc.customer
+                parent_acc = "Sundry Debtors"
+
+                sales_entry = {
+                    "Autoid": "711",
+                    "CompanyNumber": str(company_idx),
+                    "TallyMasterid": 1,
+                    "Voucherid": doc.name,
+                    "VoucherNumber": doc.name,
+                    "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "VoucherType": 'Credit Note',
+                    "VoucherTypeParent": "Credit Note",
+                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerParent": parent_acc,
+
+                    "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+
+                    "BillName": "711",
+                    "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "CrDr": cr_dr,
+                    "CostCategory": "",
+                    "CostCentre": doc.company,
+                    "Stockitem": "",
+                    "Godown": "",
+                    "BatchNo": "",
+                    "Quantity": "",
+                    "Rate": "",
+                    "Discount": "",
+                    "Amount": abs(amount),
+                    "OrderNo": "",
+                    "OrderDate": "",
+                    "TrackingNo": "",
+                    "TrackingDate": "",
+                    "TermsOfPayment": "",
+                    "OtherRef": "",
+                    "TermsOfDelivery1": "",
+                    "TermsOfDelivery2": "",
+                    "DispatchDocNo": "",
+                    "ReceiptDocNo": "",
+                    "DispatchedThrough": "",
+                    "Destination": "",
+                    "CarrierName": "",
+                    "BillOfLanding": "",
+                    "BillOfLandingDate": "",
+                    "VehicleNo": "",
+
+                    "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                    "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
+
+                    "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
+
+                                    "CmpGstRegistrationType":gst_category,
+                                    "CmpGstin":company_details[0]['gstin'],
+                                    "CmpGstState":address[0]['state'],
+                                    "GstOvrdnTaxability":"",
+                                    "GstOvrdnTypeofsupply":"",
+                                    "GstHsnName":"",
+                                    "GstHsnDescription":"",
+                                    "CgstGstRateDutyhead":"",
+                                    "CgstGstRateValuationtype":"",
+                                    "CgstGstRate":"",
+                                    "SgstGstRateDutyhead":"",
+                                    "SgstGstRateValuationtype":"",
+                                    "SgstGstRate":"",
+                                    "IgstGstRateDutyhead":"",
+                                    "IgstGstRateValuationtype":"",
+                                    "IgstGstRate":"",
+                    "Narration": ""
+                }
+
+                vouchers.append(sales_entry)
+
+            elif account_type == 'Cost of Goods Sold':
+                ledgername = invoice['account']
+                parent_acc = "Cost of Goods Sold"
+
+                sales_entry = {
+                    "Autoid": "711",
+                    "CompanyNumber": str(company_idx),
+                    "TallyMasterid": 1,
+                    "Voucherid": doc.name,
+                    "VoucherNumber": doc.name,
+                    "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "VoucherType": 'Credit Note',
+                    "VoucherTypeParent": "Credit Note",
+                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerParent": parent_acc,
+
+                    "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+
+                    "BillName": "711",
+                    "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "CrDr": cr_dr,
+                    "CostCategory": "",
+                    "CostCentre": doc.company,
+                    "Stockitem": "",
+                    "Godown": "",
+                    "BatchNo": "",
+                    "Quantity": "",
+                    "Rate": "",
+                    "Discount": "",
+                    "Amount": abs(amount),
+                    "OrderNo": "",
+                    "OrderDate": "",
+                    "TrackingNo": "",
+                    "TrackingDate": "",
+                    "TermsOfPayment": "",
+                    "OtherRef": "",
+                    "TermsOfDelivery1": "",
+                    "TermsOfDelivery2": "",
+                    "DispatchDocNo": "",
+                    "ReceiptDocNo": "",
+                    "DispatchedThrough": "",
+                    "Destination": "",
+                    "CarrierName": "",
+                    "BillOfLanding": "",
+                    "BillOfLandingDate": "",
+                    "VehicleNo": "",
+
+                    "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                    "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
+
+                    "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
+
+                                    "CmpGstRegistrationType":gst_category,
+                                    "CmpGstin":company_details[0]['gstin'],
+                                    "CmpGstState":address[0]['state'],
+                                    "GstOvrdnTaxability":"",
+                                    "GstOvrdnTypeofsupply":"",
+                                    "GstHsnName":"",
+                                    "GstHsnDescription":"",
+                                    "CgstGstRateDutyhead":"",
+                                    "CgstGstRateValuationtype":"",
+                                    "CgstGstRate":"",
+                                    "SgstGstRateDutyhead":"",
+                                    "SgstGstRateValuationtype":"",
+                                    "SgstGstRate":"",
+                                    "IgstGstRateDutyhead":"",
+                                    "IgstGstRateValuationtype":"",
+                                    "IgstGstRate":"",
+                    "Narration": ""
+                }
+
+                vouchers.append(sales_entry)
+
             elif account_type == 'Round Off':
                 ledgername = 'Roundoff'
                 parent_acc = "Indirect Expenses"
 
+                sales_entry = {
+                    "Autoid": "711",
+                    "CompanyNumber": str(company_idx),
+                    "TallyMasterid": 1,
+                    "Voucherid": doc.name,
+                    "VoucherNumber": doc.name,
+                    "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "VoucherType": 'Credit Note',
+                    "VoucherTypeParent": "Credit Note",
+                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerParent": parent_acc,
 
-            sales_entry = {
-                "Autoid": "711",
-                "CompanyNumber": str(company_idx),
-                "TallyMasterid": 1,
-                "Voucherid": doc.name,
-                "VoucherNumber": doc.name,
-                "VoucherDate": doc.posting_date,
-                "VoucherType": 'sales',
-                "VoucherTypeParent": "Credit Note",
-                "LedgerName": ledgername.split(" - ")[0],
-                "LedgerParent": parent_acc,
+                    "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerState": cus_address[0]['state'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerCountry": cus_address[0]['country'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstReg": gst_category if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
+                    "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
-                "LedgerAddress": cus_address[0]['city'] if cus_address else "",
-                "LedgerState": cus_address[0]['state'] if cus_address else "",
-                "LedgerCountry": cus_address[0]['country'] if cus_address else "",
-                "LedgerPincode": cus_address[0]['pincode'],
-                "LedgerMobile": cus_address[0]['phone'],
-                "LedgerGstReg": gst_category,
-                "LedgerPan": customer[0]['pan'],
-                "LedgerGstin": cust_gstin.gstin,
+                    "BillName": "711",
+                    "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                    "CrDr": cr_dr,
+                    "CostCategory": "",
+                    "CostCentre": doc.company,
+                    "Stockitem": "",
+                    "Godown": "",
+                    "BatchNo": "",
+                    "Quantity": "",
+                    "Rate": "",
+                    "Discount": "",
+                    "Amount": abs(amount),
+                    "OrderNo": "",
+                    "OrderDate": "",
+                    "TrackingNo": "",
+                    "TrackingDate": "",
+                    "TermsOfPayment": "",
+                    "OtherRef": "",
+                    "TermsOfDelivery1": "",
+                    "TermsOfDelivery2": "",
+                    "DispatchDocNo": "",
+                    "ReceiptDocNo": "",
+                    "DispatchedThrough": "",
+                    "Destination": "",
+                    "CarrierName": "",
+                    "BillOfLanding": "",
+                    "BillOfLandingDate": "",
+                    "VehicleNo": "",
 
-                "BillName": "711",
-                "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                "CrDr": cr_dr,
-                "CostCategory": "",
-                "CostCentre": doc.company,
-                "Stockitem": "",
-                "Godown": "",
-                "BatchNo": "",
-                "Quantity": "",
-                "Rate": "",
-                "Discount": "",
-                "Amount": amount,
-                "OrderNo": "",
-                "OrderDate": "",
-                "TrackingNo": "",
-                "TrackingDate": "",
-                "TermsOfPayment": "",
-                "OtherRef": "",
-                "TermsOfDelivery1": "",
-                "TermsOfDelivery2": "",
-                "DispatchDocNo": "",
-                "ReceiptDocNo": "",
-                "DispatchedThrough": "",
-                "Destination": "",
-                "CarrierName": "",
-                "BillOfLanding": "",
-                "BillOfLandingDate": "",
-                "VehicleNo": "",
+                    "BuyerName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerMailingName": doc.customer if parent_acc == "Sundry Debtors" else "",
+                    "BuyerAddress1": cus_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerAddress2": cus_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerState": cus_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerCountry": cus_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_address else "",
+                    "BuyerGstReg": gst_category if parent_acc == "Sundry Debtors" else "",
+                    "BuyerGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "BuyerPincode": cus_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_address else "",
 
-                "BuyerName": doc.customer,
-                "BuyerMailingName": doc.customer,
-                "BuyerAddress1": cus_address[0]['address_line1'] if cus_address else "",
-                "BuyerAddress2": cus_address[0]['address_line1'] if cus_address else "",
-                "BuyerState": cus_address[0]['state'] if cus_address else "",
-                "BuyerCountry": cus_address[0]['country'] if cus_address else "",
-                "BuyerGstReg": gst_category,
-                "BuyerGSTIN": cust_gstin.gstin,
-                "BuyerPincode": cus_address[0]['pincode'] if cus_address else "",
+                    "ConsigneeName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeState": cus_ship_address[0]['state'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeCountry": cus_ship_address[0]['country'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "ConsigneeGSTIN": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
+                    "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_acc == "Sundry Debtors" and cus_ship_address else "",
+                    "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_acc == "Sundry Debtors" else "",
 
-                "ConsigneeName": cus_ship_address[0]['address_title'] if cus_ship_address else "",
-                "ConsigneeMailingName":cus_ship_address[0]['address_title'] if cus_ship_address else "",
-                "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if cus_ship_address else "",
-                "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if cus_ship_address else "",
-                "ConsigneeState": cus_ship_address[0]['state'] if cus_ship_address else "",
-                "ConsigneeCountry": cus_ship_address[0]['country'] if cus_ship_address else "",
-                "ConsigneeGSTIN": cust_gstin.gstin,
-                "ConsigneePincode": cus_ship_address[0]['pincode'] if cus_ship_address else "",
+                                    "CmpGstRegistrationType":gst_category,
+                                    "CmpGstin":company_details[0]['gstin'],
+                                    "CmpGstState":address[0]['state'],
+                                    "GstOvrdnTaxability":"",
+                                    "GstOvrdnTypeofsupply":"",
+                                    "GstHsnName":"",
+                                    "GstHsnDescription":"",
+                                    "CgstGstRateDutyhead":"",
+                                    "CgstGstRateValuationtype":"",
+                                    "CgstGstRate":"",
+                                    "SgstGstRateDutyhead":"",
+                                    "SgstGstRateValuationtype":"",
+                                    "SgstGstRate":"",
+                                    "IgstGstRateDutyhead":"",
+                                    "IgstGstRateValuationtype":"",
+                                    "IgstGstRate":"",
+                    "Narration": ""
+                }
 
-
-                "PlaceOfSupply": cus_ship_address[0]['state'] if cus_ship_address else "",
-                                "CmpGstRegistrationType":gst_category,
-                                "CmpGstin":company_details[0]['gstin'],
-                                "CmpGstState":address[0]['state'],
-                                "GstOvrdnTaxability":"",
-                                "GstOvrdnTypeofsupply":"",
-                                "GstHsnName":"",
-                                "GstHsnDescription":"",
-                                "CgstGstRateDutyhead":"",
-                                "CgstGstRateValuationtype":"",
-                                "CgstGstRate":"",
-                                "SgstGstRateDutyhead":"",
-                                "SgstGstRateValuationtype":"",
-                                "SgstGstRate":"",
-                                "IgstGstRateDutyhead":"",
-                                "IgstGstRateValuationtype":"",
-                                "IgstGstRate":"",
-                "Narration": ""
-            }
-
-            vouchers.append(sales_entry)
+                vouchers.append(sales_entry)
 
         all_vouchers.append({
             "status": True,
