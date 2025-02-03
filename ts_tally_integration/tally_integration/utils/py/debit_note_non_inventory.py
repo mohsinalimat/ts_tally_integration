@@ -116,7 +116,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "LedgerGstReg": gst_category if gst_category else "",
                         "LedgerPan": supplier.pan if supplier.pan else "",
                         "LedgerGstin": supplier.gstin if supplier.gstin else "",
-                        "BillName": "",
+                        "BillName": document.name,
                         "BillDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr":"Dr",
                         "CostCategory": "",
@@ -319,7 +319,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "LedgerGstReg": gst_category if gst_category else "",
                         "LedgerPan": supplier.pan if supplier.pan else "",
                         "LedgerGstin": supplier.gstin if supplier.gstin else "",
-                        "BillName": "",
+                        "BillName": document.name,
                         "BillDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr":"Cr",
                         "CostCategory": "",
@@ -732,6 +732,13 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
             elif "Stock Received But Not Billed" in key or "Cost of Goods Sold" in key:
                 parrent_acc = frappe.get_doc("Account", key)
                 for row in document.items:
+                    ledger_name = ''
+                    if row.cgst_rate>0 and row.sgst_rate>0 and row.igst_rate==0:
+                        ledger_name = f"PURCHASE @ {row.cgst_rate + row.sgst_rate} % {row.gst_hsn_code}"
+                    elif row.cgst_rate==0 and row.sgst_rate==0 and row.igst_rate>0:
+                        ledger_name = f"PURCHASE @ {row.igst_rate} % {row.gst_hsn_code}"
+                    elif row.cgst_rate==0 and row.sgst_rate==0 and row.igst_rate==0:
+                        ledger_name = f"PURCHASE Exempt {row.gst_hsn_code}"
                     if key == row.expense_account:
                         if 'Input GST Out-state' in document.taxes_and_charges:
                             doc_json ={
@@ -743,7 +750,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                 "VoucherType": "Debit Note",
                                 "VoucherTypeParent": "Debit Note",
-                                "LedgerName": row.item_name.upper() +" PURCHASE" if row.item_name else "PURCHASE",
+                                "LedgerName": ledger_name if ledger_name!="" else "PURCHASE",
                                 "LedgerParent": "Purchase Accounts",
                                 "LedgerAddress":"",
                                 "LedgerState": "",
@@ -852,7 +859,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                 "VoucherType": "Debit Note",
                                 "VoucherTypeParent": "Debit Note",
-                                "LedgerName": row.item_name.upper() +" PURCHASE" if row.item_name else "PURCHASE",
+                                "LedgerName": ledger_name if ledger_name!="" else "PURCHASE",
                                 "LedgerParent": "Purchase Accounts",
                                 "LedgerAddress":"",
                                 "LedgerState": "",
@@ -961,7 +968,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                 "VoucherType": "Debit Note",
                                 "VoucherTypeParent": "Debit Note",
-                                "LedgerName": row.item_name.upper() +" PURCHASE" if row.item_name else "PURCHASE",
+                                "LedgerName": ledger_name if ledger_name!="" else "PURCHASE",
                                 "LedgerParent": "Purchase Accounts",
                                 "LedgerAddress":"",
                                 "LedgerState": "",
