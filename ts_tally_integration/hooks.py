@@ -137,11 +137,11 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-doc_events = {
-	"Purchase Invoice": {
-		"validate":"ts_tally_integration.tally_integration.utils.py.purchase_invoice.validate"
-	}
-}
+# doc_events = {
+# 	"Purchase Invoice": {
+# 		"before_save":""
+# 	}
+# }
 
 # Scheduled Tasks
 # ---------------
