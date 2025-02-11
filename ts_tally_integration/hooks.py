@@ -138,8 +138,10 @@ app_license = "mit"
 # Hook on document methods and events
 
 # doc_events = {
-# 	"Purchase Invoice": {
-# 		"before_save":""
+# 	"*": {
+# 		"on_update": "method",
+# 		"on_cancel": "method",
+# 		"on_trash": "method"
 # 	}
 # }
 
