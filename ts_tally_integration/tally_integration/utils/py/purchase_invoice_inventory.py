@@ -2,6 +2,7 @@ import frappe
 import json
 import requests
 from datetime import datetime
+from werkzeug.wrappers import Response
 
 @frappe.whitelist(allow_guest=True)
 def get_purchase_invoice():
@@ -13,6 +14,9 @@ def get_purchase_invoice():
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
         # get_tagged_accounts_amount(doc.name)
         list_of_purchases.append(purchase_invoice_json(get_tagged_accounts_amount(doc.name), supplier, supplier_add, doc))
+        # all_vouchers = list_of_purchases[0]    
+        # all_vouchers = Response(json.dumps(all_vouchers, default=str), content_type='application/json')
+        # all_vouchers.status_code = 200
     return list_of_purchases
 
 def get_tagged_accounts_amount(purchase_invoice_name):
