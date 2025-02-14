@@ -1,13 +1,18 @@
 import frappe
 from datetime import datetime
+import json
+from werkzeug.wrappers import Response
 
 
 @frappe.whitelist(allow_guest = True)
 def get_sales():
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-25-00015','is_return':0, 'update_stock':0},fields=['*'])
+
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
+
     all_vouchers = []
-    tax_processed = False
+    final_voucher = []
     for doc in sales_doc:
+        tax_processed = False
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
         address = frappe.db.get_all('Address', filters={'name': link[0]['parent']} if link else {}, fields=['*'])
 
@@ -37,7 +42,9 @@ def get_sales():
 
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         gl_entry = gl_entry[::-1]
+
         vouchers = []
+
 
         for invoice in gl_entry:
             amount = invoice['credit'] if 'credit' in invoice and invoice['credit'] else invoice['debit']
@@ -61,7 +68,7 @@ def get_sales():
                         elif item['igst_rate']:
                             ledger_suffix = item['igst_rate']
 
-                        sales_entry = {
+                        ledger_dict = {
                             "Autoid": "711",
                             "CompanyNumber": str(company_idx),
                             "TallyMasterid": 1,
@@ -150,7 +157,7 @@ def get_sales():
                             "Narration": ""
                         }
 
-                        vouchers.append(sales_entry)
+                        vouchers.append(ledger_dict)
                 sales_item_processed = True  
 
                 if sales_item_processed:
@@ -158,7 +165,7 @@ def get_sales():
 
             # --------------------------------- The BELOW block of code is only for TAX ---------------------------------------------
 
-            
+
             elif account_type == 'Tax':
                 
                 if not tax_processed:
@@ -178,14 +185,14 @@ def get_sales():
                                     SUM(sgst_amount) AS sgst_amount, 
                                     SUM(igst_amount) AS igst_amount 
                                 FROM `tabSales Invoice Item` 
-                                WHERE parent='{doc.name}' AND docstatus=1
+                                WHERE parent='{doc.name}'
                                 GROUP BY parent, cgst_rate, sgst_rate, igst_rate
                             """, as_dict=True)
 
                     for item in items_tax:
                         if not item['gst_treatment'] == 'Exempted':
                             if item['cgst_rate']:
-                                sales_entry = {
+                                ledger_dict = {
                                     "Autoid": "711",
                                     "CompanyNumber": str(company_idx),
                                     "TallyMasterid": 1,
@@ -274,11 +281,11 @@ def get_sales():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(sales_entry)
+                                vouchers.append(ledger_dict)
 
 
                             if item['sgst_rate']:
-                                sales_entry = {
+                                ledger_dict = {
                                     "Autoid": "711",
                                     "CompanyNumber": str(company_idx),
                                     "TallyMasterid": 1,
@@ -367,10 +374,10 @@ def get_sales():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(sales_entry)
+                                vouchers.append(ledger_dict)
 
                             if item['igst_rate']:
-                                sales_entry = {
+                                ledger_dict = {
                                     "Autoid": "711",
                                     "CompanyNumber": str(company_idx),
                                     "TallyMasterid": 1,
@@ -459,7 +466,7 @@ def get_sales():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(sales_entry)
+                                vouchers.append(ledger_dict)
                 # --------------------------------- The ABOVE block of code is only for TAX ---------------------------------------------
 
 
@@ -467,7 +474,7 @@ def get_sales():
                 ledgername = invoice['account']
                 parent_acc = "Bank Accounts"
 
-                sales_entry = {
+                ledger_dict = {
                     "Autoid": "711",
                     "CompanyNumber": str(company_idx),
                     "TallyMasterid": 1,
@@ -556,13 +563,13 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(sales_entry)
+                vouchers.append(ledger_dict)
 
             elif account_type == 'Stock':
                 ledgername = invoice['account']
                 parent_acc = "Stock In hand"
 
-                sales_entry = {
+                ledger_dict = {
                     "Autoid": "711",
                     "CompanyNumber": str(company_idx),
                     "TallyMasterid": 1,
@@ -651,13 +658,13 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(sales_entry)
+                vouchers.append(ledger_dict)
 
             elif account_type == 'Receivable':
                 ledgername = doc.customer
                 parent_acc = "Sundry Debtors"
 
-                sales_entry = {
+                ledger_dict = {
                     "Autoid": "711",
                     "CompanyNumber": str(company_idx),
                     "TallyMasterid": 1,
@@ -746,13 +753,13 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(sales_entry)
+                vouchers.append(ledger_dict)
 
             elif account_type == 'Cost of Goods Sold':
                 ledgername = invoice['account']
                 parent_acc = "Cost of Goods Sold"
 
-                sales_entry = {
+                ledger_dict = {
                     "Autoid": "711",
                     "CompanyNumber": str(company_idx),
                     "TallyMasterid": 1,
@@ -841,13 +848,13 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(sales_entry)
+                vouchers.append(ledger_dict)
 
             elif account_type == 'Round Off':
                 ledgername = 'Roundoff'
                 parent_acc = "Indirect Expenses"
 
-                sales_entry = {
+                ledger_dict = {
                     "Autoid": "711",
                     "CompanyNumber": str(company_idx),
                     "TallyMasterid": 1,
@@ -936,13 +943,20 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(sales_entry)
+                vouchers.append(ledger_dict)
+        all_vouchers.append(vouchers.copy())
 
-        all_vouchers.append({
-            "status": True,
-            "VOUCHERDETAILS": {
-                "VOUCHER": vouchers
-            }
-        })
+    final_voucher.append({
+        "status": True,
+        "VOUCHERDETAILS": {
+            "VOUCHER": all_vouchers
+        }
+    })
 
-    return all_vouchers
+    final_voucher = final_voucher[0]
+    final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
+    final_voucher.status_code = 200
+     
+
+    return final_voucher
+

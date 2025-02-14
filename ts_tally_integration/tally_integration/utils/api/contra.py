@@ -1,6 +1,7 @@
 import frappe
 import json
 from datetime import datetime
+from werkzeug.wrappers import Response
 
 
 @frappe.whitelist(allow_guest = True)
@@ -71,4 +72,8 @@ def get_contra():
             }
         })
 
+    all_vouchers = all_vouchers[0]    
+    all_vouchers = Response(json.dumps(all_vouchers, default=str), content_type='application/json')
+    all_vouchers.status_code = 200
+ 
     return all_vouchers

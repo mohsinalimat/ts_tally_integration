@@ -1,5 +1,7 @@
 import frappe
 from datetime import datetime
+import json
+from werkzeug.wrappers import Response
 
 
 @frappe.whitelist(allow_guest = True)
@@ -947,4 +949,9 @@ def credit_note():
             }
         })
 
+    all_vouchers = all_vouchers[0]    
+    all_vouchers = Response(json.dumps(all_vouchers, default=str), content_type='application/json')
+    all_vouchers.status_code = 200
+
     return all_vouchers
+
