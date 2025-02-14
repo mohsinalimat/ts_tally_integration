@@ -5,13 +5,13 @@ from werkzeug.wrappers import Response
 
 
 @frappe.whitelist(allow_guest = True)
-def credit_note():
+def get_sales():
 
-    credit_doc = frappe.db.get_all('Sales Invoice',filters={'is_return':1, 'update_stock':0, 'docstatus':1},fields=['*'])
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'is_return':0, 'update_stock':1, 'docstatus':1},fields=['*'])
 
     all_vouchers = []
     final_voucher = []
-    for doc in credit_doc:
+    for doc in sales_doc:
         tax_processed = False
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
         address = frappe.db.get_all('Address', filters={'name': link[0]['parent']} if link else {}, fields=['*'])
@@ -42,6 +42,7 @@ def credit_note():
 
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         gl_entry = gl_entry[::-1]
+
         vouchers = []
 
 
@@ -50,6 +51,7 @@ def credit_note():
             cr_dr = "Cr" if 'credit' in invoice and invoice['credit'] else "Dr"
 
             account_type = frappe.db.get_value('Account', invoice['account'], 'account_type')
+
 
             if account_type == 'Income Account':
                 ledgername = invoice['account']
@@ -73,8 +75,8 @@ def credit_note():
                             "Voucherid": doc.name,
                             "VoucherNumber": doc.name,
                             "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": 'Credit Note',
-                            "VoucherTypeParent": "Credit Note",
+                            "VoucherType": 'sales',
+                            "VoucherTypeParent": "Sales",
                             "LedgerName": f"{ledgername.split(' - ')[0]} @ {(ledger_suffix)}",
                             "LedgerParent": parent_acc,
 
@@ -87,18 +89,18 @@ def credit_note():
                             "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
                             "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
-                            "BillName": "711",
+                            "BillName": doc.name,
                             "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "CrDr": cr_dr,
                             "CostCategory": "",
                             "CostCentre": doc.company,
-                            "Stockitem": "",
+                            "Stockitem": item['item_name'],
                             "Godown": "",
                             "BatchNo": "",
                             "Quantity": "",
                             "Rate": "",
                             "Discount": "",
-                            "Amount": abs(item['amount']),
+                            "Amount": item['amount'],
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
@@ -161,10 +163,11 @@ def credit_note():
                 if sales_item_processed:
                     continue
 
-                # ------------------------------------- The BELOW block of code is only for TAX ---------------------------------------------------------
+            # --------------------------------- The BELOW block of code is only for TAX ---------------------------------------------
+
 
             elif account_type == 'Tax':
-
+                
                 if not tax_processed:
                     ledgername = invoice['account']
                     parent_acc = "Duties & Taxes"
@@ -173,6 +176,7 @@ def credit_note():
                     items_tax = frappe.db.sql(f"""
                                 SELECT 
                                     parent,
+                                    item_name,
                                     cgst_rate, 
                                     sgst_rate, 
                                     igst_rate,
@@ -181,12 +185,11 @@ def credit_note():
                                     SUM(sgst_amount) AS sgst_amount, 
                                     SUM(igst_amount) AS igst_amount 
                                 FROM `tabSales Invoice Item` 
-                                WHERE parent='{doc.name}' AND docstatus=1
+                                WHERE parent='{doc.name}'
                                 GROUP BY parent, cgst_rate, sgst_rate, igst_rate
                             """, as_dict=True)
 
                     for item in items_tax:
-
                         if not item['gst_treatment'] == 'Exempted':
                             if item['cgst_rate']:
                                 ledger_dict = {
@@ -221,7 +224,7 @@ def credit_note():
                                     "Quantity": "",
                                     "Rate": "",
                                     "Discount": "",
-                                    "Amount": abs(item['cgst_amount']),
+                                    "Amount": item['cgst_amount'],
                                     "OrderNo": "",
                                     "OrderDate": "",
                                     "TrackingNo": "",
@@ -279,9 +282,8 @@ def credit_note():
                                     }
 
                                 vouchers.append(ledger_dict)
-                                
-                                
-                                
+
+
                             if item['sgst_rate']:
                                 ledger_dict = {
                                     "Autoid": "711",
@@ -292,7 +294,7 @@ def credit_note():
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                     "VoucherType": 'sales',
                                     "VoucherTypeParent": "Sales",
-                                    "LedgerName": f"Output Tax SGST @ {item['sgst_rate']}",
+                                    "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_acc,
 
                                     "LedgerAddress": cus_address[0]['city'] if cus_address and parent_acc == "Sundry Debtors" else "", 
@@ -315,7 +317,7 @@ def credit_note():
                                     "Quantity": "",
                                     "Rate": "",
                                     "Discount": "",
-                                    "Amount": abs(item['sgst_amount']),
+                                    "Amount": item['cgst_amount'],
                                     "OrderNo": "",
                                     "OrderDate": "",
                                     "TrackingNo": "",
@@ -374,8 +376,7 @@ def credit_note():
 
                                 vouchers.append(ledger_dict)
 
-
-                            elif item['igst_rate']:
+                            if item['igst_rate']:
                                 ledger_dict = {
                                     "Autoid": "711",
                                     "CompanyNumber": str(company_idx),
@@ -408,7 +409,7 @@ def credit_note():
                                     "Quantity": "",
                                     "Rate": "",
                                     "Discount": "",
-                                    "Amount": abs(item['igst_amount']),
+                                    "Amount": item['igst_amount'],
                                     "OrderNo": "",
                                     "OrderDate": "",
                                     "TrackingNo": "",
@@ -466,7 +467,6 @@ def credit_note():
                                     }
 
                                 vouchers.append(ledger_dict)
-
                 # --------------------------------- The ABOVE block of code is only for TAX ---------------------------------------------
 
 
@@ -481,8 +481,8 @@ def credit_note():
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Credit Note',
-                    "VoucherTypeParent": "Credit Note",
+                    "VoucherType": 'sales',
+                    "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_acc,
 
@@ -495,7 +495,7 @@ def credit_note():
                     "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
                     "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
-                    "BillName": "711",
+                    "BillName": doc.name,
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
@@ -506,7 +506,7 @@ def credit_note():
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": abs(amount),
+                    "Amount": amount,
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -576,8 +576,8 @@ def credit_note():
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Credit Note',
-                    "VoucherTypeParent": "Credit Note",
+                    "VoucherType": 'sales',
+                    "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_acc,
 
@@ -590,7 +590,7 @@ def credit_note():
                     "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
                     "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
-                    "BillName": "711",
+                    "BillName": doc.name,
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
@@ -601,7 +601,7 @@ def credit_note():
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": abs(amount),
+                    "Amount": amount,
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -671,8 +671,8 @@ def credit_note():
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Credit Note',
-                    "VoucherTypeParent": "Credit Note",
+                    "VoucherType": 'sales',
+                    "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_acc,
 
@@ -685,7 +685,7 @@ def credit_note():
                     "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
                     "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
-                    "BillName": "711",
+                    "BillName": doc.name,
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
@@ -696,7 +696,7 @@ def credit_note():
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": abs(amount),
+                    "Amount": amount,
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -766,8 +766,8 @@ def credit_note():
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Credit Note',
-                    "VoucherTypeParent": "Credit Note",
+                    "VoucherType": 'sales',
+                    "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_acc,
 
@@ -780,7 +780,7 @@ def credit_note():
                     "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
                     "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
-                    "BillName": "711",
+                    "BillName": doc.name,
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
@@ -791,7 +791,7 @@ def credit_note():
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": abs(amount),
+                    "Amount": amount,
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -861,8 +861,8 @@ def credit_note():
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Credit Note',
-                    "VoucherTypeParent": "Credit Note",
+                    "VoucherType": 'sales',
+                    "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_acc,
 
@@ -875,7 +875,7 @@ def credit_note():
                     "LedgerPan": customer[0]['pan'] if parent_acc == "Sundry Debtors" else "", 
                     "LedgerGstin": cust_gstin.gstin if parent_acc == "Sundry Debtors" else "",
 
-                    "BillName": "711",
+                    "BillName": doc.name,
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
@@ -886,7 +886,7 @@ def credit_note():
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": abs(amount),
+                    "Amount": amount,
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -959,3 +959,4 @@ def credit_note():
      
 
     return final_voucher
+

@@ -92,7 +92,7 @@ def credit_note():
                             "CrDr": cr_dr,
                             "CostCategory": "",
                             "CostCentre": doc.company,
-                            "Stockitem": "",
+                            "Stockitem": item['item_name'],
                             "Godown": "",
                             "BatchNo": "",
                             "Quantity": "",
