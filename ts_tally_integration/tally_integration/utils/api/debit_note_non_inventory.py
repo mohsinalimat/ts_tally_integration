@@ -2,17 +2,29 @@ import frappe
 import json
 import requests
 from datetime import datetime
+from werkzeug.wrappers import Response
+from itertools import chain
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_debit_note():
 
-    doc_list = frappe.get_all('Purchase Invoice', filters={'docstatus': 1, "update_stock":0, 'is_return': 1}, fields=['*'])
+    doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "update_stock":0, 'is_return': 1}, fields=['*'])
     list_of_purchases= []
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
         list_of_purchases.append(purchase_invoice_json(get_tagged_accounts_amount(doc.name), supplier, supplier_add, doc))
-    return list_of_purchases
+    flattened_list = list(chain.from_iterable(list_of_purchases))
+
+    response_purchase = {
+        "status": True,
+        "VOUCHERDETAILS": {
+            "VOUCHER": flattened_list
+        }
+    }
+
+    return Response(json.dumps(response_purchase, default=str), content_type='application/json', status=200)
+
 
 def get_tagged_accounts_amount(purchase_invoice_name):
 
@@ -1177,15 +1189,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 }
                 list_of_purchase_invoices.append(doc_json)
   
-    response_purchase = {
-            "status": True,
-            "VOUCHERDETAILS": {
-                "VOUCHER": list_of_purchase_invoices
-            }
-        }
+    # response_purchase = {
+    #         "status": True,
+    #         "VOUCHERDETAILS": {
+    #             "VOUCHER": list_of_purchase_invoices
+    #         }
+    #     }
     
-    # print(json.dumps(response_purchase))
-    return response_purchase
+    return list_of_purchase_invoices
 def get_company_address(company_name):
    
     linked_address = frappe.get_all("Address", filters={"link_doctype": "Company", "link_name": company_name}, pluck="name")

@@ -83,7 +83,7 @@ app_license = "mit"
 # ------------
 
 # before_install = "ts_tally_integration.install.before_install"
-# after_install = "ts_tally_integration.install.after_install"
+after_install = "ts_tally_integration.tally_integration.utils.py.after_install.after_install"
 
 # Uninstallation
 # ------------

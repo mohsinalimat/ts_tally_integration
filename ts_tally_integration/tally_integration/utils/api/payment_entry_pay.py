@@ -2,16 +2,18 @@ import frappe
 import json
 import requests
 from datetime import datetime
+from werkzeug.wrappers import Response
+from itertools import chain
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_payment_entry():
     return get_payment_entry_supplier()
 
 
 def get_payment_entry_supplier():
     
-    doc_list = frappe.get_all('Payment Entry', filters={'docstatus': 1, 'payment_type': 'Pay'}, fields=['*'])
+    doc_list = frappe.db.get_list('Payment Entry', filters={'docstatus': 1, 'payment_type': 'Pay'}, fields=['*'])
     list_of_json_suppliers = []
     for doc in doc_list:
         list_of_payment_entries = []
@@ -120,13 +122,22 @@ def get_payment_entry_supplier():
 
         list_of_payment_entries.append(doc_dic_supplier1)
 
-        response_supplier = {
-            "status": True,
-            "VOUCHERDETAILS": {
-                "VOUCHER": list_of_payment_entries
-            }
-        }
-        # list_of_json_suppliers.append(json.dumps(response_supplier))
-        list_of_json_suppliers.append(response_supplier)
+    # response_supplier = {
+    #     "status": True,
+    #     "VOUCHERDETAILS": {
+    #         "VOUCHER": list_of_payment_entries
+    #     }
+    # }
+    # list_of_json_suppliers.append(json.dumps(response_supplier))
+    list_of_json_suppliers.append(list_of_payment_entries)
 
-    return list_of_json_suppliers
+    flattened_list = list(chain.from_iterable(list_of_json_suppliers))
+
+    response_payment = {
+        "status": True,
+        "VOUCHERDETAILS": {
+            "VOUCHER": flattened_list
+        }
+    }
+
+    return Response(json.dumps(response_payment, default=str), content_type='application/json', status=200)

@@ -2,17 +2,30 @@ import frappe
 import json
 import requests
 from datetime import datetime
+from werkzeug.wrappers import Response
+from itertools import chain
 
-@frappe.whitelist(allow_guest=True)
-def get_debit_note():
+@frappe.whitelist()
+def get_purchase_invoice():
 
-    doc_list = frappe.get_all('Purchase Invoice', filters={'docstatus': 1, "update_stock":1, 'is_return': 1}, fields=['*'])
+    doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "update_stock":0, 'is_return': 0}, fields=['*'])
     list_of_purchases= []
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
+        get_tagged_accounts_amount(doc.name)
         list_of_purchases.append(purchase_invoice_json(get_tagged_accounts_amount(doc.name), supplier, supplier_add, doc))
-    return list_of_purchases
+    
+    flattened_list = list(chain.from_iterable(list_of_purchases))
+
+    response_purchase = {
+        "status": True,
+        "VOUCHERDETAILS": {
+            "VOUCHER": flattened_list
+        }
+    }
+
+    return Response(json.dumps(response_purchase, default=str), content_type='application/json', status=200)
 
 def get_tagged_accounts_amount(purchase_invoice_name):
 
@@ -62,7 +75,6 @@ def get_tagged_accounts_amount(purchase_invoice_name):
    
     return (sorted_account_amount)
 
-
 def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
 
     document = frappe.get_doc("Purchase Invoice", doc.name)
@@ -91,11 +103,11 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
     #     "SEZ": "Regular - SEZ"
     # }.get(company_address_shipping.gst_category, company_address_shipping.gst_category)
 
-    company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
-
     list_of_purchase_invoices = []
+    company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
+    
     for key, value in tagged_acc.items():
-        if value['debit'] > 0:
+        if value['credit'] > 0:
             if "Creditors" in key:
                 doc_json = {
                         "Autoid": "",
@@ -104,8 +116,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
                         "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Debit Note",
-                        "VoucherTypeParent": "Debit Note",
+                        "VoucherType": "Purchase",
+                        "VoucherTypeParent": "Purchase",
                         "LedgerName": supplier.supplier_name,
                         "LedgerParent": "Sundry Creditors",
                         "LedgerAddress": supplier_add.address_line1 if supplier_add.address_line1 else "",
@@ -118,7 +130,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "LedgerGstin": supplier.gstin if supplier.gstin else "",
                         "BillName": document.name,
                         "BillDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "CrDr": "Dr",
+                        "CrDr": "Cr",
                         "CostCategory": "",
                         "CostCentre": (cost_center.company) if cost_center else "",
                         "Stockitem": "",
@@ -127,7 +139,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Quantity": "",
                         "Rate": "",
                         "Discount": "",
-                        "Amount": str(value['debit']),
+                        "Amount": str(value['credit']),
                         "OrderNo": "",
                         "OrderDate": "",
                         "TrackingNo": "",
@@ -185,9 +197,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     }
                 list_of_purchase_invoices.append(doc_json)
             
-            elif "Cost of Goods Sold" in key:
-                pass
-            
             else:
                 parrent_acc = frappe.get_doc("Account", key)
                 doc_json = {
@@ -197,8 +206,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
                         "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Debit Note",
-                        "VoucherTypeParent": "Debit Note",
+                        "VoucherType": "Purchase",
+                        "VoucherTypeParent": "Purchase",
                         "LedgerName": "Roundoff"  if "Rounded Off" in key else (key).split(" - ")[0],
                         "LedgerParent": (parrent_acc.parent_account).split(" - ")[0] if parrent_acc.parent_account else "",
                         "LedgerAddress":"",
@@ -211,7 +220,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "LedgerGstin": "",
                         "BillName": "",
                         "BillDate": "",
-                        "CrDr": "Dr",
+                        "CrDr": "Cr",
                         "CostCategory": "",
                         "CostCentre": (cost_center.company) if cost_center else "",
                         "Stockitem": "",
@@ -220,7 +229,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Quantity": "",
                         "Rate": "",
                         "Discount": "",
-                        "Amount": str(value['debit']),
+                        "Amount": str(value['credit']),
                         "OrderNo": "",
                         "OrderDate": "",
                         "TrackingNo": "",
@@ -298,7 +307,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     }
                 list_of_purchase_invoices.append(doc_json)
 
-        elif value['credit'] > 0:
+        elif value['debit'] > 0:
             if 'Creditors' in key:
                 doc_json = {
                         "Autoid": "",
@@ -307,8 +316,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
                         "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Debit Note",
-                        "VoucherTypeParent": "Debit Note",
+                        "VoucherType": "Purchase",
+                        "VoucherTypeParent": "Purchase",
                         "LedgerName": supplier.supplier_name,
                         "LedgerParent": "Sundry Creditors",
                         "LedgerAddress": supplier_add.address_line1 if supplier_add.address_line1 else "",
@@ -321,7 +330,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "LedgerGstin": supplier.gstin if supplier.gstin else "",
                         "BillName": document.name,
                         "BillDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "CrDr": "Cr",
+                        "CrDr": "Dr",
                         "CostCategory": "",
                         "CostCentre": (cost_center.company) if cost_center else "",
                         "Stockitem": "",
@@ -330,7 +339,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "Quantity": "",
                         "Rate": "",
                         "Discount": "",
-                        "Amount": str(value['credit']),
+                        "Amount": str(value['debit']),
                         "OrderNo": "",
                         "OrderDate": "",
                         "TrackingNo": "",
@@ -413,8 +422,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": "Debit Note",
-                            "VoucherTypeParent": "Debit Note",
+                            "VoucherType": "Purchase",
+                            "VoucherTypeParent": "Purchase",
                             "LedgerName": "Input Tax IGST @ "+str(item_tax['igst_rate'])+"%",
                             "LedgerParent": "Duties & Taxes",
                             "LedgerAddress":"",
@@ -427,7 +436,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "LedgerGstin": "",
                             "BillName": "",
                             "BillDate": "",
-                            "CrDr": "Cr",
+                            "CrDr": "Dr",
                             "CostCategory": "",
                             "CostCentre": (cost_center.company) if cost_center else "",
                             "Stockitem": "",
@@ -436,7 +445,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "Quantity": "",
                             "Rate": "",
                             "Discount": "",
-                            "Amount": str(abs(item_tax['igst_amount'])),
+                            "Amount": str(item_tax['igst_amount']),
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
@@ -521,8 +530,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": "Debit Note",
-                            "VoucherTypeParent": "Debit Note",
+                            "VoucherType": "Purchase",
+                            "VoucherTypeParent": "Purchase",
                             "LedgerName": "Input Tax CGST @ "+str(item_tax['cgst_rate'])+"%",
                             "LedgerParent": "Duties & Taxes",
                             "LedgerAddress":"",
@@ -535,7 +544,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "LedgerGstin": "",
                             "BillName": "",
                             "BillDate": "",
-                            "CrDr": "Cr",
+                            "CrDr": "Dr",
                             "CostCategory": "",
                             "CostCentre": (cost_center.company) if cost_center else "",
                             "Stockitem": "",
@@ -544,7 +553,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "Quantity": "",
                             "Rate": "",
                             "Discount": "",
-                            "Amount": str(abs(item_tax['cgst_amount'])),
+                            "Amount": str(item_tax['cgst_amount']),
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
@@ -628,8 +637,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": "Debit Note",
-                            "VoucherTypeParent": "Debit Note",
+                            "VoucherType": "Purchase",
+                            "VoucherTypeParent": "Purchase",
                             "LedgerName": "Input Tax SGST @ "+str(item_tax['sgst_rate'])+"%",
                             "LedgerParent": "Duties & Taxes",
                             "LedgerAddress":"",
@@ -642,7 +651,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "LedgerGstin": "",
                             "BillName": "",
                             "BillDate": "",
-                            "CrDr": "Cr",
+                            "CrDr": "Dr",
                             "CostCategory": "",
                             "CostCentre": (cost_center.company) if cost_center else "",
                             "Stockitem": "",
@@ -651,7 +660,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "Quantity": "",
                             "Rate": "",
                             "Discount": "",
-                            "Amount": str(abs(item_tax['sgst_amount'])),
+                            "Amount": str(item_tax['sgst_amount']),
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
@@ -729,7 +738,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         }
                         list_of_purchase_invoices.append(doc_json_sgst)
 
-            elif "Stock In Hand" in key or "Cost of Goods Sold" in key:
+            elif "Stock Received But Not Billed" in key or "Cost of Goods Sold" in key:
                 parrent_acc = frappe.get_doc("Account", key)
                 for row in document.items:
                     ledger_name = ''
@@ -739,8 +748,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         ledger_name = f"PURCHASE @ {row.igst_rate} % {row.gst_hsn_code}"
                     elif row.cgst_rate==0 and row.sgst_rate==0 and row.igst_rate==0:
                         ledger_name = f"PURCHASE Exempt {row.gst_hsn_code}"
-
-                    batch_no = frappe.get_value("Batch", {'item': row.item_code, 'reference_name': document.name}, 'name')
+                   
                     if key == row.expense_account:
                         if 'Input GST Out-state' in document.taxes_and_charges:
                             doc_json ={
@@ -750,8 +758,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "Voucherid": document.name,
                                 "VoucherNumber": document.name,
                                 "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                "VoucherType": "Debit Note",
-                                "VoucherTypeParent": "Debit Note",
+                                "VoucherType": "Purchase",
+                                "VoucherTypeParent": "Purchase",
                                 "LedgerName": ledger_name if ledger_name!="" else "PURCHASE",
                                 "LedgerParent": "Purchase Accounts",
                                 "LedgerAddress":"",
@@ -764,14 +772,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "LedgerGstin": "",
                                 "BillName": "",
                                 "BillDate": "",
-                                "CrDr": "Cr",
+                                "CrDr": "Dr",
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
-                                "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
-                                "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
-                                "Quantity": str(abs(row.qty)) if row.qty else "",
-                                "Rate": str(abs(row.net_rate)) if row.net_rate else "",
+                                "Stockitem": "",
+                                "Godown": "",
+                                "BatchNo": "",
+                                "Quantity": "",
+                                "Rate": "",
                                 "Discount": "",
                                 "Amount": str(abs(row.net_amount)) if row.net_amount else "",
                                 "OrderNo": "",
@@ -848,7 +856,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "ReferenceDate": datetime.strptime(str(document.bill_date),'%Y-%m-%d').strftime('%d-%m-%Y') if document.bill_date else "",
                                 "VoucherSourceGodown": "",				
                                 "Narration": (document.remarks).replace("\n",". ") if document.remarks else ""
-                            }
+                                }
                             list_of_purchase_invoices.append(doc_json)
 
                         elif 'Input GST In-state' in document.taxes_and_charges:
@@ -859,8 +867,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "Voucherid": document.name,
                                 "VoucherNumber": document.name,
                                 "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                "VoucherType": "Debit Note",
-                                "VoucherTypeParent": "Debit Note",
+                                "VoucherType": "Purchase",
+                                "VoucherTypeParent": "Purchase",
                                 "LedgerName": ledger_name if ledger_name!="" else "PURCHASE",
                                 "LedgerParent": "Purchase Accounts",
                                 "LedgerAddress":"",
@@ -873,14 +881,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "LedgerGstin": "",
                                 "BillName": "",
                                 "BillDate": "",
-                                "CrDr": "Cr",
+                                "CrDr": "Dr",
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
-                                "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
-                                "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
-                                "Quantity": str(abs(row.qty)) if row.qty else "",
-                                "Rate": str(abs(row.net_rate)) if row.net_rate else "",
+                                "Stockitem": "",
+                                "Godown": "",
+                                "BatchNo": "",
+                                "Quantity": "",
+                                "Rate": "",
                                 "Discount": "",
                                 "Amount": str(abs(row.net_amount)) if row.net_amount else "",
                                 "OrderNo": "",
@@ -957,7 +965,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "ReferenceDate": datetime.strptime(str(document.bill_date),'%Y-%m-%d').strftime('%d-%m-%Y') if document.bill_date else "",
                                 "VoucherSourceGodown": "",				
                                 "Narration": (document.remarks).replace("\n",". ") if document.remarks else ""
-                            }
+                                }
                             list_of_purchase_invoices.append(doc_json)
 
                         else:
@@ -968,8 +976,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "Voucherid": document.name,
                                 "VoucherNumber": document.name,
                                 "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                "VoucherType": "Debit Note",
-                                "VoucherTypeParent": "Debit Note",
+                                "VoucherType": "Purchase",
+                                "VoucherTypeParent": "Purchase",
                                 "LedgerName": ledger_name if ledger_name!="" else "PURCHASE",
                                 "LedgerParent": "Purchase Accounts",
                                 "LedgerAddress":"",
@@ -982,14 +990,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "LedgerGstin": "",
                                 "BillName": "",
                                 "BillDate": "",
-                                "CrDr": "Cr",
+                                "CrDr": "Dr",
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
-                                "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
-                                "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
-                                "Quantity": str(abs(row.qty)) if row.qty else "",
-                                "Rate": str(abs(row.net_rate)) if row.net_rate else "",
+                                "Stockitem": "",
+                                "Godown": "",
+                                "BatchNo": "",
+                                "Quantity": "",
+                                "Rate": "",
                                 "Discount": "",
                                 "Amount": str(abs(row.net_amount)) if row.net_amount else "",
                                 "OrderNo": "",
@@ -1046,6 +1054,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "ConsigneeGSTIN": "",
                                 "ConsigneePincode": "",
                                 "PlaceOfSupply": "",
+                                "CmpGstReg":gst_category_company if gst_category_company else "",
                                 "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                                 "CmpGstin": company.gstin if company.gstin else "",
                                 "CmpGstState": company_address_billing.state if company_address_billing.state else "",
@@ -1066,7 +1075,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "ReferenceDate": datetime.strptime(str(document.bill_date),'%Y-%m-%d').strftime('%d-%m-%Y') if document.bill_date else "",
                                 "VoucherSourceGodown": "",				
                                 "Narration": (document.remarks).replace("\n",". ") if document.remarks else ""
-                            }
+                                }
                             list_of_purchase_invoices.append(doc_json)
 
             else:
@@ -1078,8 +1087,8 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     "Voucherid": document.name,
                     "VoucherNumber": document.name,
                     "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": "Debit Note",
-                    "VoucherTypeParent": "Debit Note",
+                    "VoucherType": "Purchase",
+                    "VoucherTypeParent": "Purchase",
                     "LedgerName": "Roundoff"  if "Rounded Off" in key else (key).split(" - ")[0],
                     "LedgerParent": "Duties & Taxes" if parrent_acc.account_type == "Tax" or "Tax Assets" in parrent_acc.parent_account  else (parrent_acc.parent_account).split(" - ")[0],
                     "LedgerAddress":"",
@@ -1092,7 +1101,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     "LedgerGstin": "",
                     "BillName": "",
                     "BillDate": "",
-                    "CrDr": "Cr",
+                    "CrDr": "Dr",
                     "CostCategory": "",
                     "CostCentre": (cost_center.company) if cost_center else "",
                     "Stockitem": "",
@@ -1101,7 +1110,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": str(value['credit']),
+                    "Amount": str(value['debit']),
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -1179,14 +1188,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 }
                 list_of_purchase_invoices.append(doc_json)
   
-    response_purchase = {
-            "status": True,
-            "VOUCHERDETAILS": {
-                "VOUCHER": list_of_purchase_invoices
-            }
-        }
-    # print(json.dumps(response_purchase))
-    return response_purchase
+    # response_purchase = {
+    #         "status": True,
+    #         "VOUCHERDETAILS": {
+    #             "VOUCHER": list_of_purchase_invoices
+    #         }
+    #     }
+    
+    return list_of_purchase_invoices
 def get_company_address(company_name):
    
     linked_address = frappe.get_all("Address", filters={"link_doctype": "Company", "link_name": company_name}, pluck="name")
