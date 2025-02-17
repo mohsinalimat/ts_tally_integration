@@ -22,7 +22,7 @@ def user_creation():
     api_key = frappe.db.get_value("User", "tally@thirvusoft.co.in", "api_key")
     
     base_url = get_url()
-    api_details = f'''API Keys: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice(Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice\n\nPurchase Invoice(Non-Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice\n\nDebit Note(Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note\n\nDebit Note(Non-Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note'''
+    api_details = f'''API Key: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice(Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice\n\nPurchase Invoice(Non-Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice\n\nDebit Note(Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note\n\nDebit Note(Non-Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note'''
     
     frappe.db.set_value("TS Tally Settings", "TS Tally Settings", "api_details", api_details)
 
