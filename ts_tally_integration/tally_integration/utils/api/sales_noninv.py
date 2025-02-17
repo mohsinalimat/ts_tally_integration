@@ -7,7 +7,7 @@ from werkzeug.wrappers import Response
 @frappe.whitelist(allow_guest = True)
 def get_sales():
 
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-25-00028','is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
 
     all_vouchers = []
     final_voucher = []
@@ -43,6 +43,7 @@ def get_sales():
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         gl_entry = gl_entry[::-1]
 
+        all_vouchers = []
 
         for invoice in gl_entry:
             amount = invoice['credit'] if 'credit' in invoice and invoice['credit'] else invoice['debit']
@@ -98,7 +99,7 @@ def get_sales():
                             "Quantity": "",
                             "Rate": "",
                             "Discount": "",
-                            "Amount": item['amount'],
+                            "Amount": amount,
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
@@ -956,4 +957,3 @@ def get_sales():
 
 
     return final_voucher
-

@@ -21,8 +21,15 @@ def user_creation():
     
     base_url = get_url()
     
-    api_details = f'''API Keys: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice: {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice\n\nDebit Note: {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note'''
-    
+    api_details = f'''
+    API Keys: {api_key}\n\n
+    Secret Key: {secret_key}\n\n
+    Purchase Invoice: {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice\n\n
+    Debit Note: {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note\n\n
+    Sales Invoice Non Inventory: {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_noninv.get_sales\n\n
+    Sales Invoice Inventory: {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_inv.get_sales
+
+    '''
     frappe.db.set_value("TS Tally Settings", "TS Tally Settings", "api_details", api_details)
 
     tally_settings = frappe.get_doc("TS Tally Settings", "TS Tally Settings")
@@ -49,5 +56,3 @@ def role_permission(role_name):
         role_permission.read = 1
         role_permission.export = 0
         role_permission.save()
-
-   

@@ -43,9 +43,6 @@ def get_sales():
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         gl_entry = gl_entry[::-1]
 
-        vouchers = []
-
-
         for invoice in gl_entry:
             amount = invoice['credit'] if 'credit' in invoice and invoice['credit'] else invoice['debit']
             cr_dr = "Cr" if 'credit' in invoice and invoice['credit'] else "Dr"
@@ -100,7 +97,7 @@ def get_sales():
                             "Quantity": "",
                             "Rate": "",
                             "Discount": "",
-                            "Amount": item['amount'],
+                            "Amount": amount,
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
@@ -157,7 +154,7 @@ def get_sales():
                             "Narration": ""
                         }
 
-                        vouchers.append(ledger_dict)
+                        all_vouchers.append(ledger_dict)
                 sales_item_processed = True  
 
                 if sales_item_processed:
@@ -281,7 +278,7 @@ def get_sales():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(ledger_dict)
+                                all_vouchers.append(ledger_dict)
 
 
                             if item['sgst_rate']:
@@ -374,7 +371,7 @@ def get_sales():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(ledger_dict)
+                                all_vouchers.append(ledger_dict)
 
                             if item['igst_rate']:
                                 ledger_dict = {
@@ -466,7 +463,7 @@ def get_sales():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(ledger_dict)
+                                all_vouchers.append(ledger_dict)
                 # --------------------------------- The ABOVE block of code is only for TAX ---------------------------------------------
 
 
@@ -563,7 +560,7 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Stock':
                 ledgername = invoice['account']
@@ -658,7 +655,7 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Receivable':
                 ledgername = doc.customer
@@ -753,7 +750,7 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Cost of Goods Sold':
                 ledgername = invoice['account']
@@ -848,7 +845,7 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Round Off':
                 ledgername = 'Roundoff'
@@ -943,8 +940,7 @@ def get_sales():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
-        all_vouchers.append(vouchers.copy())
+                all_vouchers.append(ledger_dict)
 
     final_voucher.append({
         "status": True,
