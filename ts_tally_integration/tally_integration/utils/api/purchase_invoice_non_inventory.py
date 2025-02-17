@@ -104,7 +104,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
     # }.get(company_address_shipping.gst_category, company_address_shipping.gst_category)
 
     list_of_purchase_invoices = []
-    company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
+    company_idx = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
     
     for key, value in tagged_acc.items():
         if value['credit'] > 0:
