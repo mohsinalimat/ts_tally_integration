@@ -5,7 +5,7 @@ from werkzeug.wrappers import Response
 
 
 @frappe.whitelist(allow_guest = True)
-def get_contra():
+def get_journal():
     journal_doc = frappe.db.get_all('Journal Entry',fields=['*'])
     
     all_vouchers = []
@@ -38,8 +38,8 @@ def get_contra():
                 "Voucherid": "",
                 "VoucherNumber": doc['name'],
                 "VoucherDate": doc['posting_date'].strftime('%d-%m-%Y'),
-                "VoucherType": doc['voucher_type'],
-                "VoucherTypeParent": "Contra",
+                "VoucherType": 'Journal',
+                "VoucherTypeParent": "Journal",
                 "LedgerName": (entry['account']).split(" - ")[0],
                 "LedgerParent": parent_acc,
                 "LedgerAddress": "",
@@ -49,15 +49,23 @@ def get_contra():
                 "LedgerMobile": "",
                 "LedgerGstReg": "",
                 "LedgerGstin": "",
-                "LedgerPan": None,
+    	        "LedgerPan": 'null',
                 "BillName": "",
                 "BillDate": "",
                 "PlaceOfSupply": "",
                 "TransactionDate": doc['posting_date'].strftime('%d-%m-%Y'),
                 "CrDr": cr_dr,
                 "Amount": amount,
-                "CostCategory": "",
-                "CostCentre": entry['cost_center'],
+                "CostCategory1": "",
+                "CostCentre1": entry['cost_center'],
+                "CostCategory2": "",
+                "CostCentre2": "",
+                "CostCategory3": "",
+                "CostCentre3": "",				
+                "CostCategory4": "",
+                "CostCentre4": "",
+                "CostCategory5": "",
+                "CostCentre5": "",				
                 "BranchCode": "",
                 "Location": address[0]['city'] if address else "",
                 "State": address[0]['gst_state'] if address else "",

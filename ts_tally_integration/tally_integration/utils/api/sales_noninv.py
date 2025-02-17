@@ -7,7 +7,7 @@ from werkzeug.wrappers import Response
 @frappe.whitelist(allow_guest = True)
 def get_sales():
 
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-25-00028','is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-25-00030','is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
 
     all_vouchers = []
     final_voucher = []
@@ -28,7 +28,7 @@ def get_sales():
 
         company_details = frappe.db.get_all('Company', filters = {'name': doc.company}, fields = ['*'])
 
-        company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
+        company_idx = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
 
         cust_gstin = frappe.get_doc('Customer', doc.customer)
 

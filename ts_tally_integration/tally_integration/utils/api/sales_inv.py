@@ -28,7 +28,7 @@ def get_sales():
 
         company_details = frappe.db.get_all('Company', filters = {'name': doc.company}, fields = ['*'])
 
-        company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
+        company_idx = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
 
         cust_gstin = frappe.get_doc('Customer', doc.customer)
 
@@ -90,7 +90,7 @@ def get_sales():
                             "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "CrDr": cr_dr,
                             "CostCategory": "",
-                            "CostCentre": doc.company,
+                            "CostCentre": item['cost_center'],
                             "Stockitem": item['item_name'],
                             "Godown": "",
                             "BatchNo": "",

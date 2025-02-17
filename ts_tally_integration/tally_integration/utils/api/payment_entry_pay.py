@@ -29,7 +29,7 @@ def get_payment_entry_supplier():
             "SEZ": "Regular - SEZ"
         }.get(supplier.gst_category, supplier.gst_category)
 
-        company_idx = (frappe.db.sql(f"select idx from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['idx']
+        company_idx = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
         parent_account = ""
         if "cash" == acc_doc.account_type.lower():
             parent_account = "Cash-In-Hand"
