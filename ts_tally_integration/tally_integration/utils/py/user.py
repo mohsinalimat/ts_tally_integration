@@ -5,21 +5,21 @@ from frappe.permissions import add_permission
 
 def user_creation():
 
-    if frappe.db.exists("User", "tallyuser@example.com"):
+    if frappe.db.exists("User", "tally@thirvusoft.co.in"):
         return
     role_creation()
     user = frappe.new_doc("User")
-    user.email = "tallyuser@example.com"
+    user.email = "tally@thirvusoft.co.in"
     user.first_name = "Tally"
     user.last_name = "User"
     user.send_welcome_email = 0
     user.username = "tallyuser"
     user.add_roles("Tally User")
     user.save()
-    api_generate_secret = generate_keys("tallyuser@example.com")
+    api_generate_secret = generate_keys("tally@thirvusoft.co.in")
 
     secret_key = api_generate_secret["api_secret"]
-    api_key = frappe.db.get_value("User", "tallyuser@example.com", "api_key")
+    api_key = frappe.db.get_value("User", "tally@thirvusoft.co.in", "api_key")
     
     base_url = get_url()
     api_details = f'''API Keys: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice(Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice\n\nPurchase Invoice(Non-Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice\n\nDebit Note(Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note\n\nDebit Note(Non-Inventory): {base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note'''
