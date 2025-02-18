@@ -30,12 +30,12 @@ def user_creation(user_id):
     api_key = frappe.db.get_value("User", user_id, "api_key")
     
     base_url = get_url()
-    purchase_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice"
-    purchase_invoice_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice"
-    debit_note_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note"
-    debit_note_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note"
-    payment_entry_pay = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_pay.get_payment_entry"
-    payment_entry_receipt = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_receipt.get_payment_entry"
+    purchase_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice" # Purchase Invoice Inventory
+    purchase_invoice_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice" # Purchase Invoice Non-Inventory
+    debit_note_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note" # Purchase Invoice Return
+    debit_note_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note" # Purchase Invoice Return (Non-Inventory) 
+    payment_entry_pay = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_pay.get_payment_entry" # Payment Entry type Pay
+    payment_entry_receipt = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_receipt.get_payment_entry" # Payment Entry type Receive
 
     api_details = f'''API Key: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice(Inventory): {purchase_invoice_inventory}\n\nPurchase Invoice(Non-Inventory): {purchase_invoice_non_inventory}\n\nDebit Note(Inventory): {debit_note_inventory}\n\nDebit Note(Non-Inventory): {debit_note_non_inventory}\n\nPayment Entry(Pay): {payment_entry_pay}\n\nPayment Entry(Receipt): {payment_entry_receipt}'''
     
