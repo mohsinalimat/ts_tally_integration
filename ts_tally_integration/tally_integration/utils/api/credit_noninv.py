@@ -4,7 +4,7 @@ import json
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist(allow_guest = True)
+@frappe.whitelist()
 def credit_note():
 
     credit_doc = frappe.db.get_all('Sales Invoice',filters={'is_return':1, 'update_stock':0, 'docstatus':1},fields=['*'])
@@ -42,7 +42,6 @@ def credit_note():
 
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         gl_entry = gl_entry[::-1]
-        vouchers = []
 
 
         for invoice in gl_entry:
@@ -155,7 +154,7 @@ def credit_note():
                             "Narration": ""
                         }
 
-                        vouchers.append(ledger_dict)
+                        all_vouchers.append(ledger_dict)
                 sales_item_processed = True  
 
                 if sales_item_processed:
@@ -278,7 +277,7 @@ def credit_note():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(ledger_dict)
+                                all_vouchers.append(ledger_dict)
                                 
                                 
                                 
@@ -372,7 +371,7 @@ def credit_note():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(ledger_dict)
+                                all_vouchers.append(ledger_dict)
 
 
                             elif item['igst_rate']:
@@ -465,7 +464,7 @@ def credit_note():
                                     "Narration": ""
                                     }
 
-                                vouchers.append(ledger_dict)
+                                all_vouchers.append(ledger_dict)
 
                 # --------------------------------- The ABOVE block of code is only for TAX ---------------------------------------------
 
@@ -563,7 +562,7 @@ def credit_note():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Stock':
                 ledgername = invoice['account']
@@ -658,7 +657,7 @@ def credit_note():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Receivable':
                 ledgername = doc.customer
@@ -753,7 +752,7 @@ def credit_note():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Cost of Goods Sold':
                 ledgername = invoice['account']
@@ -848,7 +847,7 @@ def credit_note():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
+                all_vouchers.append(ledger_dict)
 
             elif account_type == 'Round Off':
                 ledgername = 'Roundoff'
@@ -943,8 +942,7 @@ def credit_note():
                     "Narration": ""
                 }
 
-                vouchers.append(ledger_dict)
-        all_vouchers.append(vouchers.copy())
+                all_vouchers.append(ledger_dict)
 
     final_voucher.append({
         "status": True,
@@ -956,6 +954,6 @@ def credit_note():
     final_voucher = final_voucher[0]
     final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
     final_voucher.status_code = 200
-     
+
 
     return final_voucher

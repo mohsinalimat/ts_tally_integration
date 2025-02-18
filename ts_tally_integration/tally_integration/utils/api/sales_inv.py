@@ -4,10 +4,10 @@ import json
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist(allow_guest = True)
+@frappe.whitelist()
 def get_sales():
 
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'is_return':0, 'update_stock':1, 'docstatus':1},fields=['*'])
+    sales_doc = frappe.db.get_list('Sales Invoice',filters={'is_return':0, 'update_stock':1, 'docstatus':1},fields=['*'])
 
     all_vouchers = []
     final_voucher = []
@@ -92,7 +92,7 @@ def get_sales():
                             "CostCategory": "",
                             "CostCentre": item['cost_center'],
                             "Stockitem": item['item_name'],
-                            "Godown": "",
+                            "Godown": item['warehouse'].split('-')[0].strip(),
                             "BatchNo": "",
                             "Quantity": "",
                             "Rate": "",

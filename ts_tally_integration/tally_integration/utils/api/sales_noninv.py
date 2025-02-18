@@ -4,7 +4,7 @@ import json
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist(allow_guest = True)
+@frappe.whitelist()
 def get_sales():
 
     sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-25-00030','is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
@@ -22,7 +22,6 @@ def get_sales():
         customer = frappe.db.get_all('Customer', filters = {'name': doc.customer_name}, fields = ['*'])
 
         cus_ship_address = []
-        # if doc.update_stock == 1:
         cus_ship_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
         cus_ship_address = frappe.db.get_all('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
 
@@ -43,7 +42,6 @@ def get_sales():
         gl_entry = frappe.db.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         gl_entry = gl_entry[::-1]
 
-        all_vouchers = []
 
         for invoice in gl_entry:
             amount = invoice['credit'] if 'credit' in invoice and invoice['credit'] else invoice['debit']

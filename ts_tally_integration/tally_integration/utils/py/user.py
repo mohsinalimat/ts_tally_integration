@@ -3,6 +3,7 @@ from frappe.core.doctype.user.user import generate_keys
 from frappe.utils import get_url
 from frappe.permissions import add_permission
 
+
 def user_creation():
 
     if frappe.db.exists("User", "tally@thirvusoft.co.in"):

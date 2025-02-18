@@ -7,7 +7,6 @@ from werkzeug.wrappers import Response
 from itertools import chain
 
 
-
 @frappe.whitelist()
 def get_purchase_invoice():
     doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "update_stock":1, 'is_return': 0}, fields=['*'])
