@@ -10,5 +10,6 @@ class TSTallySettings(Document):
 
 @frappe.whitelist()
 def get_unmapped_accounts():
-	unmapped_account = frappe.db.get_all('Account', filters={'custom_tally_parent_account':['=',''], 'is_group':0}, fields=['name', 'company'])
+	unmapped_account = frappe.db.get_list('Account', filters={'custom_tally_parent_account':['=',''], 'is_group':0}, fields=['name', 'company'])
 	return unmapped_account
+

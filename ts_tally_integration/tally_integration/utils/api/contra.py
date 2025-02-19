@@ -6,7 +6,7 @@ from werkzeug.wrappers import Response
 
 @frappe.whitelist(allow_guest = True)
 def get_contra():
-    journal_doc = frappe.db.get_all('Journal Entry',fields=['*'])
+    journal_doc = frappe.db.get_all('Journal Entry',filters={'voucher_type':'Contra Entry'},fields=['*'])
     
     all_vouchers = []
 

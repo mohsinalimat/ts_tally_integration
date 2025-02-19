@@ -7,7 +7,7 @@ from werkzeug.wrappers import Response
 @frappe.whitelist(allow_guest = True)
 def get_delivery():
 
-    delivery_doc = frappe.db.get_all('Delivery Note',filters={'is_return':0,'docstatus':1},fields=['*'])
+    delivery_doc = frappe.db.get_all('Delivery Note',filters={'name':'DN-25-00003','is_return':0,'docstatus':1},fields=['*'])
 
     all_vouchers = []
     final_voucher = []
@@ -51,7 +51,7 @@ def get_delivery():
 
             for item in delivery_note_item:
                 hsn_desc = frappe.db.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
-                    
+
                 ledger_dict ={
                         "Autoid": "1",
                         "CompanyNumber": company_idx,
@@ -160,3 +160,4 @@ def get_delivery():
     
 
     return final_voucher
+

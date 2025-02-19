@@ -18,20 +18,23 @@ function fetch_unmapped_accounts(frm) {
                         <table style="width: 100%; border-collapse: collapse;">
                             <th>
                                 <tr>
+                                    <th style="border: 1px solid #ddd; padding: 8px; background:rgb(183, 220, 255);">S.No</th>
                                     <th style="border: 1px solid #ddd; padding: 8px; background:rgb(183, 220, 255);">Account Name</th>
                                     <th style="border: 1px solid #ddd; padding: 8px; background:rgb(183, 220, 255);">Company</th>
                                 </tr>
                             </th>
                     `;
 
-                    r.message.forEach(account => {
+                    r.message.forEach((account, index) => {
                         table += `
                             <tr>
+                                <td style="border: 1px solid #ddd; padding: 8px;">${index + 1}</td>
                                 <td style="border: 1px solid #ddd; padding: 8px;">${account.name}</td>
                                 <td style="border: 1px solid #ddd; padding: 8px;">${account.company}</td>
                             </tr>
                         `;
                     });
+                    
 
                     frm.fields_dict['unmapped_accounts'].html(table);
                 } else {

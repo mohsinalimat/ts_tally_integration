@@ -6,13 +6,12 @@ from werkzeug.wrappers import Response
 
 @frappe.whitelist(allow_guest = True)
 def get_journal():
-    journal_doc = frappe.db.get_all('Journal Entry',fields=['*'])
-    
+    journal_doc = frappe.db.get_all('Journal Entry',filters={'voucher_type':'Journal Entry'},fields=['*'])
+
     all_vouchers = []
 
     for doc in journal_doc:
         link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
-
 
         company_idx = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
 
