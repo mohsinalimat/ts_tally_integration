@@ -7,16 +7,26 @@ from itertools import chain
 
 
 @frappe.whitelist()
-def get_payment_entry():
-    return get_payment_entry_supplier()
+def get_payment_entry(company=None):
+    return get_payment_entry_supplier(company)
 
 
-def get_payment_entry_supplier():
+def get_payment_entry_supplier(company):
+    if company==None:
+        return Response(json.dumps("Company Number is not found!", default=str), content_type='application/json', status=404)
+
+    company_list = frappe.db.sql("select company_name from `tabTS Tally Company` where company_number=%s", company, as_dict=1)
     
-    doc_list = frappe.db.get_list('Payment Entry', filters={'docstatus': 1, 'payment_type': 'Pay'}, fields=['*'])
+    if len(company_list)==0:
+        return Response(json.dumps("Company is not found. Please check the company number!", default=str), content_type='application/json', status=404)
+
+    company_name = company_list[0].company_name
+    
+    doc_list = frappe.db.get_list('Payment Entry', filters={'docstatus': 1, "company" : company_name, 'payment_type': 'Pay'}, fields=['*'])
     list_of_json_suppliers = []
+    list_of_payment_entries = []
+
     for doc in doc_list:
-        list_of_payment_entries = []
         pay_doc = frappe.get_doc("Payment Entry", doc.name)
         supplier = frappe.get_doc("Supplier", pay_doc.party)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)

@@ -1,12 +1,16 @@
 import frappe
 from ts_tally_integration.tally_integration.utils.py.user import user_creation
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+from ts_tally_integration.tally_integration.doctype.ts_tally_settings.ts_tally_settings import user_creation, role_creation, role_permission
 
 
 def after_install():
-    print("Creating Tally User")
-    user_creation()
-    print("Tally User Created")
+    print("Dependencies Installing by Thirvusoft...")
+    user_id = "tally@thirvusoft.co.in"
+    role_name = "Tally User"
+    role_creation(role_name)
+    role_permission(role_name)
+    user_creation(user_id)
     create_account_parentfield()
     print("Updating Account Parent Field")
     create_tally_parent_account()
@@ -119,3 +123,4 @@ def create_tally_parent_account():
                 account["custom_tally_parent_account"]
             )
             print(f'Updated {account["account_name"]} in {company["name"]}')
+

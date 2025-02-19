@@ -1,5 +1,4 @@
 import frappe
-from frappe import _
 import json
 import requests
 from datetime import datetime
@@ -7,9 +6,23 @@ from werkzeug.wrappers import Response
 from itertools import chain
 
 
+
 @frappe.whitelist()
-def get_purchase_invoice():
-    doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "update_stock":1, 'is_return': 0}, fields=['*'])
+def get_purchase_invoice(company=None):
+    if company==None:
+        return Response(json.dumps("Company Number is not found!", default=str), content_type='application/json', status=404)
+
+    company_list = frappe.db.sql("select company_name , stock from `tabTS Tally Company` where company_number=%s", company, as_dict=1)
+    
+    if len(company_list)==0:
+        return Response(json.dumps("Company is not found. Please check the company number!", default=str), content_type='application/json', status=404)
+
+    if company_list[0].stock == "Non-Inventory":
+        return Response(json.dumps("Company is Non-Inventory. But requested for Inventory!", default=str), content_type='application/json', status=400)
+
+    company_name = company_list[0].company_name
+
+    doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "company" : company_name, "update_stock":1, 'is_return': 0}, fields=['*'])
     list_of_purchases= []
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)

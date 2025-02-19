@@ -6,14 +6,27 @@ from werkzeug.wrappers import Response
 from itertools import chain
 
 @frappe.whitelist()
-def get_debit_note():
+def get_debit_note(company=None):
+    if company==None:
+        return Response(json.dumps("Company Number is not found!", default=str), content_type='application/json', status=404)
 
-    doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "update_stock":0, 'is_return': 1}, fields=['*'])
+    company_list = frappe.db.sql("select company_name , stock from `tabTS Tally Company` where company_number=%s", company, as_dict=1)
+    
+    if len(company_list)==0:
+        return Response(json.dumps("Company is not found. Please check the company number!", default=str), content_type='application/json', status=404)
+
+    if company_list[0].stock == "Non-Inventory":
+        return Response(json.dumps("Company is Non-Inventory. But requested for Inventory!", default=str), content_type='application/json', status=400)
+
+    company_name = company_list[0].company_name
+
+    doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "company" : company_name, "update_stock":0, 'is_return': 1}, fields=['*'])
     list_of_purchases= []
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
         list_of_purchases.append(purchase_invoice_json(get_tagged_accounts_amount(doc.name), supplier, supplier_add, doc))
+        
     flattened_list = list(chain.from_iterable(list_of_purchases))
 
     response_purchase = {

@@ -7,15 +7,27 @@ from itertools import chain
 
 
 @frappe.whitelist()
-def get_payment_entry():
-    return get_payment_entry_customer()
+def get_payment_entry(company=None):
+    return get_payment_entry_customer(company)
     
 
-def get_payment_entry_customer():
-    doc_list = frappe.db.get_list('Payment Entry', filters={'docstatus': 1, 'payment_type': 'Receive'}, fields=['*'])
+def get_payment_entry_customer(company):
+    if company==None:
+        return Response(json.dumps("Company Number is not found!", default=str), content_type='application/json', status=404)
+
+    company_list = frappe.db.sql("select company_name from `tabTS Tally Company` where company_number=%s", company, as_dict=1)
+    
+    if len(company_list)==0:
+        return Response(json.dumps("Company is not found. Please check the company number!", default=str), content_type='application/json', status=404)
+
+    
+    company_name = company_list[0].company_name
+
+    doc_list = frappe.db.get_list('Payment Entry', filters={'docstatus': 1, "company" : company_name, 'payment_type': 'Receive'}, fields=['*'])
     list_of_json_customers = []
+    list_of_payment_entries = []
+
     for doc in doc_list:
-        list_of_payment_entries = []
         pay_doc = frappe.get_doc("Payment Entry", doc.name)
         cust = frappe.get_doc("Customer", pay_doc.party)
         cust_add = frappe.get_doc("Address",cust.customer_primary_address)
@@ -138,6 +150,6 @@ def get_payment_entry_customer():
             "VOUCHER": flattened_list
         }
     }
-
+    
     return Response(json.dumps(response_payment, default=str), content_type='application/json', status=200)
 
