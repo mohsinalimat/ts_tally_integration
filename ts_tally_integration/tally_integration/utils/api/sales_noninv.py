@@ -7,7 +7,7 @@ from werkzeug.wrappers import Response
 @frappe.whitelist()
 def get_sales():
 
-    sales_doc = frappe.db.get_all('Sales Invoice',filters={'name':'SINV-25-00030','is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
+    sales_doc = frappe.db.get_all('Sales Invoice',filters={'is_return':0, 'update_stock':0, 'docstatus':1},fields=['*'])
 
     all_vouchers = []
     final_voucher = []

@@ -1,35 +1,36 @@
 import frappe
-# from ts_tally_integration.tally_integration.utils.py.user import user_creation
-# from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+from ts_tally_integration.tally_integration.utils.py.user import user_creation
+from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
-# def after_install():
-#     print("Creating Tally User...")
-#     user_creation()
-#     print("Tally User Created")
-
-#     create_account_parentfield()
-
-# def create_account_parentfield():
-#     custom_fields = {
-#         "Account": [
-#             {
-#                 "label": "Tally Parent Account",
-#                 "fieldname": "custom_tally_parent_account",
-#                 "fieldtype": "Autocomplete",
-#                 "options":"Sundry Debtors\nDuties & Taxes\nDirect Expenses\nSales Accounts\nPurchase Accounts\nIndirect Expenses\nBank Accounts\nCash-in-Hand",
-#                 "insert_after": "parent_account",
-#                 "depends_on": "eval: doc.is_group == 0",
-#                 "mandatory_depends_on": "eval: doc.is_group == 0",
-#             }
-#         ]
-#     }
-#     create_custom_fields(custom_fields=custom_fields)
+def after_install():
+    print("Creating Tally User")
+    user_creation()
+    print("Tally User Created")
+    create_account_parentfield()
+    print("Updating Account Parent Field")
+    create_tally_parent_account()
+    print("Account ParentField Updated")
 
 
-# def create_tally_parent_account():
-company_list = frappe.db.get_all('Company', fields=['name', 'abbr'])
-for company in company_list:
+def create_account_parentfield():
+    custom_fields = {
+        "Account": [
+            {
+                "label": "Tally Parent Account",
+                "fieldname": "custom_tally_parent_account",
+                "fieldtype": "Autocomplete",
+                "options":"Sundry Debtors\nDuties & Taxes\nDirect Expenses\nSales Accounts\nPurchase Accounts\nIndirect Expenses\nBank Accounts\nCash-in-Hand",
+                "insert_after": "parent_account",
+                "depends_on": "eval: doc.is_group == 0",
+                "mandatory_depends_on": "eval: doc.is_group == 0",
+            }
+        ]
+    }
+    create_custom_fields(custom_fields=custom_fields)
+
+
+def create_tally_parent_account():
 
     accounts = [
                 {"account_name": "Debtors", "custom_tally_parent_account": "Sundry Debtors"},
@@ -105,5 +106,14 @@ for company in company_list:
                 {"account_name": "Stock Received But Not Billed", "custom_tally_parent_account": "Sundry Debtors"}
             ]
 
-    for account in accounts:
-        print('AAAAAAAAAAAAAAAA', account)
+    company_list = frappe.db.get_all('Company', fields=['name', 'abbr'])
+
+    for company in company_list:
+        for account in accounts:
+            frappe.db.set_value(
+                "Account",
+                {"account_name": account["account_name"], "company": company["name"]},
+                "custom_tally_parent_account",
+                account["custom_tally_parent_account"]
+            )
+            print(f'Updated {account["account_name"]} in {company["name"]}')
