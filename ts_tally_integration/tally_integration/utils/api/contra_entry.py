@@ -5,7 +5,7 @@ from werkzeug.wrappers import Response
 
 
 @frappe.whitelist()
-def get_journal(company=None):
+def get_contra(company=None):
     if company==None:
         return "Company Number not found!"
     company_number = frappe.db.exists('TS Tally Company', {'company_number': company})
@@ -13,11 +13,11 @@ def get_journal(company=None):
         tally_settings = frappe.db.get_all('TS Tally Company', filters={'name': company_number}, fields=['*'])
         company_name = tally_settings[0]['company_name']
 
-        journal_doc = frappe.db.get_list('Journal Entry',filters={'company':company_name,'voucher_type':'Journal Entry'},fields=['*'])
-
+        journal_doc = frappe.db.get_list('Journal Entry',filters={'company':company_name,'voucher_type':'Contra Entry'},fields=['*'])
+    
         all_vouchers = []
         final_voucher = []
-    
+
         for doc in journal_doc:
             address_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
 
@@ -40,8 +40,8 @@ def get_journal(company=None):
                     "Voucherid": "",
                     "VoucherNumber": doc['name'],
                     "VoucherDate": doc['posting_date'].strftime('%d-%m-%Y'),
-                    "VoucherType": 'Journal',
-                    "VoucherTypeParent": "Journal",
+                    "VoucherType": doc['voucher_type'],
+                    "VoucherTypeParent": "Contra",
                     "LedgerName": (entry['account']).split(" - ")[0],
                     "LedgerParent": parent_account,
                     "LedgerAddress": "",
@@ -51,23 +51,15 @@ def get_journal(company=None):
                     "LedgerMobile": "",
                     "LedgerGstReg": "",
                     "LedgerGstin": "",
-                    "LedgerPan": 'null',
+                    "LedgerPan": None,
                     "BillName": "",
                     "BillDate": "",
                     "PlaceOfSupply": "",
                     "TransactionDate": doc['posting_date'].strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "Amount": amount,
-                    "CostCategory1": "",
-                    "CostCentre1": entry['cost_center'],
-                    "CostCategory2": "",
-                    "CostCentre2": "",
-                    "CostCategory3": "",
-                    "CostCentre3": "",				
-                    "CostCategory4": "",
-                    "CostCentre4": "",
-                    "CostCategory5": "",
-                    "CostCentre5": "",				
+                    "CostCategory": "",
+                    "CostCentre": entry['cost_center'],
                     "BranchCode": "",
                     "Location": address[0]['city'] if address else "",
                     "State": address[0]['gst_state'] if address else "",

@@ -1,5 +1,5 @@
 import frappe
-from ts_tally_integration.tally_integration.utils.py.user import user_creation
+# from ts_tally_integration.tally_integration.utils.py.user import user_creation
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from ts_tally_integration.tally_integration.doctype.ts_tally_settings.ts_tally_settings import user_creation, role_creation, role_permission
 
@@ -112,7 +112,7 @@ def create_tally_parent_account():
         ]
 
 
-    company_list = frappe.db.get_all('Company', fields=['name', 'abbr'])
+    company_list = frappe.db.get_list('Company', fields=['name', 'abbr'])
 
     for company in company_list:
         for account in accounts:
@@ -123,4 +123,3 @@ def create_tally_parent_account():
                 account["custom_tally_parent_account"]
             )
             print(f'Updated {account["account_name"]} in {company["name"]}')
-

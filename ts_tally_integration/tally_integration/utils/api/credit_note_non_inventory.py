@@ -5,12 +5,14 @@ from werkzeug.wrappers import Response
 
 
 @frappe.whitelist()
-def credit_note(company=None):
+def credit_note_non_inv(company=None):
     if company==None:
         return "Company Number not found!"
     company_number = frappe.db.exists('TS Tally Company', {'company_number': company})
     if company_number:
-        tally_settings = frappe.db.get_list('TS Tally Company', filters={'name': company_number}, fields=['*'])
+        tally_settings = frappe.db.get_all('TS Tally Company', filters={'name': company_number}, fields=['*'])
+        if tally_settings[0]['stock'] == 'Inventory':
+            return 'Company is Non-Inventory, but Request is Inventory'
         company_name = tally_settings[0]['company_name']
 
         credit_doc = frappe.db.get_list('Sales Invoice',filters={'company':company_name,'is_return':1, 'update_stock':0, 'docstatus':1},fields=['*'])
@@ -19,16 +21,16 @@ def credit_note(company=None):
         final_voucher = []
         for doc in credit_doc:
             tax_processed = False
-            link = frappe.db.get_list('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
+            link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
             address = frappe.db.get_list('Address', filters={'name': link[0]['parent']} if link else {}, fields=['*'])
 
-            cus_link = frappe.db.get_list('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
+            cus_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
             cus_address = frappe.db.get_list('Address', filters={'name': cus_link[0]['parent']} if cus_link else {}, fields=['*'])
 
             customer = frappe.db.get_list('Customer', filters = {'name': doc.customer_name}, fields = ['*'])
 
             cus_ship_address = []
-            cus_ship_link = frappe.db.get_list('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
+            cus_ship_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
             cus_ship_address = frappe.db.get_list('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
 
             company_details = frappe.db.get_list('Company', filters = {'name': doc.company}, fields = ['*'])
@@ -59,7 +61,7 @@ def credit_note(company=None):
                     ledgername = invoice['account']
                     parent_acc = "Sales Accounts"
 
-                    sales_item = frappe.db.get_list('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
+                    sales_item = frappe.db.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
                     for item in sales_item:
                             hsn_desc = frappe.db.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
