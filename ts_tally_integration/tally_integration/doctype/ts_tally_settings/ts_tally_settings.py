@@ -33,7 +33,7 @@ def user_creation(user_id):
 
     secret_key = api_generate_secret["api_secret"]
     api_key = frappe.db.get_value("User", user_id, "api_key")
-    
+
     base_url = get_url()
 
     purchase_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice" # Purchase Invoice (Inventory)
@@ -58,6 +58,7 @@ def user_creation(user_id):
 
     frappe.db.set_value("TS Tally Settings", "TS Tally Settings", "api_details", api_details)
 
+
 def role_creation(role_name):
     if frappe.db.exists("Role", role_name):
         return
@@ -65,7 +66,7 @@ def role_creation(role_name):
     role.role_name = role_name
     role.desk_access = 0
     role.save()
-    
+
 
 def role_permission(role_name):
     doctypes = ["GL Entry","Journal Entry","Address","Customer","Account","Sales Invoice", "Purchase Invoice", "Delivery Note", "Purchase Receipt", "Stock Entry", "Payment Entry", "Company", "Account"]

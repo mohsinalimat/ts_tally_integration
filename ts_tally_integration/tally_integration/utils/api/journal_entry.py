@@ -5,41 +5,37 @@ from werkzeug.wrappers import Response
 
 
 @frappe.whitelist()
-def get_journal(company=None):
-    if company==None:
-        return "Company Number not found!"
-    company_number = frappe.db.exists('TS Tally Company', {'company_number': company})
-    if company_number:
-        tally_settings = frappe.db.get_all('TS Tally Company', filters={'name': company_number}, fields=['*'])
-        company_name = tally_settings[0]['company_name']
+def get_journal(company_id = None):
+    if company_id == None:
+        return "Company number not found!"
+    company_row = frappe.db.exists('TS Tally Company', {'company_number': company_id})
+    if company_row:
 
-        journal_doc = frappe.db.get_list('Journal Entry',filters={'company':company_name,'voucher_type':'Journal Entry'},fields=['*'])
+        company_name = frappe.get_value('TS Tally Company', {'name': company_row}, ['company_name'])
+
+        address_link = frappe.get_all('Dynamic Link', filters = {'link_doctype': 'Company', 'link_name': company_name}, fields = ['parent'])
+
+        address = frappe.get_list('Address', filters={'name': address_link[0]['parent']} if address_link else {}, fields=['gst_state', 'city'])
 
         all_vouchers = []
-        final_voucher = []
-    
-        for doc in journal_doc:
-            address_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
 
-            company_idx_number = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
-
-            address = frappe.db.get_list('Address',filters={'name': address_link[0]['parent']} if address_link else {}, fields=['gst_state', 'city'])
-            journal_gl_entry = frappe.db.get_list('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
-
+        journal_list = frappe.get_list('Journal Entry',filters={'company':company_name,'voucher_type':'Journal Entry'},fields=['*'])
+        for list in journal_list:
+            journal_gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
 
             for entry in journal_gl_entry:
-                parent_account = frappe.db.get_value('Account', entry['account'], 'custom_tally_parent_account')
+                parent_account = frappe.get_value('Account', entry['account'], 'custom_tally_parent_account')
 
                 cr_dr = "Dr" if entry['debit_in_account_currency'] else "Cr"
                 amount = entry['debit_in_account_currency'] or entry['credit_in_account_currency']
 
                 ledger_dict = {
                     "Autoid": "1",
-                    "CompanyNumber": str(company_idx_number),
+                    "CompanyNumber": str(company_id),
                     "TallyMasterid": 1,
                     "Voucherid": "",
-                    "VoucherNumber": doc['name'],
-                    "VoucherDate": doc['posting_date'].strftime('%d-%m-%Y'),
+                    "VoucherNumber": list['name'],
+                    "VoucherDate": list['posting_date'].strftime('%d-%m-%Y'),
                     "VoucherType": 'Journal',
                     "VoucherTypeParent": "Journal",
                     "LedgerName": (entry['account']).split(" - ")[0],
@@ -55,7 +51,7 @@ def get_journal(company=None):
                     "BillName": "",
                     "BillDate": "",
                     "PlaceOfSupply": "",
-                    "TransactionDate": doc['posting_date'].strftime('%d-%m-%Y'),
+                    "TransactionDate": list['posting_date'].strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "Amount": amount,
                     "CostCategory1": "",
@@ -75,16 +71,15 @@ def get_journal(company=None):
                 }
                 all_vouchers.append(ledger_dict)
 
-        final_voucher.append({
+        final_voucher = ({
             "status": True,
             "VOUCHERDETAILS": {
                 "VOUCHER": all_vouchers
             }
         })
 
-        final_voucher = final_voucher[0]
+        final_voucher = final_voucher
         final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
         final_voucher.status_code = 200
-        
 
         return final_voucher
