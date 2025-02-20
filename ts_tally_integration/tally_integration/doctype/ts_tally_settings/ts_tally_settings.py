@@ -35,15 +35,27 @@ def user_creation(user_id):
     api_key = frappe.db.get_value("User", user_id, "api_key")
     
     base_url = get_url()
-    purchase_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice" # Purchase Invoice Inventory
-    purchase_invoice_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice" # Purchase Invoice Non-Inventory
-    debit_note_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note" # Purchase Invoice Return
-    debit_note_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note" # Purchase Invoice Return (Non-Inventory) 
-    payment_entry_pay = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_pay.get_payment_entry" # Payment Entry type Pay
-    payment_entry_receipt = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_receipt.get_payment_entry" # Payment Entry type Receive
 
-    api_details = f'''API Key: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice(Inventory): {purchase_invoice_inventory}\n\nPurchase Invoice(Non-Inventory): {purchase_invoice_non_inventory}\n\nDebit Note(Inventory): {debit_note_inventory}\n\nDebit Note(Non-Inventory): {debit_note_non_inventory}\n\nPayment Entry(Pay): {payment_entry_pay}\n\nPayment Entry(Receipt): {payment_entry_receipt}'''
-    
+    purchase_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice" # Purchase Invoice (Inventory)
+    purchase_invoice_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice" # Purchase Invoice (Non-Inventory)
+
+    debit_note_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note" # Purchase Invoice (Return)
+    debit_note_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note" # Purchase Invoice Return (Non-Inventory) 
+
+    payment_entry_pay = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_pay.get_payment_entry" # Payment Entry type (Pay)
+    payment_entry_receipt = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_receipt.get_payment_entry" # Payment Entry type (Receive)
+
+    sales_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_invoice_inventory.get_sales_inv" # Sales Invocie (Inventory)
+    sales_invoice_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_invoice_non_inventory.get_sales_non_inv" # Sales Invocie (Non-Inventory)
+
+    credit_note_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.credit_note_inventory.credit_note_inv" # Credit Note (Inventory)
+    credit_note_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.credit_note_non_inventory.credit_note_non_inv"  # Credit Note (Non-Inventory)
+
+    journal_entry = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.journal_entry.get_journal"  # journal Entry
+    contra_entry = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.contra_entry.get_contra" # Contra Entry
+
+    api_details = f'''API Key: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice(Inventory): {purchase_invoice_inventory}\n\nPurchase Invoice(Non-Inventory): {purchase_invoice_non_inventory}\n\nDebit Note(Inventory): {debit_note_inventory}\n\nDebit Note(Non-Inventory): {debit_note_non_inventory}\n\nSales Invoice Inventory: {sales_invoice_inventory}\n\nSales Invoice Non Inventory: {sales_invoice_non_inventory}\n\nCredit Note Inventory: {credit_note_inventory}\n\nCredit Note Non Inventory: {credit_note_non_inventory}\n\nJournal Entry: {journal_entry}\n\nContra Entry: {contra_entry}\n\nPayment Entry(Pay): {payment_entry_pay}\n\nPayment Entry(Receipt): {payment_entry_receipt}'''
+
     frappe.db.set_value("TS Tally Settings", "TS Tally Settings", "api_details", api_details)
 
 def role_creation(role_name):
