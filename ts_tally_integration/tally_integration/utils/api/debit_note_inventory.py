@@ -1,38 +1,33 @@
 import frappe
 import json
-import requests
 from datetime import datetime
 from werkzeug.wrappers import Response
 from itertools import chain
 
 @frappe.whitelist()
-def get_debit_note(company=None):
-    if company==None:
-        return Response(json.dumps("Company Number is not found!", default=str), content_type='application/json', status=404)
+def get_debit_note(company_id=None):
+    if company_id == None:
+        return Response(json.dumps("Company ID is not found!", default=str), content_type='application/json', status=404)
 
-    company_list = frappe.db.sql("select company_name , stock from `tabTS Tally Company` where company_number=%s", company, as_dict=1)
+    tally_company_table = frappe.get_value("TS Tally Company", {"company_number" : company_id}, ["company_name", "stock"], as_dict=1)
     
-    if len(company_list)==0:
-        return Response(json.dumps("Company is not found. Please check the company number!", default=str), content_type='application/json', status=404)
+    if tally_company_table.company_name==None:
+        return Response(json.dumps("Company is not found. Please check the company id!", default=str), content_type='application/json', status=404)
 
-    if company_list[0].stock == "Non-Inventory":
+    if tally_company_table.stock == "Non-Inventory":
         return Response(json.dumps("Company is Non-Inventory. But requested for Inventory!", default=str), content_type='application/json', status=400)
 
-    company_name = company_list[0].company_name
-    
-    doc_list = frappe.db.get_list('Purchase Invoice', filters={'docstatus': 1, "company" : company_name, "update_stock":1, 'is_return': 1}, fields=['*'])
+    doc_list = frappe.get_list('Purchase Invoice', filters={'docstatus': 1, "company" : tally_company_table.company_name, "update_stock":1, 'is_return': 1}, fields=['*'])
     list_of_purchases= []
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
-        list_of_purchases.append(purchase_invoice_json(get_tagged_accounts_amount(doc.name), supplier, supplier_add, doc))
-    
-    flattened_list = list(chain.from_iterable(list_of_purchases))
+        list_of_purchases.append(purchase_invoice_json(get_tagged_accounts_amount(doc.name), supplier, supplier_add, doc, company_id))
 
     response_purchase = {
         "status": True,
         "VOUCHERDETAILS": {
-            "VOUCHER": flattened_list
+            "VOUCHER": list(chain.from_iterable(list_of_purchases))
         }
     }
 
@@ -40,7 +35,6 @@ def get_debit_note(company=None):
 
 def get_tagged_accounts_amount(purchase_invoice_name):
 
-    purchase_invoice = frappe.get_doc("Purchase Invoice", purchase_invoice_name)
     account_amount = {}
     gl_entries = frappe.get_all("GL Entry", filters={"voucher_type": "Purchase Invoice", "voucher_no": purchase_invoice_name}, fields=["*"], order_by="creation asc")
 
@@ -87,11 +81,11 @@ def get_tagged_accounts_amount(purchase_invoice_name):
     return (sorted_account_amount)
 
 
-def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
+def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
 
     document = frappe.get_doc("Purchase Invoice", doc.name)
     company = frappe.get_doc("Company", doc.company)
-    company_address_billing = frappe.get_doc("Address", get_company_address(doc.company)[0]) if document.billing_address else ""
+    company_state = frappe.get_value("Address", {"name":document.billing_address}, fieldname="state") if document.billing_address else ""
     cost_center = frappe.get_doc("Cost Center", doc.cost_center) if document.cost_center else ""
     gst_category = {
         "Unregistered": "Unregistered/Consumer",
@@ -107,16 +101,15 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
         "SEZ": "Regular - SEZ"
     }.get(company.gst_category, company.gst_category)
 
-    company_idx = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
-
     list_of_purchase_invoices = []
+
     for key, value in tagged_acc.items():
         if value['debit'] > 0:
             if "Creditors" in key:
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json = {
                         "Autoid": "",
-                        "CompanyNumber": str(company_idx),
+                        "CompanyNumber": str(company_id),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
@@ -181,7 +174,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
                         "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                         "CmpGstin": company.gstin if company.gstin else "",
-                        "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                        "CmpGstState": company_state if company_state else "",
                         "GstOvrdnTaxability":"",
                         "GstOvrdnTypeofsupply":"",
                         "GstHsnName":"",
@@ -209,14 +202,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json = {
                         "Autoid": "",
-                        "CompanyNumber": str(company_idx),
+                        "CompanyNumber": str(company_id),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
                         "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "VoucherType": "Debit Note",
                         "VoucherTypeParent": "Debit Note",
-                        "LedgerName": "Roundoff"  if "Rounded Off" in key else (key).split(" - ")[0],
+                        "LedgerName": "Roundoff"  if "Rounded Off" in key or "Round Off" in key else (key).split(" - ")[0],
                         "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                         "LedgerAddress":"",
                         "LedgerState": "",
@@ -254,26 +247,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "BillOfLanding": "",
                         "BillOfLandingDate": "",
                         "VehicleNo": "",
-                    # Commented for future need
-                        # "BuyerName": supplier.supplier_name,
-                        # "BuyerMailingName": supplier.supplier_name,
-                        # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                        # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                        # "BuyerState": supplier_add.state if supplier_add.state else "",
-                        # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                        # "BuyerGstReg": gst_category if gst_category else "",
-                        # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                        # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                        # "ConsigneeName": supplier.supplier_name,
-                        # "ConsigneeMailingName": supplier.supplier_name,
-                        # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                        # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                        # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                        # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                        # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                        # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                        # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                    # Commented for future need
                         "BuyerName": "",
                         "BuyerMailingName": "",
                         "BuyerAddress1": "",
@@ -294,7 +267,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "PlaceOfSupply": "",
                         "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                         "CmpGstin": company.gstin if company.gstin else "",
-                        "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                        "CmpGstState": company_state if company_state else "",
                         "GstOvrdnTaxability":"",
                         "GstOvrdnTypeofsupply":"",
                         "GstHsnName":"",
@@ -320,7 +293,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json = {
                         "Autoid": "",
-                        "CompanyNumber": str(company_idx),
+                        "CompanyNumber": str(company_id),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
                         "VoucherNumber": document.name,
@@ -385,7 +358,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
                         "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                         "CmpGstin": company.gstin if company.gstin else "",
-                        "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                        "CmpGstState": company_state if company_state else "",
                         "GstOvrdnTaxability":"",
                         "GstOvrdnTypeofsupply":"",
                         "GstHsnName":"",
@@ -427,7 +400,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         parent_acc = frappe.get_doc("Account", "Input Tax IGST - "+str(company.abbr))
                         doc_json_igst ={
                             "Autoid": "",
-                            "CompanyNumber": str(company_idx),
+                            "CompanyNumber": str(company_id),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
@@ -472,26 +445,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "BillOfLanding": "",
                             "BillOfLandingDate": "",
                             "VehicleNo": "",
-                        # Commented for future need
-                            # "BuyerName": supplier.supplier_name,
-                            # "BuyerMailingName": supplier.supplier_name,
-                            # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                            # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                            # "BuyerState": supplier_add.state if supplier_add.state else "",
-                            # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                            # "BuyerGstReg": gst_category if gst_category else "",
-                            # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                            # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                            # "ConsigneeName": supplier.supplier_name,
-                            # "ConsigneeMailingName": supplier.supplier_name,
-                            # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                            # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                            # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                            # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                            # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                            # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                            # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                        # Commented for future need
                             "BuyerName": "",
                             "BuyerMailingName": "",
                             "BuyerAddress1": "",
@@ -512,7 +465,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "PlaceOfSupply": "",
                             "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                             "CmpGstin": company.gstin if company.gstin else "",
-                            "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                            "CmpGstState": company_state if company_state else "",
                             "GstOvrdnTaxability":"",
                             "GstOvrdnTypeofsupply":"",
                             "GstHsnName":"",
@@ -536,7 +489,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         parent_acc = frappe.get_doc("Account", "Input Tax CGST - "+str(company.abbr))
                         doc_json_cgst ={
                             "Autoid": "",
-                            "CompanyNumber": str(company_idx),
+                            "CompanyNumber": str(company_id),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
@@ -581,26 +534,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "BillOfLanding": "",
                             "BillOfLandingDate": "",
                             "VehicleNo": "",
-                        # Commented for future need
-                            # "BuyerName": supplier.supplier_name,
-                            # "BuyerMailingName": supplier.supplier_name,
-                            # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                            # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                            # "BuyerState": supplier_add.state if supplier_add.state else "",
-                            # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                            # "BuyerGstReg": gst_category if gst_category else "",
-                            # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                            # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                            # "ConsigneeName": supplier.supplier_name,
-                            # "ConsigneeMailingName": supplier.supplier_name,
-                            # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                            # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                            # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                            # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                            # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                            # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                            # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                        # Commented for future need
                             "BuyerName": "",
                             "BuyerMailingName": "",
                             "BuyerAddress1": "",
@@ -621,7 +554,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "PlaceOfSupply": "",
                             "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                             "CmpGstin": company.gstin if company.gstin else "",
-                            "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                            "CmpGstState": company_state if company_state else "",
                             "GstOvrdnTaxability":"",
                             "GstOvrdnTypeofsupply":"",
                             "GstHsnName":"",
@@ -644,7 +577,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         parent_acc = frappe.get_doc("Account", "Input Tax SGST - "+str(company.abbr))
                         doc_json_sgst ={
                             "Autoid": "",
-                            "CompanyNumber": str(company_idx),
+                            "CompanyNumber": str(company_id),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
                             "VoucherNumber": document.name,
@@ -689,26 +622,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "BillOfLanding": "",
                             "BillOfLandingDate": "",
                             "VehicleNo": "",
-                        # Commented for future need
-                            # "BuyerName": supplier.supplier_name,
-                            # "BuyerMailingName": supplier.supplier_name,
-                            # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                            # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                            # "BuyerState": supplier_add.state if supplier_add.state else "",
-                            # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                            # "BuyerGstReg": gst_category if gst_category else "",
-                            # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                            # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                            # "ConsigneeName": supplier.supplier_name,
-                            # "ConsigneeMailingName": supplier.supplier_name,
-                            # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                            # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                            # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                            # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                            # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                            # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                            # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                        # Commented for future need
                             "BuyerName": "",
                             "BuyerMailingName": "",
                             "BuyerAddress1": "",
@@ -729,7 +642,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                             "PlaceOfSupply": "",
                             "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                             "CmpGstin": company.gstin if company.gstin else "",
-                            "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                            "CmpGstState": company_state if company_state else "",
                             "GstOvrdnTaxability":"",
                             "GstOvrdnTypeofsupply":"",
                             "GstHsnName":"",
@@ -766,7 +679,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         if 'Input GST Out-state' in document.taxes_and_charges:
                             doc_json ={
                                 "Autoid": "",
-                                "CompanyNumber": str(company_idx),
+                                "CompanyNumber": str(company_id),
                                 "TallyMasterid": 1,
                                 "Voucherid": document.name,
                                 "VoucherNumber": document.name,
@@ -811,26 +724,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "BillOfLanding": "",
                                 "BillOfLandingDate": "",
                                 "VehicleNo": "",
-                            # Commented for future need
-                                # "BuyerName": supplier.supplier_name,
-                                # "BuyerMailingName": supplier.supplier_name,
-                                # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                                # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                                # "BuyerState": supplier_add.state if supplier_add.state else "",
-                                # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                                # "BuyerGstReg": gst_category if gst_category else "",
-                                # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                                # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                                # "ConsigneeName": supplier.supplier_name,
-                                # "ConsigneeMailingName": supplier.supplier_name,
-                                # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                                # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                                # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                                # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                                # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                                # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                                # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                            # Commented for future need
                                 "BuyerName": "",
                                 "BuyerMailingName": "",
                                 "BuyerAddress1": "",
@@ -851,11 +744,11 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "PlaceOfSupply": "",
                                 "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                                 "CmpGstin": company.gstin if company.gstin else "",
-                                "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                                "CmpGstState": company_state if company_state else "",
                                 "GstOvrdnTaxability": "Exempt" if row.gst_treatment == "Exempted" or row.gst_treatment == "Non-GST" or row.gst_treatment == "Nil-Rated" else row.gst_treatment or "",
                                 "GstOvrdnTypeofsupply":"Goods",
                                 "GstHsnName":row.gst_hsn_code if row.gst_hsn_code else "",
-                                "GstHsnDescription":frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
+                                "GstHsnDescription":frappe.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
                                 "CgstGstRateDutyhead":"CGST",
                                 "CgstGstRateValuationtype":"Based on Value",
                                 "CgstGstRate":str(row.igst_rate/2) if row.igst_rate>0 else "",
@@ -875,7 +768,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         elif 'Input GST In-state' in document.taxes_and_charges:
                             doc_json ={
                                 "Autoid": "",
-                                "CompanyNumber": str(company_idx),
+                                "CompanyNumber": str(company_id),
                                 "TallyMasterid": 1,
                                 "Voucherid": document.name,
                                 "VoucherNumber": document.name,
@@ -920,26 +813,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "BillOfLanding": "",
                                 "BillOfLandingDate": "",
                                 "VehicleNo": "",
-                            # Commented for future need
-                                # "BuyerName": supplier.supplier_name,
-                                # "BuyerMailingName": supplier.supplier_name,
-                                # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                                # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                                # "BuyerState": supplier_add.state if supplier_add.state else "",
-                                # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                                # "BuyerGstReg": gst_category if gst_category else "",
-                                # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                                # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                                # "ConsigneeName": supplier.supplier_name,
-                                # "ConsigneeMailingName": supplier.supplier_name,
-                                # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                                # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                                # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                                # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                                # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                                # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                                # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                            # Commented for future need
                                 "BuyerName": "",
                                 "BuyerMailingName": "",
                                 "BuyerAddress1": "",
@@ -960,11 +833,11 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "PlaceOfSupply": "",
                                 "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                                 "CmpGstin": company.gstin if company.gstin else "",
-                                "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                                "CmpGstState": company_state if company_state else "",
                                 "GstOvrdnTaxability": "Exempt" if row.gst_treatment == "Exempted" or row.gst_treatment == "Non-GST" or row.gst_treatment == "Nil-Rated" else row.gst_treatment or "",
                                 "GstOvrdnTypeofsupply":"Goods",
                                 "GstHsnName":row.gst_hsn_code if row.gst_hsn_code else "",
-                                "GstHsnDescription":frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
+                                "GstHsnDescription":frappe.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
                                 "CgstGstRateDutyhead":"CGST",
                                 "CgstGstRateValuationtype":"Based on Value",
                                 "CgstGstRate":str(row.cgst_rate) if row.cgst_rate>0 else "",
@@ -984,7 +857,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                         else:
                             doc_json ={
                                 "Autoid": "",
-                                "CompanyNumber": str(company_idx),
+                                "CompanyNumber": str(company_id),
                                 "TallyMasterid": 1,
                                 "Voucherid": document.name,
                                 "VoucherNumber": document.name,
@@ -1029,26 +902,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "BillOfLanding": "",
                                 "BillOfLandingDate": "",
                                 "VehicleNo": "",
-                            # Commented for future need
-                                # "BuyerName": supplier.supplier_name,
-                                # "BuyerMailingName": supplier.supplier_name,
-                                # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                                # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                                # "BuyerState": supplier_add.state if supplier_add.state else "",
-                                # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                                # "BuyerGstReg": gst_category if gst_category else "",
-                                # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                                # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                                # "ConsigneeName": supplier.supplier_name,
-                                # "ConsigneeMailingName": supplier.supplier_name,
-                                # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                                # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                                # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                                # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                                # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                                # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                                # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                            # Commented for future need
                                 "BuyerName": "",
                                 "BuyerMailingName": "",
                                 "BuyerAddress1": "",
@@ -1069,11 +922,11 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                                 "PlaceOfSupply": "",
                                 "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                                 "CmpGstin": company.gstin if company.gstin else "",
-                                "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                                "CmpGstState": company_state if company_state else "",
                                 "GstOvrdnTaxability": "Exempt" if row.gst_treatment == "Exempted" or row.gst_treatment == "Non-GST" or row.gst_treatment == "Nil-Rated" else row.gst_treatment or "",
                                 "GstOvrdnTypeofsupply":"Goods",
                                 "GstHsnName":row.gst_hsn_code if row.gst_hsn_code else "",
-                                "GstHsnDescription":frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.db.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
+                                "GstHsnDescription":frappe.get_value("GST HSN Code",row.gst_hsn_code,"description") if frappe.get_value("GST HSN Code",row.gst_hsn_code,"description") else "",
                                 "CgstGstRateDutyhead":"CGST",
                                 "CgstGstRateValuationtype":"Based on Value",
                                 "CgstGstRate":"",
@@ -1094,14 +947,14 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json ={
                     "Autoid": "",
-                    "CompanyNumber": str(company_idx),
+                    "CompanyNumber": str(company_id),
                     "TallyMasterid": 1,
                     "Voucherid": document.name,
                     "VoucherNumber": document.name,
                     "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "VoucherType": "Debit Note",
                     "VoucherTypeParent": "Debit Note",
-                    "LedgerName": "Roundoff"  if "Rounded Off" in key else (key).split(" - ")[0],
+                    "LedgerName": "Roundoff"  if "Rounded Off" in key or "Round Off" in key else (key).split(" - ")[0],
                     "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                     "LedgerAddress":"",
                     "LedgerState": "",
@@ -1139,26 +992,6 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     "BillOfLanding": "",
                     "BillOfLandingDate": "",
                     "VehicleNo": "",
-                # Commented for future need
-                    # "BuyerName": supplier.supplier_name,
-                    # "BuyerMailingName": supplier.supplier_name,
-                    # "BuyerAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                    # "BuyerAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                    # "BuyerState": supplier_add.state if supplier_add.state else "",
-                    # "BuyerCountry": supplier_add.country if supplier_add.country else "",
-                    # "BuyerGstReg": gst_category if gst_category else "",
-                    # "BuyerGSTIN": supplier.gstin if supplier.gstin else "",
-                    # "BuyerPincode": supplier_add.pincode if supplier_add.pincode else "",
-                    # "ConsigneeName": supplier.supplier_name,
-                    # "ConsigneeMailingName": supplier.supplier_name,
-                    # "ConsigneeAddress1": supplier_add.address_line1 if supplier_add.address_line1 else "",
-                    # "ConsigneeAddress2": supplier_add.address_line2 if supplier_add.address_line2 else "",
-                    # "ConsigneeState": supplier_add.state if supplier_add.state else "",
-                    # "ConsigneeCountry": supplier_add.country if supplier_add.country else "",
-                    # "ConsigneeGSTIN": supplier.gstin if supplier.gstin else "",
-                    # "ConsigneePincode": supplier_add.pincode if supplier_add.pincode else "",
-                    # "PlaceOfSupply": (document.place_of_supply).split("-")[1] if document.place_of_supply else "",
-                # Commented for future need
                     "BuyerName": "",
                     "BuyerMailingName": "",
                     "BuyerAddress1": "",
@@ -1179,7 +1012,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                     "PlaceOfSupply": "",
                     "CmpGstRegistrationType":gst_category_company if gst_category_company else "",
                     "CmpGstin": company.gstin if company.gstin else "",
-                    "CmpGstState": company_address_billing.state if company_address_billing.state else "",
+                    "CmpGstState": company_state if company_state else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -1201,7 +1034,3 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc):
                 list_of_purchase_invoices.append(doc_json)
   
     return list_of_purchase_invoices
-def get_company_address(company_name):
-   
-    linked_address = frappe.get_all("Address", filters={"link_doctype": "Company", "link_name": company_name}, pluck="name")
-    return linked_address

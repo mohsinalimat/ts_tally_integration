@@ -1,39 +1,31 @@
 import frappe
 import json
-import requests
 from datetime import datetime
 from werkzeug.wrappers import Response
 from itertools import chain
 
 
 @frappe.whitelist()
-def get_payment_entry(company=None):
-    return get_payment_entry_supplier(company)
+def get_payment_entry(company_id=None):
 
+    if company_id == None:
+        return Response(json.dumps("Company ID is not found!", default=str), content_type='application/json', status=404)
 
-def get_payment_entry_supplier(company):
-    if company==None:
-        return Response(json.dumps("Company Number is not found!", default=str), content_type='application/json', status=404)
-
-    company_list = frappe.db.sql("select company_name from `tabTS Tally Company` where company_number=%s", company, as_dict=1)
+    tally_company_table = frappe.get_value("TS Tally Company", {"company_number" : company_id}, ["company_name"], as_dict=1)
     
-    if len(company_list)==0:
-        return Response(json.dumps("Company is not found. Please check the company number!", default=str), content_type='application/json', status=404)
-
-    company_name = company_list[0].company_name
-    
-    doc_list = frappe.db.get_list('Payment Entry', filters={'docstatus': 1, "company" : company_name, 'payment_type': 'Pay'}, fields=['*'])
+    if tally_company_table.company_name==None:
+        return Response(json.dumps("Company is not found. Please check the company id!", default=str), content_type='application/json', status=404)
+  
+    doc_list = frappe.get_list('Payment Entry', filters={'docstatus': 1, "company" : tally_company_table.company_name, 'payment_type': 'Pay'}, fields=['*'])
     list_of_json_suppliers = []
     list_of_payment_entries = []
 
     for doc in doc_list:
-        pay_doc = frappe.get_doc("Payment Entry", doc.name)
-        supplier = frappe.get_doc("Supplier", pay_doc.party)
+        supplier = frappe.get_doc("Supplier", doc.party)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
         acc_doc_paid_from = frappe.get_doc("Account", doc.paid_from)
         acc_doc_paid_to = frappe.get_doc("Account", doc.paid_to)
 
-        company = frappe.get_doc("Company", doc.company)
         gst_category = {
             "Unregistered": "Unregistered/Consumer",
             "Registered Regular": "Regular",
@@ -41,11 +33,9 @@ def get_payment_entry_supplier(company):
             "SEZ": "Regular - SEZ"
         }.get(supplier.gst_category, supplier.gst_category)
 
-        company_idx = (frappe.db.sql(f"select company_number from `tabTS Tally Company` where company_name ='{doc.company}'", as_dict=True))[0]['company_number']
-
         doc_dic_supplier = {
             "Autoid": "",
-            "CompanyNumber": str(company_idx),
+            "CompanyNumber": str(company_id),
             "TallyMasterid": 1,
             "Voucherid": doc.name,
             "VoucherNumber": doc.name,
@@ -88,7 +78,7 @@ def get_payment_entry_supplier(company):
 
         doc_dic_supplier1 = {
             "Autoid": "",
-            "CompanyNumber": str(company_idx),
+            "CompanyNumber": str(company_id),
             "TallyMasterid": 1,
             "Voucherid": doc.name,
             "VoucherNumber": doc.name,
@@ -129,21 +119,12 @@ def get_payment_entry_supplier(company):
 
         list_of_payment_entries.append(doc_dic_supplier1)
 
-    # response_supplier = {
-    #     "status": True,
-    #     "VOUCHERDETAILS": {
-    #         "VOUCHER": list_of_payment_entries
-    #     }
-    # }
-    # list_of_json_suppliers.append(json.dumps(response_supplier))
     list_of_json_suppliers.append(list_of_payment_entries)
-
-    flattened_list = list(chain.from_iterable(list_of_json_suppliers))
-
+   
     response_payment = {
         "status": True,
         "VOUCHERDETAILS": {
-            "VOUCHER": flattened_list
+            "VOUCHER": list(chain.from_iterable(list_of_json_suppliers))
         }
     }
 
