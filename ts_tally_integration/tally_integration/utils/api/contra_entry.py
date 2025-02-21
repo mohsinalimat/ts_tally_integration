@@ -8,69 +8,63 @@ from werkzeug.wrappers import Response
 def get_contra(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
-    company_row = frappe.db.exists('TS Tally Company', {'company_number': company_id})
-    if company_row:
 
-        company_name = frappe.get_value('TS Tally Company', {'name': company_row}, ['company_name'])
+    company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
 
-        address_link = frappe.get_all('Dynamic Link', filters = {'link_doctype': 'Company', 'link_name': company_name}, fields = ['parent'])
+    all_vouchers = []
 
-        address = frappe.get_list('Address', filters={'name': address_link[0]['parent']} if address_link else {}, fields=['gst_state', 'city'])
+    journal_list = frappe.get_list('Journal Entry', filters={'company':company_name,'voucher_type':'Contra Entry'}, fields=['*'])
+    for list in journal_list:
+        journal_gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
 
-        all_vouchers = []
+        for entry in journal_gl_entry:
+            parent_account = frappe.get_value('Account', entry['account'], 'custom_tally_parent_account')
 
-        journal_list = frappe.get_list('Journal Entry', filters={'company':company_name,'voucher_type':'Contra Entry'}, fields=['*'])
-        for list in journal_list:
-            journal_gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
+            cr_dr = "Dr" if entry['debit_in_account_currency'] else "Cr"
+            amount = entry['debit_in_account_currency'] or entry['credit_in_account_currency']
 
-            for entry in journal_gl_entry:
-                parent_account = frappe.get_value('Account', entry['account'], 'custom_tally_parent_account')
-
-                cr_dr = "Dr" if entry['debit_in_account_currency'] else "Cr"
-                amount = entry['debit_in_account_currency'] or entry['credit_in_account_currency']
-
-                ledger_dict = {
-                    "Autoid": "1",
-                    "CompanyNumber": str(company_id),
-                    "TallyMasterid": 1,
-                    "Voucherid": "",
-                    "VoucherNumber": list['name'],
-                    "VoucherDate": list['posting_date'].strftime('%d-%m-%Y'),
-                    "VoucherType": 'Contra',
-                    "VoucherTypeParent": "Contra",
-                    "LedgerName": (entry['account']).split(" - ")[0],
-                    "LedgerParent": parent_account,
-                    "LedgerAddress": "",
-                    "LedgerState": "",
-                    "LedgerCountry": "",
-                    "LedgerPincode": "",
-                    "LedgerMobile": "",
-                    "LedgerGstReg": "",
-                    "LedgerGstin": "",
-                    "LedgerPan": None,
-                    "BillName": "",
-                    "BillDate": "",
-                    "PlaceOfSupply": "",
-                    "TransactionDate": list['posting_date'].strftime('%d-%m-%Y'),
-                    "CrDr": cr_dr,
-                    "Amount": amount,
-                    "CostCategory": "",
-                    "CostCentre": entry['cost_center'].split('-')[0],
-                    "BranchCode": "",
-                    "Location": address[0]['city'] if address else "",
-                    "State": address[0]['gst_state'] if address else "",
-                    "Narration": None
-                }
-                all_vouchers.append(ledger_dict)
-
-        final_voucher = ({
-            "status": True,
-            "VOUCHERDETAILS": {
-                "VOUCHER": all_vouchers
+            ledger_dict = {
+                "Autoid": "1",
+                "CompanyNumber": str(company_id),
+                "TallyMasterid": 1,
+                "Voucherid": "",
+                "VoucherNumber": list['name'],
+                "VoucherDate": list['posting_date'].strftime('%d-%m-%Y'),
+                "VoucherType": 'Contra',
+                "VoucherTypeParent": "Contra",
+                "LedgerName": (entry['account']).split(" - ")[0],
+                "LedgerParent": parent_account,
+                "LedgerAddress": "",
+                "LedgerState": "",
+                "LedgerCountry": "",
+                "LedgerPincode": "",
+                "LedgerMobile": "",
+                "LedgerGstReg": "",
+                "LedgerGstin": "",
+                "LedgerPan": None,
+                "BillName": "",
+                "BillDate": "",
+                "PlaceOfSupply": "",
+                "TransactionDate": list['posting_date'].strftime('%d-%m-%Y'),
+                "CrDr": cr_dr,
+                "Amount": amount,
+                "CostCategory": "",
+                "CostCentre": entry['cost_center'].split('-')[0],
+                "BranchCode": "",
+                "Location": "",
+                "State": "",
+                "Narration": None
             }
-        })
-        final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
-        final_voucher.status_code = 200
-        
+            all_vouchers.append(ledger_dict)
 
-        return final_voucher
+    final_voucher = ({
+        "status": True,
+        "VOUCHERDETAILS": {
+            "VOUCHER": all_vouchers
+        }
+    })
+    final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
+    final_voucher.status_code = 200
+    
+
+    return final_voucher
