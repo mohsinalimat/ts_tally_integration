@@ -18,26 +18,20 @@ def get_sales_inv(company_id=None):
         company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
         company_address = frappe.get_list('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
         company_gst = frappe.get_value('Company', {'name': company_name}, ['gstin'])
-
-
-        sales_list = frappe.db.get_list('Sales Invoice',filters={'company':company_name,'is_return':0, 'update_stock':1, 'docstatus':1},fields=['*'])
-
+        
         all_vouchers = []
+
+        sales_list = frappe.get_list('Sales Invoice',filters={'company':company_name,'is_return':0, 'update_stock':1, 'docstatus':1},fields=['*'])
 
         for doc in sales_list:
             tax_processed = False
-            company_address_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': doc['company']}, fields=['parent'])
-            company_address = frappe.db.get_list('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
+            cus_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
+            cus_address = frappe.get_list('Address', filters={'name': cus_link[0]['parent']} if cus_link else {}, fields=['*'])
 
-            cus_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
-            cus_address = frappe.db.get_list('Address', filters={'name': cus_link[0]['parent']} if cus_link else {}, fields=['*'])
+            customer_pan = frappe.get_value('Customer', {'name': doc.customer_name}, ['pan'])
 
-            customer = frappe.db.get_list('Customer', filters = {'name': doc.customer_name}, fields = ['*'])
-
-            cus_ship_address = []
-            cus_ship_link = frappe.db.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
-            cus_ship_address = frappe.db.get_list('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
-
+            cus_ship_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
+            cus_ship_address = frappe.get_list('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
 
             cust_gstin = frappe.get_doc('Customer', doc.customer)
 
@@ -49,24 +43,24 @@ def get_sales_inv(company_id=None):
             }.get(cust_gstin.gst_category, cust_gstin.gst_category)
 
 
-            gl_entry = frappe.db.get_list('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
+            gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
             gl_entry = gl_entry[::-1]
 
             for invoice in gl_entry:
                 amount = invoice['credit'] if 'credit' in invoice and invoice['credit'] else invoice['debit']
                 cr_dr = "Cr" if 'credit' in invoice and invoice['credit'] else "Dr"
 
-                account_type = frappe.db.get_value('Account', invoice['account'], 'account_type')
+                account_type = frappe.get_value('Account', invoice['account'], 'account_type')
 
 
                 if account_type == 'Income Account':
                     ledgername = invoice['account']
-                    parent_account = frappe.db.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+                    parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
-                    sales_item = frappe.db.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
+                    sales_item = frappe.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
                     for item in sales_item:
-                            hsn_desc = frappe.db.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
+                            hsn_desc = frappe.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
                             if item['sgst_rate']:
                                 ledger_suffix = item['sgst_rate'] + item['cgst_rate']
                             elif item['gst_treatment'] == 'Exempted':
@@ -92,7 +86,7 @@ def get_sales_inv(company_id=None):
                                 "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                 "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                 "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                                "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                                "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                                 "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                                 "BillName": doc.name,
@@ -144,22 +138,22 @@ def get_sales_inv(company_id=None):
                                 "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                                 "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                                "CmpGstRegistrationType":gst_category,
-                                                "CmpGstin":company_gst,
-                                                "CmpGstState":company_address[0]['state'],
-                                                "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
-                                                "GstOvrdnTypeofsupply":"Goods",
-                                                "GstHsnName":item['gst_hsn_code'],
-                                                "GstHsnDescription":hsn_desc.replace('\n', ' '),
-                                                "CgstGstRateDutyhead":"CGST",
-                                                "CgstGstRateValuationtype":"Based on Value",
-                                                "CgstGstRate":item['cgst_rate'] if item['cgst_rate'] else "",
-                                                "SgstGstRateDutyhead":"SGST/UTGST",
-                                                "SgstGstRateValuationtype":"Based on Value",
-                                                "SgstGstRate":item['sgst_rate'] if item['sgst_rate'] else "",
-                                                "IgstGstRateDutyhead":"IGST",
-                                                "IgstGstRateValuationtype":"Based on Value",
-                                                "IgstGstRate": item['sgst_rate'] + item['cgst_rate'] if item['sgst_rate'] and item['cgst_rate'] else "",
+                                "CmpGstRegistrationType":gst_category,
+                                "CmpGstin":company_gst,
+                                "CmpGstState":company_address[0]['state'],
+                                "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
+                                "GstOvrdnTypeofsupply":"Goods",
+                                "GstHsnName":item['gst_hsn_code'],
+                                "GstHsnDescription":hsn_desc.replace('\n', ' '),
+                                "CgstGstRateDutyhead":"CGST",
+                                "CgstGstRateValuationtype":"Based on Value",
+                                "CgstGstRate":item['cgst_rate'] if item['cgst_rate'] else "",
+                                "SgstGstRateDutyhead":"SGST/UTGST",
+                                "SgstGstRateValuationtype":"Based on Value",
+                                "SgstGstRate":item['sgst_rate'] if item['sgst_rate'] else "",
+                                "IgstGstRateDutyhead":"IGST",
+                                "IgstGstRateValuationtype":"Based on Value",
+                                "IgstGstRate": item['sgst_rate'] + item['cgst_rate'] if item['sgst_rate'] and item['cgst_rate'] else "",
                                 "Narration": ""
                             }
 
@@ -176,7 +170,7 @@ def get_sales_inv(company_id=None):
                     
                     if not tax_processed:
                         ledgername = invoice['account']
-                        parent_account = frappe.db.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+                        parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
                         tax_processed = True
 
                         items_tax = frappe.db.sql(f"""
@@ -216,7 +210,7 @@ def get_sales_inv(company_id=None):
                                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                                         "BillName": doc.name,
@@ -268,22 +262,22 @@ def get_sales_inv(company_id=None):
                                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                                        "CmpGstRegistrationType":gst_category,
-                                                        "CmpGstin":company_gst,
-                                                        "CmpGstState":company_address[0]['state'],
-                                                        "GstOvrdnTaxability":"",
-                                                        "GstOvrdnTypeofsupply":"",
-                                                        "GstHsnName":"",
-                                                        "GstHsnDescription":"",
-                                                        "CgstGstRateDutyhead":"",
-                                                        "CgstGstRateValuationtype":"",
-                                                        "CgstGstRate":"",
-                                                        "SgstGstRateDutyhead":"",
-                                                        "SgstGstRateValuationtype":"",
-                                                        "SgstGstRate":"",
-                                                        "IgstGstRateDutyhead":"",
-                                                        "IgstGstRateValuationtype":"",
-                                                        "IgstGstRate":"",
+                                        "CmpGstRegistrationType":gst_category,
+                                        "CmpGstin":company_gst,
+                                        "CmpGstState":company_address[0]['state'],
+                                        "GstOvrdnTaxability":"",
+                                        "GstOvrdnTypeofsupply":"",
+                                        "GstHsnName":"",
+                                        "GstHsnDescription":"",
+                                        "CgstGstRateDutyhead":"",
+                                        "CgstGstRateValuationtype":"",
+                                        "CgstGstRate":"",
+                                        "SgstGstRateDutyhead":"",
+                                        "SgstGstRateValuationtype":"",
+                                        "SgstGstRate":"",
+                                        "IgstGstRateDutyhead":"",
+                                        "IgstGstRateValuationtype":"",
+                                        "IgstGstRate":"",
                                         "Narration": ""
                                         }
 
@@ -309,7 +303,7 @@ def get_sales_inv(company_id=None):
                                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                                         "BillName": doc.name,
@@ -361,22 +355,22 @@ def get_sales_inv(company_id=None):
                                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                                        "CmpGstRegistrationType":gst_category,
-                                                        "CmpGstin":company_gst,
-                                                        "CmpGstState":company_address[0]['state'],
-                                                        "GstOvrdnTaxability":"",
-                                                        "GstOvrdnTypeofsupply":"",
-                                                        "GstHsnName":"",
-                                                        "GstHsnDescription":"",
-                                                        "CgstGstRateDutyhead":"",
-                                                        "CgstGstRateValuationtype":"",
-                                                        "CgstGstRate":"",
-                                                        "SgstGstRateDutyhead":"",
-                                                        "SgstGstRateValuationtype":"",
-                                                        "SgstGstRate":"",
-                                                        "IgstGstRateDutyhead":"",
-                                                        "IgstGstRateValuationtype":"",
-                                                        "IgstGstRate":"",
+                                        "CmpGstRegistrationType":gst_category,
+                                        "CmpGstin":company_gst,
+                                        "CmpGstState":company_address[0]['state'],
+                                        "GstOvrdnTaxability":"",
+                                        "GstOvrdnTypeofsupply":"",
+                                        "GstHsnName":"",
+                                        "GstHsnDescription":"",
+                                        "CgstGstRateDutyhead":"",
+                                        "CgstGstRateValuationtype":"",
+                                        "CgstGstRate":"",
+                                        "SgstGstRateDutyhead":"",
+                                        "SgstGstRateValuationtype":"",
+                                        "SgstGstRate":"",
+                                        "IgstGstRateDutyhead":"",
+                                        "IgstGstRateValuationtype":"",
+                                        "IgstGstRate":"",
                                         "Narration": ""
                                         }
 
@@ -401,7 +395,7 @@ def get_sales_inv(company_id=None):
                                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                                         "BillName": doc.name,
@@ -453,22 +447,22 @@ def get_sales_inv(company_id=None):
                                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                                        "CmpGstRegistrationType":gst_category,
-                                                        "CmpGstin":company_gst,
-                                                        "CmpGstState":company_address[0]['state'],
-                                                        "GstOvrdnTaxability":"",
-                                                        "GstOvrdnTypeofsupply":"",
-                                                        "GstHsnName":"",
-                                                        "GstHsnDescription":"",
-                                                        "CgstGstRateDutyhead":"",
-                                                        "CgstGstRateValuationtype":"",
-                                                        "CgstGstRate":"",
-                                                        "SgstGstRateDutyhead":"",
-                                                        "SgstGstRateValuationtype":"",
-                                                        "SgstGstRate":"",
-                                                        "IgstGstRateDutyhead":"",
-                                                        "IgstGstRateValuationtype":"",
-                                                        "IgstGstRate":"",
+                                        "CmpGstRegistrationType":gst_category,
+                                        "CmpGstin":company_gst,
+                                        "CmpGstState":company_address[0]['state'],
+                                        "GstOvrdnTaxability":"",
+                                        "GstOvrdnTypeofsupply":"",
+                                        "GstHsnName":"",
+                                        "GstHsnDescription":"",
+                                        "CgstGstRateDutyhead":"",
+                                        "CgstGstRateValuationtype":"",
+                                        "CgstGstRate":"",
+                                        "SgstGstRateDutyhead":"",
+                                        "SgstGstRateValuationtype":"",
+                                        "SgstGstRate":"",
+                                        "IgstGstRateDutyhead":"",
+                                        "IgstGstRateValuationtype":"",
+                                        "IgstGstRate":"",
                                         "Narration": ""
                                         }
 
@@ -478,7 +472,7 @@ def get_sales_inv(company_id=None):
 
                 elif account_type == 'Bank':
                     ledgername = invoice['account']
-                    parent_account = frappe.db.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+                    parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                     ledger_dict = {
                         "Autoid": "711",
@@ -498,7 +492,7 @@ def get_sales_inv(company_id=None):
                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                         "BillName": doc.name,
@@ -550,22 +544,22 @@ def get_sales_inv(company_id=None):
                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                        "CmpGstRegistrationType":gst_category,
-                                        "CmpGstin":company_gst,
-                                        "CmpGstState":company_address[0]['state'],
-                                        "GstOvrdnTaxability":"",
-                                        "GstOvrdnTypeofsupply":"",
-                                        "GstHsnName":"",
-                                        "GstHsnDescription":"",
-                                        "CgstGstRateDutyhead":"",
-                                        "CgstGstRateValuationtype":"",
-                                        "CgstGstRate":"",
-                                        "SgstGstRateDutyhead":"",
-                                        "SgstGstRateValuationtype":"",
-                                        "SgstGstRate":"",
-                                        "IgstGstRateDutyhead":"",
-                                        "IgstGstRateValuationtype":"",
-                                        "IgstGstRate":"",
+                        "CmpGstRegistrationType":gst_category,
+                        "CmpGstin":company_gst,
+                        "CmpGstState":company_address[0]['state'],
+                        "GstOvrdnTaxability":"",
+                        "GstOvrdnTypeofsupply":"",
+                        "GstHsnName":"",
+                        "GstHsnDescription":"",
+                        "CgstGstRateDutyhead":"",
+                        "CgstGstRateValuationtype":"",
+                        "CgstGstRate":"",
+                        "SgstGstRateDutyhead":"",
+                        "SgstGstRateValuationtype":"",
+                        "SgstGstRate":"",
+                        "IgstGstRateDutyhead":"",
+                        "IgstGstRateValuationtype":"",
+                        "IgstGstRate":"",
                         "Narration": ""
                     }
 
@@ -573,7 +567,7 @@ def get_sales_inv(company_id=None):
 
                 elif account_type == 'Stock':
                     ledgername = invoice['account']
-                    parent_account = frappe.db.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+                    parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                     ledger_dict = {
                         "Autoid": "711",
@@ -593,7 +587,7 @@ def get_sales_inv(company_id=None):
                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                         "BillName": doc.name,
@@ -645,22 +639,22 @@ def get_sales_inv(company_id=None):
                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                        "CmpGstRegistrationType":gst_category,
-                                        "CmpGstin":company_gst,
-                                        "CmpGstState":company_address[0]['state'],
-                                        "GstOvrdnTaxability":"",
-                                        "GstOvrdnTypeofsupply":"",
-                                        "GstHsnName":"",
-                                        "GstHsnDescription":"",
-                                        "CgstGstRateDutyhead":"",
-                                        "CgstGstRateValuationtype":"",
-                                        "CgstGstRate":"",
-                                        "SgstGstRateDutyhead":"",
-                                        "SgstGstRateValuationtype":"",
-                                        "SgstGstRate":"",
-                                        "IgstGstRateDutyhead":"",
-                                        "IgstGstRateValuationtype":"",
-                                        "IgstGstRate":"",
+                        "CmpGstRegistrationType":gst_category,
+                        "CmpGstin":company_gst,
+                        "CmpGstState":company_address[0]['state'],
+                        "GstOvrdnTaxability":"",
+                        "GstOvrdnTypeofsupply":"",
+                        "GstHsnName":"",
+                        "GstHsnDescription":"",
+                        "CgstGstRateDutyhead":"",
+                        "CgstGstRateValuationtype":"",
+                        "CgstGstRate":"",
+                        "SgstGstRateDutyhead":"",
+                        "SgstGstRateValuationtype":"",
+                        "SgstGstRate":"",
+                        "IgstGstRateDutyhead":"",
+                        "IgstGstRateValuationtype":"",
+                        "IgstGstRate":"",
                         "Narration": ""
                     }
 
@@ -668,7 +662,7 @@ def get_sales_inv(company_id=None):
 
                 elif account_type == 'Receivable':
                     ledgername = doc.customer
-                    parent_account = frappe.db.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+                    parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                     ledger_dict = {
                         "Autoid": "711",
@@ -688,7 +682,7 @@ def get_sales_inv(company_id=None):
                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                         "BillName": doc.name,
@@ -740,22 +734,22 @@ def get_sales_inv(company_id=None):
                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                        "CmpGstRegistrationType":gst_category,
-                                        "CmpGstin":company_gst,
-                                        "CmpGstState":company_address[0]['state'],
-                                        "GstOvrdnTaxability":"",
-                                        "GstOvrdnTypeofsupply":"",
-                                        "GstHsnName":"",
-                                        "GstHsnDescription":"",
-                                        "CgstGstRateDutyhead":"",
-                                        "CgstGstRateValuationtype":"",
-                                        "CgstGstRate":"",
-                                        "SgstGstRateDutyhead":"",
-                                        "SgstGstRateValuationtype":"",
-                                        "SgstGstRate":"",
-                                        "IgstGstRateDutyhead":"",
-                                        "IgstGstRateValuationtype":"",
-                                        "IgstGstRate":"",
+                        "CmpGstRegistrationType":gst_category,
+                        "CmpGstin":company_gst,
+                        "CmpGstState":company_address[0]['state'],
+                        "GstOvrdnTaxability":"",
+                        "GstOvrdnTypeofsupply":"",
+                        "GstHsnName":"",
+                        "GstHsnDescription":"",
+                        "CgstGstRateDutyhead":"",
+                        "CgstGstRateValuationtype":"",
+                        "CgstGstRate":"",
+                        "SgstGstRateDutyhead":"",
+                        "SgstGstRateValuationtype":"",
+                        "SgstGstRate":"",
+                        "IgstGstRateDutyhead":"",
+                        "IgstGstRateValuationtype":"",
+                        "IgstGstRate":"",
                         "Narration": ""
                     }
 
@@ -763,7 +757,7 @@ def get_sales_inv(company_id=None):
 
                 elif account_type == 'Cost of Goods Sold':
                     ledgername = invoice['account']
-                    parent_account = frappe.db.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+                    parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                     ledger_dict = {
                         "Autoid": "711",
@@ -783,7 +777,7 @@ def get_sales_inv(company_id=None):
                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                         "BillName": doc.name,
@@ -835,22 +829,22 @@ def get_sales_inv(company_id=None):
                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                        "CmpGstRegistrationType":gst_category,
-                                        "CmpGstin":company_gst,
-                                        "CmpGstState":company_address[0]['state'],
-                                        "GstOvrdnTaxability":"",
-                                        "GstOvrdnTypeofsupply":"",
-                                        "GstHsnName":"",
-                                        "GstHsnDescription":"",
-                                        "CgstGstRateDutyhead":"",
-                                        "CgstGstRateValuationtype":"",
-                                        "CgstGstRate":"",
-                                        "SgstGstRateDutyhead":"",
-                                        "SgstGstRateValuationtype":"",
-                                        "SgstGstRate":"",
-                                        "IgstGstRateDutyhead":"",
-                                        "IgstGstRateValuationtype":"",
-                                        "IgstGstRate":"",
+                        "CmpGstRegistrationType":gst_category,
+                        "CmpGstin":company_gst,
+                        "CmpGstState":company_address[0]['state'],
+                        "GstOvrdnTaxability":"",
+                        "GstOvrdnTypeofsupply":"",
+                        "GstHsnName":"",
+                        "GstHsnDescription":"",
+                        "CgstGstRateDutyhead":"",
+                        "CgstGstRateValuationtype":"",
+                        "CgstGstRate":"",
+                        "SgstGstRateDutyhead":"",
+                        "SgstGstRateValuationtype":"",
+                        "SgstGstRate":"",
+                        "IgstGstRateDutyhead":"",
+                        "IgstGstRateValuationtype":"",
+                        "IgstGstRate":"",
                         "Narration": ""
                     }
 
@@ -858,7 +852,7 @@ def get_sales_inv(company_id=None):
 
                 elif account_type == 'Round Off':
                     ledgername = 'Roundoff'
-                    parent_account = frappe.db.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+                    parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                     ledger_dict = {
                         "Autoid": "711",
@@ -878,7 +872,7 @@ def get_sales_inv(company_id=None):
                         "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
                         "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
-                        "LedgerPan": customer[0]['pan'] if parent_account== "Sundry Debtors" else "", 
+                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
                         "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
 
                         "BillName": doc.name,
@@ -930,22 +924,22 @@ def get_sales_inv(company_id=None):
                         "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
                         "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
 
-                                        "CmpGstRegistrationType":gst_category,
-                                        "CmpGstin":company_gst,
-                                        "CmpGstState":company_address[0]['state'],
-                                        "GstOvrdnTaxability":"",
-                                        "GstOvrdnTypeofsupply":"",
-                                        "GstHsnName":"",
-                                        "GstHsnDescription":"",
-                                        "CgstGstRateDutyhead":"",
-                                        "CgstGstRateValuationtype":"",
-                                        "CgstGstRate":"",
-                                        "SgstGstRateDutyhead":"",
-                                        "SgstGstRateValuationtype":"",
-                                        "SgstGstRate":"",
-                                        "IgstGstRateDutyhead":"",
-                                        "IgstGstRateValuationtype":"",
-                                        "IgstGstRate":"",
+                        "CmpGstRegistrationType":gst_category,
+                        "CmpGstin":company_gst,
+                        "CmpGstState":company_address[0]['state'],
+                        "GstOvrdnTaxability":"",
+                        "GstOvrdnTypeofsupply":"",
+                        "GstHsnName":"",
+                        "GstHsnDescription":"",
+                        "CgstGstRateDutyhead":"",
+                        "CgstGstRateValuationtype":"",
+                        "CgstGstRate":"",
+                        "SgstGstRateDutyhead":"",
+                        "SgstGstRateValuationtype":"",
+                        "SgstGstRate":"",
+                        "IgstGstRateDutyhead":"",
+                        "IgstGstRateValuationtype":"",
+                        "IgstGstRate":"",
                         "Narration": ""
                     }
 

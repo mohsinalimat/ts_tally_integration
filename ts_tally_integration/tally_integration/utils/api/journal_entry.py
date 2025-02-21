@@ -7,7 +7,7 @@ from werkzeug.wrappers import Response
 @frappe.whitelist()
 def get_journal(company_id = None):
     if company_id == None:
-        return "Company number not found!"
+        return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
     company_row = frappe.db.exists('TS Tally Company', {'company_number': company_id})
     if company_row:
 
@@ -19,7 +19,7 @@ def get_journal(company_id = None):
 
         all_vouchers = []
 
-        journal_list = frappe.get_list('Journal Entry',filters={'company':company_name,'voucher_type':'Journal Entry'},fields=['*'])
+        journal_list = frappe.get_list('Journal Entry', filters={'company':company_name,'voucher_type':'Journal Entry'}, fields=['*'])
         for list in journal_list:
             journal_gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
 

@@ -5,21 +5,21 @@ from werkzeug.wrappers import Response
 
 
 @frappe.whitelist()
-def get_contra(company_id=None):
-    if company_id==None:
-        return "Company number not found!"
+def get_contra(company_id = None):
+    if company_id == None:
+        return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
     company_row = frappe.db.exists('TS Tally Company', {'company_number': company_id})
     if company_row:
 
         company_name = frappe.get_value('TS Tally Company', {'name': company_row}, ['company_name'])
 
-        address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
+        address_link = frappe.get_all('Dynamic Link', filters = {'link_doctype': 'Company', 'link_name': company_name}, fields = ['parent'])
 
-        address = frappe.get_list('Address',filters={'name': address_link[0]['parent']} if address_link else {}, fields=['gst_state', 'city'])
+        address = frappe.get_list('Address', filters={'name': address_link[0]['parent']} if address_link else {}, fields=['gst_state', 'city'])
 
         all_vouchers = []
 
-        journal_list = frappe.get_list('Journal Entry',filters={'company':company_name,'voucher_type':'Contra Entry'},fields=['*'])
+        journal_list = frappe.get_list('Journal Entry', filters={'company':company_name,'voucher_type':'Contra Entry'}, fields=['*'])
         for list in journal_list:
             journal_gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
 
@@ -36,7 +36,7 @@ def get_contra(company_id=None):
                     "Voucherid": "",
                     "VoucherNumber": list['name'],
                     "VoucherDate": list['posting_date'].strftime('%d-%m-%Y'),
-                    "VoucherType": list['voucher_type'],
+                    "VoucherType": 'Contra',
                     "VoucherTypeParent": "Contra",
                     "LedgerName": (entry['account']).split(" - ")[0],
                     "LedgerParent": parent_account,
