@@ -17,7 +17,7 @@ def get_item(company_id = None):
 
     for item in items:
         tax_template = frappe.get_all('Item Tax', filters={'parent': item.name}, fields=['*'])
-        print('TTTTTTTTTTTTTTTTTTT', tax_template)
+
         item_dict = {
             "Autoid": "22",
             "CompanyNumber": "1",
@@ -44,11 +44,10 @@ def get_item(company_id = None):
 
         all_doc.append(item_dict)
 
-
     final_voucher = ({
         "status": True,
         "VOUCHERDETAILS": {
-            "STOCKGROUPS": all_doc
+            "STOCKITEMS": all_doc
         }
     })
 

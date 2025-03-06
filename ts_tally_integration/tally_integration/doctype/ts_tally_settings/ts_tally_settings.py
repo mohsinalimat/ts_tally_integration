@@ -69,7 +69,7 @@ def role_creation(role_name):
 
 
 def role_permission(role_name):
-    doctypes = ["GL Entry","Journal Entry","Address","Customer","Account","Sales Invoice", "Purchase Invoice", "Delivery Note", "Purchase Receipt", "Stock Entry", "Payment Entry", "Company", "Account"]
+    doctypes = ["GL Entry","Journal Entry","Address","Customer","Account","Sales Invoice", "Purchase Invoice", "Delivery Note", "Purchase Receipt", "Stock Entry", "Payment Entry", "Company", "Account", "Supplier", "Customer"]
     
     for doctype in doctypes:
         existing_permission = frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role_name})

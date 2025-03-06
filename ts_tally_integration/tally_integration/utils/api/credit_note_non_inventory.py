@@ -26,7 +26,7 @@ def credit_note_non_inv(company_id = None):
         tax_processed = False
 
         cus_address = frappe.get_list('Address', filters={'name': doc.customer_address}, fields=['*'])
-        
+
         customer_pan = frappe.get_value('Customer', {'name': doc.customer_name}, ['pan'])
 
         cus_ship_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
