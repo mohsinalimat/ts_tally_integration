@@ -36,6 +36,12 @@ def user_creation(user_id):
 
     base_url = get_url()
 
+    item_master = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item.get_purchase_invoice" # Item
+    item_group = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item_group.get_purchase_invoice" # Itemgroup
+    warehouse = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.warehouse.get_purchase_invoice" # Warehouse
+    party = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.party.get_purchase_invoice" # Party
+
+
     purchase_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice" # Purchase Invoice (Inventory)
     purchase_invoice_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.get_purchase_invoice" # Purchase Invoice (Non-Inventory)
 
@@ -54,7 +60,41 @@ def user_creation(user_id):
     journal_entry = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.journal_entry.get_journal"  # journal Entry
     contra_entry = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.contra_entry.get_contra" # Contra Entry
 
-    api_details = f'''API Key: {api_key}\n\nSecret Key: {secret_key}\n\nPurchase Invoice(Inventory): {purchase_invoice_inventory}\n\nPurchase Invoice(Non-Inventory): {purchase_invoice_non_inventory}\n\nDebit Note(Inventory): {debit_note_inventory}\n\nDebit Note(Non-Inventory): {debit_note_non_inventory}\n\nSales Invoice Inventory: {sales_invoice_inventory}\n\nSales Invoice Non Inventory: {sales_invoice_non_inventory}\n\nCredit Note Inventory: {credit_note_inventory}\n\nCredit Note Non Inventory: {credit_note_non_inventory}\n\nJournal Entry: {journal_entry}\n\nContra Entry: {contra_entry}\n\nPayment Entry(Pay): {payment_entry_pay}\n\nPayment Entry(Receipt): {payment_entry_receipt}'''
+    api_details = f'''API Key: {api_key}
+
+    Secret Key: {secret_key}
+
+    Item Master: {item_master}
+
+    Item Group: {item_group}
+
+    Warehouse: {warehouse}
+
+    Party: {party}
+
+    Purchase Invoice (Inventory): {purchase_invoice_inventory}
+
+    Purchase Invoice (Non-Inventory): {purchase_invoice_non_inventory}
+
+    Debit Note (Inventory): {debit_note_inventory}
+
+    Debit Note (Non-Inventory): {debit_note_non_inventory}
+
+    Sales Invoice (Inventory): {sales_invoice_inventory}
+
+    Sales Invoice (Non-Inventory): {sales_invoice_non_inventory}
+
+    Credit Note (Inventory): {credit_note_inventory}
+
+    Credit Note (Non-Inventory): {credit_note_non_inventory}
+
+    Journal Entry: {journal_entry}
+
+    Contra Entry: {contra_entry}
+
+    Payment Entry (Pay): {payment_entry_pay}
+
+    Payment Entry (Receipt): {payment_entry_receipt}'''
 
     frappe.db.set_value("TS Tally Settings", "TS Tally Settings", "api_details", api_details)
 
