@@ -6,7 +6,9 @@
  "engine": "InnoDB",
  "field_order": [
   "details_section",
+  "column_break_gorf",
   "company_table",
+  "unmapped_accounts",
   "api_tab",
   "api_details"
  ],
@@ -31,12 +33,22 @@
    "fieldname": "api_details",
    "fieldtype": "Text",
    "label": "API Details"
+  },
+  {
+   "fieldname": "unmapped_accounts",
+   "fieldtype": "HTML",
+   "label": "Unmapped Accounts"
+  },
+  {
+   "description": "Enter the company number as given in Tally Software",
+   "fieldname": "column_break_gorf",
+   "fieldtype": "Column Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-15 14:47:45.196966",
+ "modified": "2025-02-19 10:19:33.267037",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Settings",
