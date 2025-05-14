@@ -4,7 +4,7 @@ app_publisher = "Siddarth"
 app_description = "Integrate Tally With Erpnext"
 app_email = "thirvusoft@gmail.com"
 app_license = "mit"
-
+required_apps = ["frappe/erpnext"]
 # Apps
 # ------------------
 

@@ -12,9 +12,10 @@ def after_install():
     role_permission(role_name)
     user_creation(user_id)
     create_account_parentfield()
-    print("Updating Account Parent Field")
+
+    print("Updating Account's Parent Field by Thirvusoft...")
     create_tally_parent_account()
-    print("Account ParentField Updated")
+    print("Account ParentField Updated by Thirvusoft...")
 
 
 def create_account_parentfield():
@@ -122,4 +123,3 @@ def create_tally_parent_account():
                 "custom_tally_parent_account",
                 account["custom_tally_parent_account"]
             )
-            print(f'Updated {account["account_name"]} in {company["name"]}')

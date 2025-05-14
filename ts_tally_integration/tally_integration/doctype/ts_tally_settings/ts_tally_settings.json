@@ -10,7 +10,8 @@
   "company_table",
   "unmapped_accounts",
   "api_tab",
-  "api_details"
+  "api_details",
+  "api_links"
  ],
  "fields": [
   {
@@ -43,12 +44,17 @@
    "description": "Enter the company number as given in Tally Software",
    "fieldname": "column_break_gorf",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "api_links",
+   "fieldtype": "HTML",
+   "label": "API Links"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-19 10:19:33.267037",
+ "modified": "2025-04-23 13:19:57.243568",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Settings",
