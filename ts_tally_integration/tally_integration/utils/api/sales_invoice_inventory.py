@@ -60,7 +60,7 @@ def get_sales_inv(company_id = None):
 
                 for item in sales_item:
                         hsn_desc = frappe.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
-                        if item['sgst_rate']:
+                        if item['sgst_rate'] or item['sgst_rate'] == 0:
                             ledger_suffix = item['sgst_rate'] + item['cgst_rate']
                         elif item['gst_treatment'] == 'Exempted':
                             ledger_suffix = 'Exempt'
