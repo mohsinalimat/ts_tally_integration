@@ -36,10 +36,10 @@ def user_creation(user_id):
 
     base_url = get_url()
 
-    item_master = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item.get_purchase_invoice" # Item
-    item_group = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item_group.get_purchase_invoice" # Itemgroup
-    warehouse = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.warehouse.get_purchase_invoice" # Warehouse
-    party = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.party.get_purchase_invoice" # Party
+    item_master = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item.get_puget_itemrchase_invoice" # Item
+    item_group = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item_group.get_itemgroup" # Itemgroup
+    warehouse = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.warehouse.get_warehouse" # Warehouse
+    party = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.party.get_party" # Party
 
 
     purchase_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.get_purchase_invoice" # Purchase Invoice (Inventory)
