@@ -127,7 +127,8 @@ def role_permission(role_name):
          "Customer",
          "Item",
          "Item Group",
-         "Warehouse"
+         "Warehouse",
+         "Item Tax Template"
          ]
     
     for doctype in doctypes:
