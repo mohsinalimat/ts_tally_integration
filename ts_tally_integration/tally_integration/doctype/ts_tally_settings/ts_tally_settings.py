@@ -36,7 +36,7 @@ def user_creation(user_id):
 
     base_url = get_url()
 
-    item_master = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item.get_puget_itemrchase_invoice" # Item
+    item_master = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item.get_item" # Item
     item_group = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item_group.get_itemgroup" # Itemgroup
     warehouse = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.warehouse.get_warehouse" # Warehouse
     party = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.party.get_party" # Party
@@ -97,6 +97,7 @@ def user_creation(user_id):
     Payment Entry (Receipt): {payment_entry_receipt}'''
 
     frappe.db.set_value("TS Tally Settings", "TS Tally Settings", "api_details", api_details)
+    set_response_url(base_url)
 
 
 def role_creation(role_name):
@@ -136,3 +137,67 @@ def role_permission(role_name):
         
         if not existing_permission:
             add_permission(doctype, role_name, 0, "read")
+
+
+def set_response_url(base_url):
+
+    item_master_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item.fetch_response" # Item
+    item_group_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.item_group.fetch_response" # Itemgroup
+    warehouse_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.warehouse.fetch_response" # Warehouse
+    party_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.party.fetch_response" # Party
+
+
+    purchase_invoice_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_inventory.fetch_response" # Purchase Invoice (Inventory)
+    purchase_invoice_non_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.purchase_invoice_non_inventory.fetch_response" # Purchase Invoice (Non-Inventory)
+
+    debit_note_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.fetch_response" # Purchase Invoice (Return)
+    debit_note_non_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.fetch_response" # Purchase Invoice Return (Non-Inventory) 
+
+    payment_entry_pay_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_pay.fetch_response" # Payment Entry type (Pay)
+    payment_entry_receipt_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_receipt.fetch_response" # Payment Entry type (Receive)
+
+    sales_invoice_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_invoice_inventory.fetch_response" # Sales Invocie (Inventory)
+    sales_invoice_non_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_invoice_non_inventory.fetch_response" # Sales Invocie (Non-Inventory)
+
+    credit_note_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.credit_note_inventory.fetch_response" # Credit Note (Inventory)
+    credit_note_non_inventory_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.credit_note_non_inventory.fetch_response"  # Credit Note (Non-Inventory)
+
+    journal_entry_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.journal_entry.fetch_response"  # journal Entry
+    contra_entry_response = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.contra_entry.fetch_response" # Contra Entry
+
+    response_api_details = f'''
+
+    Item Master: {item_master_response}
+
+    Item Group: {item_group_response}
+
+    Warehouse: {warehouse_response}
+
+    Party: {party_response}
+
+    Purchase Invoice (Inventory): {purchase_invoice_inventory_response}
+
+    Purchase Invoice (Non-Inventory): {purchase_invoice_non_inventory_response}
+
+    Debit Note (Inventory): {debit_note_inventory_response}
+
+    Debit Note (Non-Inventory): {debit_note_non_inventory_response}
+
+    Sales Invoice (Inventory): {sales_invoice_inventory_response}
+
+    Sales Invoice (Non-Inventory): {sales_invoice_non_inventory_response}
+
+    Credit Note (Inventory): {credit_note_inventory_response}
+
+    Credit Note (Non-Inventory): {credit_note_non_inventory_response}
+
+    Journal Entry: {journal_entry_response}
+
+    Contra Entry: {contra_entry_response}
+
+    Payment Entry (Pay): {payment_entry_pay_response}
+
+    Payment Entry (Receipt): {payment_entry_receipt_response}'''
+
+    frappe.db.set_value("TS Tally Settings", "TS Tally Settings", "response_api_details", response_api_details)
+

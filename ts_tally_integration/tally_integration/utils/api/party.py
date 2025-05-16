@@ -2,7 +2,7 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-
+from frappe.utils import now
 
 @frappe.whitelist()
 def get_party(company_id = None):
@@ -75,3 +75,39 @@ def get_party(company_id = None):
     final_voucher.status_code = 200
 
     return final_voucher
+
+
+@frappe.whitelist()
+def fetch_response(response):
+    data = json.loads(response) if isinstance(response, str) else response
+    parties = data.get("LEDGER RESPONSE", [])
+
+    for party in parties:
+        party_name = party.get("AUTOID")
+        status = party.get("STATUS")
+
+        if not party_name:
+            continue
+
+        existing_customer = frappe.db.get_value("Customer", {"name": party_name}, "name")
+        if existing_customer:
+            doc = frappe.get_doc("Customer", existing_customer)
+            doc.custom_tally_auto_id = party_name
+            doc.custom_status = status
+            doc.custom_sync_time = now()
+            doc.save(ignore_permissions=True)
+            frappe.db.commit()
+        else:
+            frappe.log_error(f"Customer not found for Tally AUTOID: {party_name}", "Tally Customer Sync Error")
+
+
+        existing_supplier = frappe.db.get_value("Supplier", {"name": party_name}, "name")
+        if existing_supplier:
+            doc = frappe.get_doc("Supplier", existing_supplier)
+            doc.custom_tally_auto_id = party_name
+            doc.custom_status = status
+            doc.custom_sync_time = now()
+            doc.save(ignore_permissions=True)
+            frappe.db.commit()
+        else:
+            frappe.log_error(f"Supplier not found for Tally AUTOID: {party_name}", "Tally Supplier Sync Error")

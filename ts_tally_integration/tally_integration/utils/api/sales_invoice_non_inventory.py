@@ -2,6 +2,7 @@ import frappe
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
+from frappe.utils import now
 
 
 @frappe.whitelist()
@@ -68,7 +69,7 @@ def get_sales_non_inv(company_id = None):
                             ledger_suffix = item['igst_rate']
 
                         ledger_dict = {
-                            "Autoid": "711",
+                            "Autoid": doc.name,
                             "CompanyNumber": str(company_id),
                             "TallyMasterid": 1,
                             "Voucherid": doc.name,
@@ -192,7 +193,7 @@ def get_sales_non_inv(company_id = None):
                         if not item['gst_treatment'] == 'Exempted':
                             if item['cgst_rate']:
                                 ledger_dict = {
-                                    "Autoid": "711",
+                                    "Autoid": doc.name,
                                     "CompanyNumber": str(company_id),
                                     "TallyMasterid": 1,
                                     "Voucherid": doc.name,
@@ -285,7 +286,7 @@ def get_sales_non_inv(company_id = None):
 
                             if item['sgst_rate']:
                                 ledger_dict = {
-                                    "Autoid": "711",
+                                    "Autoid": doc.name,
                                     "CompanyNumber": str(company_id),
                                     "TallyMasterid": 1,
                                     "Voucherid": doc.name,
@@ -377,7 +378,7 @@ def get_sales_non_inv(company_id = None):
 
                             if item['igst_rate']:
                                 ledger_dict = {
-                                    "Autoid": "711",
+                                    "Autoid": doc.name,
                                     "CompanyNumber": str(company_id),
                                     "TallyMasterid": 1,
                                     "Voucherid": doc.name,
@@ -474,7 +475,7 @@ def get_sales_non_inv(company_id = None):
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                 ledger_dict = {
-                    "Autoid": "711",
+                    "Autoid": doc.name,
                     "CompanyNumber": str(company_id),
                     "TallyMasterid": 1,
                     "Voucherid": doc.name,
@@ -570,7 +571,7 @@ def get_sales_non_inv(company_id = None):
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                 ledger_dict = {
-                    "Autoid": "711",
+                    "Autoid": doc.name,
                     "CompanyNumber": str(company_id),
                     "TallyMasterid": 1,
                     "Voucherid": doc.name,
@@ -666,7 +667,7 @@ def get_sales_non_inv(company_id = None):
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                 ledger_dict = {
-                    "Autoid": "711",
+                    "Autoid": doc.name,
                     "CompanyNumber": str(company_id),
                     "TallyMasterid": 1,
                     "Voucherid": doc.name,
@@ -770,3 +771,30 @@ def get_sales_non_inv(company_id = None):
 
     return final_voucher
 
+
+
+@frappe.whitelist()
+def fetch_response(response):
+    data = json.loads(response) if isinstance(response, str) else response
+    sales_response = data.get("SALES RESPONSE", [])
+
+    for response in sales_response:
+        sales_entry = response.get("AUTOID")
+        guid = response.get("GUID")
+        ref_no = response.get("REFNO")
+
+        if not sales_entry:
+            continue
+
+        existing_item = frappe.db.get_value("Sales Invoice", {"name": sales_entry}, "name")
+        if existing_item:
+            frappe.db.set_value("Sales Invoice", existing_item, {
+                "custom_tally_auto_id": sales_entry,
+                "custom_tally_guid": guid,
+                "custom_tally_refno": ref_no,
+                "custom_sync_time": now()
+            })
+            frappe.db.commit()
+
+        else:
+            frappe.log_error(f"Sales Invoice not found for Tally AUTOID: {sales_entry}", "Tally Sales Invoice Sync Error")
