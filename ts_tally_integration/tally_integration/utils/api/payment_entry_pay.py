@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from werkzeug.wrappers import Response
 from itertools import chain
-
+from frappe.utils import now
 
 @frappe.whitelist()
 def get_payment_entry(company_id=None):
@@ -34,7 +34,7 @@ def get_payment_entry(company_id=None):
         }.get(supplier.gst_category, supplier.gst_category)
 
         doc_dic_supplier = {
-            "Autoid": "",
+            "Autoid": doc.name,
             "CompanyNumber": str(company_id),
             "TallyMasterid": 1,
             "Voucherid": doc.name,
@@ -77,7 +77,7 @@ def get_payment_entry(company_id=None):
         list_of_payment_entries.append(doc_dic_supplier)
 
         doc_dic_supplier1 = {
-            "Autoid": "",
+            "Autoid": doc.name,
             "CompanyNumber": str(company_id),
             "TallyMasterid": 1,
             "Voucherid": doc.name,
@@ -129,3 +129,31 @@ def get_payment_entry(company_id=None):
     }
 
     return Response(json.dumps(response_payment, default=str), content_type='application/json', status=200)
+
+
+
+@frappe.whitelist()
+def fetch_response(response):
+    data = json.loads(response) if isinstance(response, str) else response
+    payment_response = data.get("PAYMENT RESPONSE", [])
+
+    for response in payment_response:
+        payment_entry = response.get("AUTOID")
+        guid = response.get("GUID")
+        ref_no = response.get("REFNO")
+
+        if not payment_entry:
+            continue
+
+        existing_item = frappe.db.get_value("Payment Entry", {"name": payment_entry}, "name")
+        if existing_item:
+            frappe.db.set_value("Payment Entry", existing_item, {
+                "custom_tally_auto_id": payment_entry,
+                "custom_tally_guid": guid,
+                "custom_tally_refno": ref_no,
+                "custom_sync_time": now()
+            })
+            frappe.db.commit()
+
+        else:
+            frappe.log_error(f"Payment Entry not found for Tally AUTOID: {payment_entry}", "Tally Payment Entry Sync Error")

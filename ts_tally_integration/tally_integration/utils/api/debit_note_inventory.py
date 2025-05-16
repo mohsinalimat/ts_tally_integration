@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from werkzeug.wrappers import Response
 from itertools import chain
+from frappe.utils import now
 
 @frappe.whitelist()
 def get_debit_note(company_id=None):
@@ -108,7 +109,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
             if "Creditors" in key:
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json = {
-                        "Autoid": "",
+                        "Autoid": document.name,
                         "CompanyNumber": str(company_id),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
@@ -201,7 +202,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
             else:
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json = {
-                        "Autoid": "",
+                        "Autoid": document.name,
                         "CompanyNumber": str(company_id),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
@@ -292,7 +293,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
             if 'Creditors' in key:
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json = {
-                        "Autoid": "",
+                        "Autoid": document.name,
                         "CompanyNumber": str(company_id),
                         "TallyMasterid": 1,
                         "Voucherid": document.name,
@@ -399,7 +400,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                     if item_tax['igst_rate']>0 and item_tax['cgst_rate']==0 and item_tax['sgst_rate']==0:
                         parent_acc = frappe.get_doc("Account", "Input Tax IGST - "+str(company.abbr))
                         doc_json_igst ={
-                            "Autoid": "",
+                            "Autoid": document.name,
                             "CompanyNumber": str(company_id),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
@@ -488,7 +489,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                     elif item_tax['igst_rate']==0 and item_tax['cgst_rate']>0 and item_tax['sgst_rate']>0:
                         parent_acc = frappe.get_doc("Account", "Input Tax CGST - "+str(company.abbr))
                         doc_json_cgst ={
-                            "Autoid": "",
+                            "Autoid": document.name,
                             "CompanyNumber": str(company_id),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
@@ -576,7 +577,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                         list_of_purchase_invoices.append(doc_json_cgst)
                         parent_acc = frappe.get_doc("Account", "Input Tax SGST - "+str(company.abbr))
                         doc_json_sgst ={
-                            "Autoid": "",
+                            "Autoid": document.name,
                             "CompanyNumber": str(company_id),
                             "TallyMasterid": 1,
                             "Voucherid": document.name,
@@ -678,7 +679,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                     if key == row.expense_account:
                         if 'Input GST Out-state' in document.taxes_and_charges:
                             doc_json ={
-                                "Autoid": "",
+                                "Autoid": document.name,
                                 "CompanyNumber": str(company_id),
                                 "TallyMasterid": 1,
                                 "Voucherid": document.name,
@@ -767,7 +768,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
 
                         elif 'Input GST In-state' in document.taxes_and_charges:
                             doc_json ={
-                                "Autoid": "",
+                                "Autoid": document.name,
                                 "CompanyNumber": str(company_id),
                                 "TallyMasterid": 1,
                                 "Voucherid": document.name,
@@ -856,7 +857,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
 
                         else:
                             doc_json ={
-                                "Autoid": "",
+                                "Autoid": document.name,
                                 "CompanyNumber": str(company_id),
                                 "TallyMasterid": 1,
                                 "Voucherid": document.name,
@@ -946,7 +947,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
             else:
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json ={
-                    "Autoid": "",
+                    "Autoid": document.name,
                     "CompanyNumber": str(company_id),
                     "TallyMasterid": 1,
                     "Voucherid": document.name,
@@ -1034,3 +1035,31 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                 list_of_purchase_invoices.append(doc_json)
   
     return list_of_purchase_invoices
+
+
+
+@frappe.whitelist()
+def fetch_response(response):
+    data = json.loads(response) if isinstance(response, str) else response
+    purchase_response = data.get("DEBITNOTE RESPONSE", [])
+
+    for response in purchase_response:
+        purchase_entry = response.get("AUTOID")
+        guid = response.get("GUID")
+        ref_no = response.get("REFNO")
+
+        if not purchase_entry:
+            continue
+
+        existing_item = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
+        if existing_item:
+            frappe.db.set_value("Purchase Invoice", existing_item, {
+                "custom_tally_auto_id": purchase_entry,
+                "custom_tally_guid": guid,
+                "custom_tally_refno": ref_no,
+                "custom_sync_time": now()
+            })
+            frappe.db.commit()
+
+        else:
+            frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")

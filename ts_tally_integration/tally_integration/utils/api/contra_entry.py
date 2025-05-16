@@ -2,7 +2,7 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-
+from frappe.utils import now
 
 @frappe.whitelist()
 def get_contra(company_id = None):
@@ -24,7 +24,7 @@ def get_contra(company_id = None):
             amount = entry['debit_in_account_currency'] or entry['credit_in_account_currency']
 
             ledger_dict = {
-                "Autoid": "1",
+                "Autoid": list['name'],
                 "CompanyNumber": str(company_id),
                 "TallyMasterid": 1,
                 "Voucherid": "",
@@ -68,3 +68,30 @@ def get_contra(company_id = None):
     
 
     return final_voucher
+
+
+@frappe.whitelist()
+def fetch_response(response):
+    data = json.loads(response) if isinstance(response, str) else response
+    contra_response = data.get("CONTRA RESPONSE", [])
+
+    for response in contra_response:
+        contra_entry = response.get("AUTOID")
+        guid = response.get("GUID")
+        ref_no = response.get("REFNO")
+
+        if not contra_entry:
+            continue
+
+        existing_item = frappe.db.get_value("Journal Entry", {"name": contra_entry}, "name")
+        if existing_item:
+            frappe.db.set_value("Journal Entry", existing_item, {
+                "custom_tally_auto_id": contra_entry,
+                "custom_tally_guid": guid,
+                "custom_tally_refno": ref_no,
+                "custom_sync_time": now()
+            })
+            frappe.db.commit()
+
+        else:
+            frappe.log_error(f"Contra Entry not found for Tally AUTOID: {contra_entry}", "Tally Contra Entry Sync Error")
