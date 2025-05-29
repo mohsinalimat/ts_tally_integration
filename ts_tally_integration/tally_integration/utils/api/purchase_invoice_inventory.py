@@ -671,7 +671,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                     
                     batch_no = frappe.get_value("Batch", {'item': row.item_code, 'reference_name': document.name}, 'name')
                     if key == row.expense_account:
-                        if 'Input GST Out-state' in document.taxes_and_charges:
+                        if document.taxes_and_charges == 'Input GST Out-state':
                             doc_json ={
                                 "Autoid": doc.name,
                                 "CompanyNumber": str(company_id),
@@ -760,7 +760,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                             }
                             list_of_purchase_invoices.append(doc_json)
 
-                        elif 'Input GST In-state' in document.taxes_and_charges:
+                        elif document.taxes_and_charges == 'Input GST In-state':
                             doc_json ={
                                 "Autoid": doc.name,
                                 "CompanyNumber": str(company_id),
