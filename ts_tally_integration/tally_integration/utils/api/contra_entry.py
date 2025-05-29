@@ -91,7 +91,12 @@ def fetch_response(response):
                 "custom_tally_refno": ref_no,
                 "custom_sync_time": now()
             })
-            frappe.db.commit()
+            return {
+                "status": True,
+                "message": "Updated successfully"
+                }
 
         else:
             frappe.log_error(f"Contra Entry not found for Tally AUTOID: {contra_entry}", "Tally Contra Entry Sync Error")
+
+    frappe.db.commit()

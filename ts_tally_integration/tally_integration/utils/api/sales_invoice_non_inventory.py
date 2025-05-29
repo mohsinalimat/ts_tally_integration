@@ -13,7 +13,6 @@ def get_sales_non_inv(company_id = None):
     stock = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['stock'])
     if stock == 'Inventory':
         return Response(json.dumps('Company is Non-Inventory, but Request is Inventory', default=str), content_type='application/json')
-
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
     company_address = frappe.get_list('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
@@ -60,6 +59,7 @@ def get_sales_non_inv(company_id = None):
                 sales_item = frappe.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
                 for item in sales_item:
+                        
                         hsn_desc = frappe.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
                         if item['sgst_rate']:
                             ledger_suffix = item['sgst_rate'] + item['cgst_rate']
@@ -794,7 +794,11 @@ def fetch_response(response):
                 "custom_tally_refno": ref_no,
                 "custom_sync_time": now()
             })
-            frappe.db.commit()
+            return {
+                "status": True,
+                "message": "Updated successfully"
+                }
 
         else:
             frappe.log_error(f"Sales Invoice not found for Tally AUTOID: {sales_entry}", "Tally Sales Invoice Sync Error")
+    frappe.db.commit()

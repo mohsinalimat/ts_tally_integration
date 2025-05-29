@@ -91,6 +91,10 @@ def fetch_response(response):
             doc.custom_status = status
             doc.custom_sync_time = now()
             doc.save(ignore_permissions=True)
-            frappe.db.commit()
+            return {
+                "status": True,
+                "message": "Updated successfully"
+                }
+
         else:
             frappe.log_error(f"Item not found for Tally AUTOID: {item_name}", "Tally Item Sync Error")
