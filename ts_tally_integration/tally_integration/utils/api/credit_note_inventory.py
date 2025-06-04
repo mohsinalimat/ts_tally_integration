@@ -26,7 +26,10 @@ def credit_note_inv(company_id = None):
 
         tax_processed = False
 
-        cus_address = frappe.get_list('Address', filters={'name': doc.customer_address}, fields=['*'])
+        if doc.customer_address:
+            cus_address = frappe.get_list('Address', filters={'name': doc.customer_address}, fields=['*'])
+        else:
+            cus_address = []
 
         customer_pan = frappe.get_value('Customer', {'name': doc.customer_name}, ['pan'])
 
@@ -971,24 +974,30 @@ def fetch_response(response):
         sales_entry = response.get("AUTOID")
         guid = response.get("GUID")
         ref_no = response.get("REFNO")
+        import_date = response.get("IMPORTDATE")
+        import_time = response.get("IMPORTTIME")
 
         if not sales_entry:
             continue
 
         existing_item = frappe.db.get_value("Sales Invoice", {"name": sales_entry}, "name")
         if existing_item:
+            import_date = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+
             frappe.db.set_value("Sales Invoice", existing_item, {
                 "custom_tally_auto_id": sales_entry,
                 "custom_tally_guid": guid,
                 "custom_tally_refno": ref_no,
-                "custom_sync_time": now()
+                "custom_sync_time": datetime.combine(import_date, import_time)
             })
-            return {
-                "status": True,
-                "message": "Updated successfully"
-                }
 
         else:
             frappe.log_error(f"Contra Entry not found for Tally AUTOID: {sales_entry}", "Tally Contra Entry Sync Error")
     
-    frappe.db.commit()
+    response =  {
+        "status": True,
+        "message": "Updated successfully"
+        }
+    return Response(json.dumps(response, default=str), content_type='application/json')
+

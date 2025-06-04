@@ -56,26 +56,34 @@ def get_itemgroup(company_id = None):
 @frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
-    item_group = data.get("STOCKGROUP RESPONSE", [])
+    item_group_list = data.get("STOCKGROUP RESPONSE", [])
 
-    for item in item_group:
-        item_name = item.get("AUTOID")
+    for item in item_group_list:
+        item_group = item.get("AUTOID")
         status = item.get("STATUS")
+        import_date = item.get("IMPORTDATE")
+        import_time = item.get("IMPORTTIME")
 
-        if not item_name:
+        if not item_group:
             continue
 
-        existing_item = frappe.db.get_value("Item Group", {"item_name": item_name}, "name")
-        if existing_item:
-            doc = frappe.get_doc("Item Group", existing_item)
-            doc.custom_tally_auto_id = item_name
-            doc.custom_status = status
-            doc.custom_sync_time = now()
-            doc.save(ignore_permissions=True)
-            return {
-                "status": True,
-                "message": "Updated successfully"
-                }
+        existing_item_group = frappe.db.get_value("Item Group", {"name": item_group}, "name")
+        if existing_item_group:
+            import_date = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+
+            frappe.db.set_value('Item Group', existing_item_group, {
+                'custom_tally_auto_id': item_group,
+                'custom_status': status,
+                'custom_sync_time': datetime.combine(import_date, import_time)
+            })
 
         else:
-            frappe.log_error(f"Item Group not found for Tally AUTOID: {item_name}", "Tally Item Group Sync Error")
+            frappe.log_error(f"Item Group not found for Tally AUTOID: {item_group}", "Tally Item Sync Error")
+ 
+    response =  {
+        "status": True,
+        "message": "Updated successfully"
+        }
+    return Response(json.dumps(response, default=str), content_type='application/json')
+

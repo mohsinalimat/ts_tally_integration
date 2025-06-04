@@ -62,26 +62,34 @@ def get_warehouse(company_id = None):
 @frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
-    item_group = data.get("GODOWN RESPONSE", [])
+    warehouse_response = data.get("GODOWN RESPONSE", [])
 
-    for item in item_group:
-        item_name = item.get("AUTOID")
-        status = item.get("STATUS")
-
-        if not item_name:
+    for warehouse in warehouse_response:
+        warehouse_name = warehouse.get("AUTOID")
+        status = warehouse.get("STATUS")
+        import_date = warehouse.get("IMPORTDATE")
+        import_time = warehouse.get("IMPORTTIME")
+    
+        if not warehouse_name:
             continue
 
-        existing_item = frappe.db.get_value("Warehouse", {"item_name": item_name}, "name")
-        if existing_item:
-            doc = frappe.get_doc("Warehouse", existing_item)
-            doc.custom_tally_auto_id = item_name
-            doc.custom_status = status
-            doc.custom_sync_time = now()
-            doc.save(ignore_permissions=True)
-            return {
-                "status": True,
-                "message": "Updated successfully"
-                }
+        existing_warehouse = frappe.db.get_value("Warehouse", {"warehouse_name": warehouse_name}, "name")
+        if existing_warehouse:
+            import_date = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+
+            frappe.db.set_value('Warehouse', existing_warehouse, {
+                'custom_tally_auto_id': warehouse_name,
+                'custom_status': status,
+                'custom_sync_time': datetime.combine(import_date, import_time)
+            })
 
         else:
-            frappe.log_error(f"Warehouse not found for Tally AUTOID: {item_name}", "Tally Warehouse Sync Error")
+            frappe.log_error(f"Warehouse not found for Tally AUTOID: {warehouse_name}", "Tally Warehouse Sync Error")
+
+    response =  {
+        "status": True,
+        "message": "Updated successfully"
+        }
+    return Response(json.dumps(response, default=str), content_type='application/json')
+

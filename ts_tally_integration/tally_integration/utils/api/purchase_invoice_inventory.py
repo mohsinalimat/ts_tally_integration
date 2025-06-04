@@ -1041,23 +1041,30 @@ def fetch_response(response):
         purchase_entry = response.get("AUTOID")
         guid = response.get("GUID")
         ref_no = response.get("REFNO")
+        import_date = response.get("IMPORTDATE")
+        import_time = response.get("IMPORTTIME")
 
         if not purchase_entry:
             continue
 
-        existing_item = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
-        if existing_item:
-            frappe.db.set_value("Purchase Invoice", existing_item, {
+        existing_purchase = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
+        if existing_purchase:
+            import_date = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+
+            frappe.db.set_value("Purchase Invoice", existing_purchase, {
                 "custom_tally_auto_id": purchase_entry,
                 "custom_tally_guid": guid,
                 "custom_tally_refno": ref_no,
-                "custom_sync_time": now()
+                "custom_sync_time": datetime.combine(import_date, import_time)
             })
-            return {
-                "status": True,
-                "message": "Updated successfully"
-                }
 
         else:
             frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
-    frappe.db.commit()
+
+    response =  {
+        "status": True,
+        "message": "Updated successfully"
+        }
+    return Response(json.dumps(response, default=str), content_type='application/json')
+

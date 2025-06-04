@@ -83,6 +83,8 @@ def get_party(company_id = None):
     return final_voucher
 
 
+
+
 @frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
@@ -91,33 +93,43 @@ def fetch_response(response):
     for party in parties:
         party_name = party.get("AUTOID")
         status = party.get("STATUS")
+        import_date = party.get("IMPORTDATE")
+        import_time = party.get("IMPORTTIME")
 
         if not party_name:
             continue
 
         existing_customer = frappe.db.get_value("Customer", {"name": party_name}, "name")
         if existing_customer:
-            doc = frappe.get_doc("Customer", existing_customer)
-            doc.custom_tally_auto_id = party_name
-            doc.custom_status = status
-            doc.custom_sync_time = now()
-            doc.save(ignore_permissions=True)
-            frappe.db.commit()
+            import_date = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+
+            frappe.db.set_value('Customer', party_name, {
+                'custom_tally_auto_id': party_name,
+                'custom_status': status,
+                'custom_sync_time': datetime.combine(import_date, import_time)
+            })
+            
         else:
             frappe.log_error(f"Customer not found for Tally AUTOID: {party_name}", "Tally Customer Sync Error")
 
 
         existing_supplier = frappe.db.get_value("Supplier", {"name": party_name}, "name")
         if existing_supplier:
-            doc = frappe.get_doc("Supplier", existing_supplier)
-            doc.custom_tally_auto_id = party_name
-            doc.custom_status = status
-            doc.custom_sync_time = now()
-            doc.save(ignore_permissions=True)
-            return {
-                "status": True,
-                "message": "Updated successfully"
-                }
+            import_date = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+
+            frappe.db.set_value('Customer', party_name, {
+                'custom_tally_auto_id': party_name,
+                'custom_status': status,
+                'custom_sync_time': datetime.combine(import_date, import_time)
+            })
         
         else:
             frappe.log_error(f"Supplier not found for Tally AUTOID: {party_name}", "Tally Supplier Sync Error")
+
+    response =  {
+        "status": True,
+        "message": "Updated successfully"
+        }
+    return Response(json.dumps(response, default=str), content_type='application/json')
