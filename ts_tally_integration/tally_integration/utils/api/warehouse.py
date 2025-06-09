@@ -2,8 +2,6 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-from frappe.utils import now
-
 
 @frappe.whitelist(allow_guest = True)
 def get_warehouse(company_id = None):
@@ -15,7 +13,10 @@ def get_warehouse(company_id = None):
     group_warehouse = []
     nongroup = []
 
-    warehouses = frappe.get_all('Warehouse', filters={'company': company_name}, fields=['*'])
+    warehouses = frappe.get_all('Warehouse',
+                                filters={'company': company_name, 'custom_status': ['!=', 'SUCCESS']},
+                                fields=['*'])
+
     for warehouse in warehouses:
         if warehouse.is_group:
             warehouse_dict = {
@@ -88,8 +89,8 @@ def fetch_response(response):
             frappe.log_error(f"Warehouse not found for Tally AUTOID: {warehouse_name}", "Tally Warehouse Sync Error")
 
     response =  {
-        "status": True,
-        "message": "Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
 

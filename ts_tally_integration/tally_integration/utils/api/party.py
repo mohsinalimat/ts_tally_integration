@@ -2,7 +2,7 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-from frappe.utils import now
+
 
 @frappe.whitelist()
 def get_party(company_id = None):
@@ -11,7 +11,7 @@ def get_party(company_id = None):
     auto_id = 1
     all_doc = []
 
-    suppliers = frappe.get_list('Supplier', fields=['*'])
+    suppliers = frappe.get_list('Supplier', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
     
     for supplier in suppliers:
 
@@ -41,7 +41,7 @@ def get_party(company_id = None):
 
         all_doc.append(supplier_dict)
 
-    customers = frappe.get_list('Customer', fields=['*'])
+    customers = frappe.get_list('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
 
     for customer in customers:
         if customer.get('customer_primary_address'):
@@ -129,7 +129,7 @@ def fetch_response(response):
             frappe.log_error(f"Supplier not found for Tally AUTOID: {party_name}", "Tally Supplier Sync Error")
 
     response =  {
-        "status": True,
-        "message": "Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')

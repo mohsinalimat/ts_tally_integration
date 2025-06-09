@@ -2,7 +2,6 @@ import frappe
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
-from frappe.utils import now
 
 
 @frappe.whitelist()
@@ -12,7 +11,13 @@ def credit_note_inv(company_id = None):
 
     stock = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['stock'])
     if stock == 'Non-Inventory':
-        return Response(json.dumps('Company is Inventory, but Request is Non-Inventory', default=str), content_type='application/json')
+        empty = ({
+            "status": True,
+            "VOUCHERDETAILS": {
+                "VOUCHER": []
+                }
+            })
+        return Response(json.dumps(empty, default=str), content_type='application/json')
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
@@ -21,7 +26,9 @@ def credit_note_inv(company_id = None):
     
     all_vouchers = []
 
-    credit_list = frappe.get_list('Sales Invoice',filters={'company':company_name,'is_return':1, 'update_stock':1, 'docstatus':1},fields=['*'])
+    credit_list = frappe.get_list('Sales Invoice',
+                                  filters = {'company':company_name,'is_return':1, 'update_stock':1, 'docstatus':1, 'custom_tally_guid': ['in', ['', None]]},
+                                  fields = ['*'])
     for doc in credit_list:
 
         tax_processed = False
@@ -996,8 +1003,8 @@ def fetch_response(response):
             frappe.log_error(f"Contra Entry not found for Tally AUTOID: {sales_entry}", "Tally Contra Entry Sync Error")
     
     response =  {
-        "status": True,
-        "message": "Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
 

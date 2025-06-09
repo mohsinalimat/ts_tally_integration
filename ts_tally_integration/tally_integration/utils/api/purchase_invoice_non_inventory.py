@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from werkzeug.wrappers import Response
 from itertools import chain
-from frappe.utils import now
+
 
 @frappe.whitelist()
 def get_purchase_invoice(company_id=None):
@@ -15,10 +15,18 @@ def get_purchase_invoice(company_id=None):
     if tally_company_table.company_name==None:
         return Response(json.dumps("Company is not found. Please check the company id!", default=str), content_type='application/json', status=404)
 
-    if tally_company_table.stock == "Non-Inventory":
-        return Response(json.dumps("Company is Non-Inventory. But requested for Inventory!", default=str), content_type='application/json', status=400)
+    if tally_company_table.stock == "Inventory":
+        empty = ({
+            "status": True,
+            "VOUCHERDETAILS": {
+                "VOUCHER": []
+                }
+            })
+        return Response(json.dumps(empty, default=str), content_type='application/json')
 
-    doc_list = frappe.get_list('Purchase Invoice', filters={'docstatus': 1, "company" : tally_company_table.company_name,"update_stock":0, 'is_return': 0}, fields=['*'])
+    doc_list = frappe.get_list('Purchase Invoice',
+                               filters = {'docstatus': 1, "company" : tally_company_table.company_name,"update_stock":0, 'is_return': 0, 'custom_tally_guid': ['in', ['', None]]},
+                               fields = ['*'])
     list_of_purchases= []
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)
@@ -1064,8 +1072,8 @@ def fetch_response(response):
             frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
 
     response =  {
-        "status": True,
-        "message": "Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
 

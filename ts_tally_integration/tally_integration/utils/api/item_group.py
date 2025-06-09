@@ -2,7 +2,6 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-from frappe.utils import now
 
 
 @frappe.whitelist()
@@ -13,7 +12,7 @@ def get_itemgroup(company_id = None):
     non_group = []
     group_item_group = []
 
-    item_groups = frappe.get_all('Item Group', fields=['name', 'is_group', 'parent_item_group'])
+    item_groups = frappe.get_all('Item Group', filters = {'custom_status': ['!=', 'SUCCESS']}, fields = ['name', 'is_group', 'parent_item_group'])
     for group in item_groups:
 
         if group.is_group:
@@ -82,8 +81,8 @@ def fetch_response(response):
             frappe.log_error(f"Item Group not found for Tally AUTOID: {item_group}", "Tally Item Sync Error")
  
     response =  {
-        "status": True,
-        "message": "Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
 

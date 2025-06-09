@@ -2,7 +2,7 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-from frappe.utils import now
+
 
 @frappe.whitelist()
 def get_contra(company_id = None):
@@ -13,7 +13,9 @@ def get_contra(company_id = None):
 
     all_vouchers = []
 
-    journal_list = frappe.get_list('Journal Entry', filters={'company':company_name,'voucher_type':'Contra Entry'}, fields=['*'])
+    journal_list = frappe.get_list('Journal Entry',
+                                   filters={'company':company_name,'voucher_type':'Contra Entry', 'custom_tally_guid': ['in', ['', None]]},
+                                   fields=['*'])
     for list in journal_list:
         journal_gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
 
@@ -101,7 +103,7 @@ def fetch_response(response):
             frappe.log_error(f"Contra Entry not found for Tally AUTOID: {contra_entry}", "Tally Contra Entry Sync Error")
 
     response =  {
-        "status": True,
-        "message": "Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')

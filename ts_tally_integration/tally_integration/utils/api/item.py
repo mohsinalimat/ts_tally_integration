@@ -2,7 +2,7 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-from frappe.utils import now
+
 
 @frappe.whitelist()
 def get_item(company_id = None):
@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_list('Item', filters={'disabled': 0}, fields=['*'])
+    items = frappe.get_list('Item', filters={'disabled': 0, 'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
     auto_id = 1
     for item in items:
         tax_template = frappe.get_all('Item Tax', filters={'parent': item.name}, fields=['*'])
@@ -101,8 +101,7 @@ def fetch_response(response):
             frappe.log_error(f"Item not found for Tally AUTOID: {item_name}", "Tally Item Sync Error")
  
     response =  {
-        "status": True,
-        "message": "Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
-
