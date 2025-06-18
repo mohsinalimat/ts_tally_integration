@@ -12,7 +12,7 @@ def get_debit_note(company_id=None):
 
     tally_company_table = frappe.get_value("TS Tally Company", {"company_number" : company_id}, ["company_name", "stock"], as_dict=1)
     
-    if tally_company_table.company_name==None:
+    if not tally_company_table:
         return Response(json.dumps("Company is not found. Please check the company id!", default=str), content_type='application/json', status=404)
 
     if tally_company_table.stock == "Non-Inventory":

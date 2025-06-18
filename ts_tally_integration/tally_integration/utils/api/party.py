@@ -99,37 +99,32 @@ def fetch_response(response):
         if not party_name:
             continue
 
-        existing_customer = frappe.db.get_value("Customer", {"name": party_name}, "name")
-        if existing_customer:
-            import_date = datetime.strptime(import_date, "%Y%m%d").date()
-            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+        import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
+        import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
+        sync_time = datetime.combine(import_date_obj, import_time_obj)
 
+        updated = False
+
+        if frappe.db.exists("Customer", {"name": party_name}):
             frappe.db.set_value('Customer', party_name, {
                 'custom_tally_auto_id': party_name,
                 'custom_status': status,
-                'custom_sync_time': datetime.combine(import_date, import_time)
+                'custom_sync_time': sync_time
             })
-            
-        else:
-            frappe.log_error(f"Customer not found for Tally AUTOID: {party_name}", "Tally Customer Sync Error")
+            updated = True
 
-
-        existing_supplier = frappe.db.get_value("Supplier", {"name": party_name}, "name")
-        if existing_supplier:
-            import_date = datetime.strptime(import_date, "%Y%m%d").date()
-            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
-
-            frappe.db.set_value('Customer', party_name, {
+        if frappe.db.exists("Supplier", {"name": party_name}):
+            frappe.db.set_value('Supplier', party_name, {
                 'custom_tally_auto_id': party_name,
                 'custom_status': status,
-                'custom_sync_time': datetime.combine(import_date, import_time)
+                'custom_sync_time': sync_time
             })
-        
-        else:
-            frappe.log_error(f"Supplier not found for Tally AUTOID: {party_name}", "Tally Supplier Sync Error")
+            updated = True
 
-    response =  {
+        if not updated:
+            frappe.log_error(f"Neither Customer nor Supplier found for Tally AUTOID: {party_name}", "Tally Sync Error")
+
+    return Response(json.dumps({
         "status":True,
         "message":"Updated successfully"
-        }
-    return Response(json.dumps(response, default=str), content_type='application/json')
+    }, default=str), content_type='application/json')
