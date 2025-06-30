@@ -12,7 +12,7 @@ def get_debit_note(company_id=None):
 
     tally_company_table = frappe.get_value("TS Tally Company", {"company_number" : company_id}, ["company_name", "stock"], as_dict=1)
     
-    if tally_company_table.company_name==None:
+    if not tally_company_table:
         return Response(json.dumps("Company is not found. Please check the company id!", default=str), content_type='application/json', status=404)
 
     if tally_company_table.stock == "Inventory":
@@ -27,9 +27,9 @@ def get_debit_note(company_id=None):
     doc_list = frappe.get_list('Purchase Invoice',
                                filters = {'docstatus': 1, "company" : tally_company_table.company_name, "update_stock":0, 'is_return': 1, 'custom_tally_guid': ['in', ['', None]]},
                                fields = ['*'])
-    
+
     list_of_purchases= []
-    
+
     for doc in doc_list:
         supplier = frappe.get_doc("Supplier", doc.supplier)
         supplier_add = frappe.get_doc("Address",supplier.supplier_primary_address)
@@ -417,7 +417,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "VoucherType": "Debit Note",
                             "VoucherTypeParent": "Debit Note",
-                            "LedgerName": "Input Tax IGST @ "+str(item_tax['igst_rate'])+"%",
+                            "LedgerName": "Input Tax IGST @ "+str(item_tax['igst_rate']),
                             "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                             "LedgerAddress":"",
                             "LedgerState": "",
@@ -506,7 +506,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "VoucherType": "Debit Note",
                             "VoucherTypeParent": "Debit Note",
-                            "LedgerName": "Input Tax CGST @ "+str(item_tax['cgst_rate'])+"%",
+                            "LedgerName": "Input Tax CGST @ "+str(item_tax['cgst_rate']),
                             "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                             "LedgerAddress":"",
                             "LedgerState": "",
@@ -594,7 +594,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "VoucherType": "Debit Note",
                             "VoucherTypeParent": "Debit Note",
-                            "LedgerName": "Input Tax SGST @ "+str(item_tax['sgst_rate'])+"%",
+                            "LedgerName": "Input Tax SGST @ "+str(item_tax['sgst_rate']),
                             "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                             "LedgerAddress":"",
                             "LedgerState": "",
@@ -1050,34 +1050,42 @@ def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     purchase_response = data.get("DEBITNOTE RESPONSE", [])
 
-    for response in purchase_response:
-        purchase_entry = response.get("AUTOID")
-        guid = response.get("GUID")
-        ref_no = response.get("REFNO")
-        import_date = response.get("IMPORTDATE")
-        import_time = response.get("IMPORTTIME")
+    for item in purchase_response:
+        purchase_entry = item.get("AUTOID")
+        guid = item.get("GUID")
+        ref_no = item.get("REFNO")
+        import_date = item.get("IMPORTDATE")
+        import_time = item.get("IMPORTTIME")
+
+        # Log incoming item
+        frappe.log_error(json.dumps(item, indent=2), "Tally Incoming Purchase Response")
 
         if not purchase_entry:
             continue
 
         existing_purchase = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
         if existing_purchase:
-            import_date = datetime.strptime(import_date, "%Y%m%d").date()
-            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+            try:
+                import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
+                import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
 
-            frappe.db.set_value("Purchase Invoice", existing_purchase, {
-                "custom_tally_auto_id": purchase_entry,
-                "custom_tally_guid": guid,
-                "custom_tally_refno": ref_no,
-                "custom_sync_time": datetime.combine(import_date, import_time)
-            })
+                frappe.db.set_value("Purchase Invoice", existing_purchase, {
+                    "custom_tally_auto_id": purchase_entry,
+                    "custom_tally_guid": guid,
+                    "custom_tally_refno": ref_no,
+                    "custom_sync_time": datetime.combine(import_date_obj, import_time_obj)
+                })
 
+                # Log success update
+                frappe.log_error(f"Successfully updated Purchase Invoice: {existing_purchase}", "Tally Sync Success")
+
+            except Exception as dt_err:
+                frappe.log_error(f"Date/time parse error for AUTOID {purchase_entry}: {dt_err}", "Tally Date Error")
         else:
             frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
 
-    response =  {
+    response = {
         "status":True,
         "message":"Updated successfully"
-        }
+    }
     return Response(json.dumps(response, default=str), content_type='application/json')
-

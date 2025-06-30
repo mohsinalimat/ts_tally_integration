@@ -14,7 +14,7 @@ def get_item(company_id = None):
     all_doc = []
 
     items = frappe.get_list('Item', filters={'disabled': 0, 'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
-    auto_id = 1
+
     for item in items:
         tax_template = frappe.get_all('Item Tax', filters={'parent': item.name}, fields=['*'])
 
@@ -31,32 +31,39 @@ def get_item(company_id = None):
 
         hsn_desc = frappe.get_value('GST HSN Code', {'name': item.gst_hsn_code}, 'description') or ''
 
+        is_gst_applicable = "Applicable" if taxability == 'Taxable' else 'Not Applicable'
+        hsn_code = item.gst_hsn_code if is_gst_applicable == 'Applicable' else ''
+        hsn_desc_clean = hsn_desc.replace('\n', ' ') if is_gst_applicable == 'Applicable' else ''
+        gst_type_of_supply = "Goods" if is_gst_applicable == 'Applicable' else ''
+        cgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else '0'
+        sgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else '0'
+        igst = str(int(item_tax_template[0]['gst_rate'])) if item_tax_template and is_gst_applicable == 'Applicable' else '0'
+
         item_dict = {
-            "Autoid": auto_id,
+            "Autoid": item.item_name,
             "CompanyNumber": str(company_id),
             "Name": item.item_name,
             "Parent": item.item_group,
-            "Category": item.item_group,
+            "Category": "",
             "BaseUnits": item.stock_uom,
             "IsBatchWiseOn": 'Yes' if item.has_batch_no else "No",
-            "IsGSTApplicable": "Applicable" if taxability == 'Taxable' else 'Not Applicable',
-            "HsnCode": item.gst_hsn_code if taxability == 'Taxable' else '',
-            "Hsn": hsn_desc.replace('\n', ' ') if taxability == 'Taxable' else '',
-            "Taxability": taxability,
-            "CgstRate": str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template else '0',
-            "SgstRate": str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template else '0',
-            "IgstRate": str(int(item_tax_template[0]['gst_rate'])) if item_tax_template else '0',
-            "GSTTypeofSupply": "Goods" if taxability == 'Taxable' else '',
+            "IsGSTApplicable": is_gst_applicable,
+            "HsnCode": hsn_code,
+            "Hsn": hsn_desc_clean,
+            "Taxability": taxability if is_gst_applicable == 'Applicable' else '',
+            "CgstRate": cgst,
+            "SgstRate": sgst,
+            "IgstRate": igst,
+            "GSTTypeofSupply": gst_type_of_supply,
             "GodownName": "",
             "BatchName": "",
             "OpeningBalance": "",
             "OpeningRate": "",
             "OpeningValue": ""
         }
-        auto_id += 1
+
 
         all_doc.append(item_dict)
-
     final_voucher = ({
         "status": True,
         "VOUCHERDETAILS": {
@@ -72,8 +79,9 @@ def get_item(company_id = None):
     return final_voucher
 
 
+
 @frappe.whitelist()
-def fetch_response(response):
+def fetch_response(response=None):
     data = json.loads(response) if isinstance(response, str) else response
     items = data.get("STOCKITEM RESPONSE", [])
 
@@ -86,22 +94,33 @@ def fetch_response(response):
         if not item_name:
             continue
 
-        existing_item = frappe.db.get_value("Item", {"item_name": item_name}, "name")
-        if existing_item:
-            import_date = datetime.strptime(import_date, "%Y%m%d").date()
-            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+        item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
+        if item_docname:
+            item_doc = frappe.get_doc("Item", item_docname)
 
-            frappe.db.set_value('Item Group', existing_item, {
-                'custom_tally_auto_id': item_name,
-                'custom_status': status,
-                'custom_sync_time': datetime.combine(import_date, import_time)
-            })
+            item_doc.custom_tally_auto_id = item_name
+            item_doc.custom_status = status
+            item_doc.custom_sync_time = datetime.combine(
+                datetime.strptime(import_date, "%Y%m%d").date(),
+                datetime.strptime(import_time, "%H:%M:%S").time()
+            )
+
+            item_doc.save(ignore_permissions=True)
+
+            # Log even on successful save
+            frappe.log_error(
+                title="Tally Item Sync - Success",
+                message=f"Item updated successfully: {item_name}"
+            )
 
         else:
-            frappe.log_error(f"Item not found for Tally AUTOID: {item_name}", "Tally Item Sync Error")
- 
-    response =  {
+            frappe.log_error(
+                title="Tally Item Sync Error",
+                message=f"Item not found for Tally AUTOID: {item_name}"
+            )
+
+    response = {
         "status":True,
         "message":"Updated successfully"
-        }
+    }
     return Response(json.dumps(response, default=str), content_type='application/json')

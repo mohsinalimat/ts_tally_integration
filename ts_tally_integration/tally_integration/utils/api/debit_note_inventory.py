@@ -417,7 +417,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "VoucherType": "Debit Note",
                             "VoucherTypeParent": "Debit Note",
-                            "LedgerName": "Input Tax IGST @ "+str(item_tax['igst_rate'])+"%",
+                            "LedgerName": "Input Tax IGST @ "+str(item_tax['igst_rate']),
                             "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                             "LedgerAddress":"",
                             "LedgerState": "",
@@ -506,7 +506,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "VoucherType": "Debit Note",
                             "VoucherTypeParent": "Debit Note",
-                            "LedgerName": "Input Tax CGST @ "+str(item_tax['cgst_rate'])+"%",
+                            "LedgerName": "Input Tax CGST @ "+str(item_tax['cgst_rate']),
                             "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                             "LedgerAddress":"",
                             "LedgerState": "",
@@ -594,7 +594,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                             "VoucherDate": datetime.strptime(str(document.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "VoucherType": "Debit Note",
                             "VoucherTypeParent": "Debit Note",
-                            "LedgerName": "Input Tax SGST @ "+str(item_tax['sgst_rate'])+"%",
+                            "LedgerName": "Input Tax SGST @ "+str(item_tax['sgst_rate']),
                             "LedgerParent": (parent_acc.custom_tally_parent_account) if parent_acc.custom_tally_parent_account else "",
                             "LedgerAddress":"",
                             "LedgerState": "",
@@ -678,11 +678,11 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                 for row in document.items:
                     ledger_name = ''
                     if row.cgst_rate>0 and row.sgst_rate>0 and row.igst_rate==0:
-                        ledger_name = f"PURCHASE @ {row.cgst_rate + row.sgst_rate} % {row.gst_hsn_code}"
+                        ledger_name = f"Purchase @ {row.cgst_rate + row.sgst_rate}"
                     elif row.cgst_rate==0 and row.sgst_rate==0 and row.igst_rate>0:
-                        ledger_name = f"PURCHASE @ {row.igst_rate} % {row.gst_hsn_code}"
+                        ledger_name = f"Purchase @ {row.igst_rate}"
                     elif row.cgst_rate==0 and row.sgst_rate==0 and row.igst_rate==0:
-                        ledger_name = f"PURCHASE Exempt {row.gst_hsn_code}"
+                        ledger_name = f"Purchase Exempt"
 
                     batch_no = frappe.get_value("Batch", {'item': row.item_code, 'reference_name': document.name}, 'name')
                     if key == row.expense_account:
@@ -712,7 +712,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
+                                "Godown": (row.warehouse).split(" - ")[0] if row.warehouse else "",
                                 "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
@@ -801,7 +801,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
+                                "Godown": (row.warehouse).split(" - ")[0] if row.warehouse else "",
                                 "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
@@ -890,7 +890,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (document.set_warehouse).split(" - ")[0] if document.set_warehouse else "",
+                                "Godown": (row.warehouse).split(" - ")[0] if row.warehouse else "",
                                 "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
@@ -1047,39 +1047,58 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
 
 
 
+
 @frappe.whitelist()
 def fetch_response(response):
-    data = json.loads(response) if isinstance(response, str) else response
-    purchase_response = data.get("DEBITNOTE RESPONSE", [])
+    try:
+        data = json.loads(response) if isinstance(response, str) else response
+        purchase_response = data.get("DEBITNOTE RESPONSE", [])
 
-    for response in purchase_response:
-        purchase_entry = response.get("AUTOID")
-        guid = response.get("GUID")
-        ref_no = response.get("REFNO")
-        import_date = response.get("IMPORTDATE")
-        import_time = response.get("IMPORTTIME")
+        for item in purchase_response:
+            purchase_entry = item.get("AUTOID")
+            guid = item.get("GUID")
+            ref_no = item.get("REFNO")
+            import_date = item.get("IMPORTDATE")
+            import_time = item.get("IMPORTTIME")
 
-        if not purchase_entry:
-            continue
+            # Log incoming entry before processing
+            frappe.log_error(json.dumps(item, indent=2), "Tally Incoming Purchase Response")
 
-        existing_purchase = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
-        if existing_purchase:
-            import_date = datetime.strptime(import_date, "%Y%m%d").date()
-            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+            if not purchase_entry:
+                continue
 
+            existing_purchase = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
+            if not existing_purchase:
+                frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
+                continue
+
+            try:
+                import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
+                import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
+                sync_datetime = datetime.combine(import_date_obj, import_time_obj)
+            except Exception as dt_err:
+                frappe.log_error(f"Invalid date/time for AUTOID {purchase_entry}: {dt_err}", "Tally Date Parse Error")
+                continue
+
+            # Update values
             frappe.db.set_value("Purchase Invoice", existing_purchase, {
                 "custom_tally_auto_id": purchase_entry,
                 "custom_tally_guid": guid,
                 "custom_tally_refno": ref_no,
-                "custom_sync_time": datetime.combine(import_date, import_time)
+                "custom_sync_time": sync_datetime
             })
 
-        else:
-            frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
+            # Log success entry after update
+            frappe.log_error(f"Successfully updated Purchase Invoice: {existing_purchase}", "Tally Sync Success")
 
-    response =  {
-        "status":True,
-        "message":"Updated successfully"
-        }
-    return Response(json.dumps(response, default=str), content_type='application/json')
+        return Response(json.dumps({
+            "status": True,
+            "message": "Updated successfully"
+        }), content_type='application/json')
 
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Tally Fetch Response Error")
+        return Response(json.dumps({
+            "status": False,
+            "message": "An error occurred while processing the response"
+        }), content_type='application/json')

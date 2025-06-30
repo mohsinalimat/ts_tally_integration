@@ -93,4 +93,3 @@ def fetch_response(response):
         "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
-
