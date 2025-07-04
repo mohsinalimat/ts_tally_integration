@@ -35,9 +35,9 @@ def get_item(company_id = None):
         hsn_code = item.gst_hsn_code if is_gst_applicable == 'Applicable' else ''
         hsn_desc_clean = hsn_desc.replace('\n', ' ') if is_gst_applicable == 'Applicable' else ''
         gst_type_of_supply = "Goods" if is_gst_applicable == 'Applicable' else ''
-        cgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else '0'
-        sgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else '0'
-        igst = str(int(item_tax_template[0]['gst_rate'])) if item_tax_template and is_gst_applicable == 'Applicable' else '0'
+        cgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else ""
+        sgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else ""
+        igst = str(int(item_tax_template[0]['gst_rate'])) if item_tax_template and is_gst_applicable == 'Applicable' else ""
 
         item_dict = {
             "Autoid": item.item_name,

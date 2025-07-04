@@ -876,8 +876,13 @@ def get_sales_inv(company_id = None):
 
 
 
+
+
 @frappe.whitelist()
 def fetch_response(response):
+    # Log the raw incoming response
+    frappe.log_error(title="Tally Sales Response Received", message=response)
+
     data = json.loads(response) if isinstance(response, str) else response
     sales_response = data.get("SALES RESPONSE", [])
 
@@ -906,9 +911,8 @@ def fetch_response(response):
         else:
             frappe.log_error(f"Sales Invoice not found for Tally AUTOID: {sales_entry}", "Tally Sales Invoice Sync Error")
 
-    response =  {
-        "status":True,
-        "message":"Updated successfully"
-        }
+    response = {
+        "status": True,
+        "message": "Updated successfully"
+    }
     return Response(json.dumps(response, default=str), content_type='application/json')
-

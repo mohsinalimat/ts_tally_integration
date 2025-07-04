@@ -82,10 +82,27 @@ def get_journal(company_id = None):
     return final_voucher
 
 
+
+
 @frappe.whitelist()
 def fetch_response(response):
-    data = json.loads(response) if isinstance(response, str) else response
+    if not response:
+        frappe.log_error("No response received from Tally", "Tally Journal Entry")
+        return Response(json.dumps({"status": False, "message": "No response received"}), content_type='application/json')
+
+    frappe.log_error(f"Raw Journal Entry Response: {response}", "Tally Journal Entry")
+    
+    try:
+        data = json.loads(response) if isinstance(response, str) else response
+    except Exception as e:
+        frappe.log_error(f"JSON decode failed: {str(e)}", "Tally Journal Entry")
+        return Response(json.dumps({"status": False, "message": "Invalid JSON"}), content_type='application/json')
+
     journal_response = data.get("JOURNAL RESPONSE", [])
+
+    if not journal_response:
+        frappe.log_error("No JOURNAL RESPONSE found in Tally response", "Tally Journal Entry")
+        return Response(json.dumps({"status": False, "message": "No journal response found"}), content_type='application/json')
 
     for response in journal_response:
         journal_entry = response.get("AUTOID")
@@ -102,7 +119,7 @@ def fetch_response(response):
             import_date = datetime.strptime(import_date, "%Y%m%d").date()
             import_time = datetime.strptime(import_time, "%H:%M:%S").time()
 
-            frappe.db.set_value("Sales Invoice", existing_journal, {
+            frappe.db.set_value("Journal Entry", existing_journal, {
                 "custom_tally_auto_id": journal_entry,
                 "custom_tally_guid": guid,
                 "custom_tally_refno": ref_no,
@@ -111,9 +128,7 @@ def fetch_response(response):
 
         else:
             frappe.log_error(f"Journal Entry not found for Tally AUTOID: {journal_entry}", "Tally Journal Entry Sync Error")
-
-    response =  {
-        "status":True,
-        "message":"Updated successfully"
-        }
-    return Response(json.dumps(response, default=str), content_type='application/json')
+    
+    frappe.db.commit()
+        
+    return Response(json.dumps({"status": True, "message": "Updated successfully"}), content_type='application/json')

@@ -1034,42 +1034,47 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
 
 
 
+
+
+
 @frappe.whitelist()
 def fetch_response(response):
+    if not response:
+        frappe.log_error("No response received from Tally", "Tally Purchase Invoice")
+        return Response(json.dumps({"status": False, "message": "No response received"}), content_type='application/json')
+
+    frappe.log_error(f"Raw Purchase Invoice Response: {response}", "Tally Purchase Invoice")
+
     try:
-        frappe.log_error(title="fetch_response called", message = response)
+        data = json.loads(response) if isinstance(response, str) else response
+    except json.JSONDecodeError as json_error:
+        frappe.log_error(f"JSON Decode Error: {json_error}\n\nResponse:\n{response}", "Tally Purchase JSON Error")
+        return Response(json.dumps({"status": False, "message": "Invalid JSON format received from Tally"}), content_type='application/json')
 
-        try:
-            data = json.loads(response)
-        except json.JSONDecodeError as json_error:
-            frappe.log_error(f"JSON Decode Error: {json_error}\n\nResponse:\n{response}", "Tally JSON Error")
-            return {
-                "status": False,
-                "message": "Invalid JSON format received from Tally."
-            }
+    purchase_response = data.get("PURCHASE RESPONSE", [])
 
-        purchase_response = data.get("PURCHASE RESPONSE", [])
+    if not purchase_response:
+        frappe.log_error("No PURCHASE RESPONSE found in Tally response", "Tally Purchase Invoice")
+        return Response(json.dumps({"status": False, "message": "No purchase response found"}), content_type='application/json')
 
-        for item in purchase_response:
-            purchase_entry = item.get("AUTOID")
-            guid = item.get("GUID")
-            ref_no = item.get("REFNO")
-            import_date = item.get("IMPORTDATE")
-            import_time = item.get("IMPORTTIME")
 
-            if not purchase_entry:
-                frappe.log_error(f"No AUTOID found in response: {item}", "Tally Sync Warning")
-                continue
+    for item in purchase_response:
+        purchase_entry = item.get("AUTOID")
+        guid = item.get("GUID")
+        ref_no = item.get("REFNO")
+        import_date = item.get("IMPORTDATE")
+        import_time = item.get("IMPORTTIME")
 
-            existing_purchase = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
-            if existing_purchase:
-                try:
-                    import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
-                    import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
-                    sync_datetime = datetime.combine(import_date_obj, import_time_obj)
-                except Exception as dt_error:
-                    frappe.log_error(f"Date/Time format error in response: {item}\nError: {dt_error}", "Tally Sync DateTime Error")
-                    continue
+        if not purchase_entry:
+            frappe.log_error(f"No AUTOID found in response: {item}", "Tally Purchase Sync Warning")
+            continue
+
+        existing_purchase = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
+        if existing_purchase:
+            try:
+                import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
+                import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
+                sync_datetime = datetime.combine(import_date_obj, import_time_obj)
 
                 frappe.db.set_value("Purchase Invoice", existing_purchase, {
                     "custom_tally_auto_id": purchase_entry,
@@ -1077,17 +1082,14 @@ def fetch_response(response):
                     "custom_tally_refno": ref_no,
                     "custom_sync_time": sync_datetime
                 })
-            else:
-                frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
 
-        return {
-            "status": True,
-            "message": "Updated successfully"
-        }
+            except Exception as dt_error:
+                frappe.log_error(f"Date/Time format error in response: {item}\nError: {dt_error}", "Tally Purchase Sync DateTime Error")
+        else:
+            frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
 
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Error in fetch_response")
-        return {
-            "status": False,
-            "message": "An error occurred while processing the Tally response"
-        }
+    return Response(json.dumps({
+        "status": True,
+        "message": "Updated successfully"
+    }), content_type='application/json')
+

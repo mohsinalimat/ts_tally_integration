@@ -17,7 +17,7 @@ def get_payment_entry(company_id=None):
         return Response(json.dumps("Company is not found. Please check the company id!", default=str), content_type='application/json', status=404)
   
     doc_list = frappe.get_list('Payment Entry',
-                               filters={'docstatus': 1, "company" : tally_company_table.company_name, 'payment_type': 'Pay', 'custom_tally_guid': ['in', ['', None]]},
+                               filters={'docstatus': 1, "company" : tally_company_table.company_name, 'payment_type': 'Pay', 'custom_tally_guid': ['is', 'not set']},
                                fields=['*'])
 
     list_of_json_suppliers = []
@@ -135,10 +135,27 @@ def get_payment_entry(company_id=None):
 
 
 
+
+
 @frappe.whitelist()
 def fetch_response(response):
-    data = json.loads(response) if isinstance(response, str) else response
+    if not response:
+        frappe.log_error("No response received from Tally", "Tally Payment Entry")
+        return Response(json.dumps({"status": False, "message": "No response received"}), content_type='application/json')
+
+    frappe.log_error(f"Raw Payment Entry Response: {response}", "Tally Payment Entry")
+
+    try:
+        data = json.loads(response) if isinstance(response, str) else response
+    except Exception as e:
+        frappe.log_error(f"JSON decode failed: {str(e)}", "Tally Payment Entry")
+        return Response(json.dumps({"status": False, "message": "Invalid JSON"}), content_type='application/json')
+
     payment_response = data.get("PAYMENT RESPONSE", [])
+
+    if not payment_response:
+        frappe.log_error("No PAYMENT RESPONSE found in Tally response", "Tally Payment Entry")
+        return Response(json.dumps({"status": False, "message": "No payment response found"}), content_type='application/json')
 
     for response in payment_response:
         payment_entry = response.get("AUTOID")
@@ -152,21 +169,22 @@ def fetch_response(response):
 
         existing_payment = frappe.db.get_value("Payment Entry", {"name": payment_entry}, "name")
         if existing_payment:
-            import_date = datetime.strptime(import_date, "%Y%m%d").date()
-            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+            try:
+                import_date = datetime.strptime(import_date, "%Y%m%d").date()
+                import_time = datetime.strptime(import_time, "%H:%M:%S").time()
 
-            frappe.db.set_value("Payment Entry", existing_payment, {
-                "custom_tally_auto_id": payment_entry,
-                "custom_tally_guid": guid,
-                "custom_tally_refno": ref_no,
-                "custom_sync_time": datetime.combine(import_date, import_time)
-            })
-
+                frappe.db.set_value("Payment Entry", existing_payment, {
+                    "custom_tally_auto_id": payment_entry,
+                    "custom_tally_guid": guid,
+                    "custom_tally_refno": ref_no,
+                    "custom_sync_time": datetime.combine(import_date, import_time)
+                })
+            except Exception as e:
+                frappe.log_error(f"Failed to update Payment Entry {payment_entry}: {str(e)}", "Tally Payment Entry Update Error")
         else:
             frappe.log_error(f"Payment Entry not found for Tally AUTOID: {payment_entry}", "Tally Payment Entry Sync Error")
- 
-    response =  {
-        "status":True,
-        "message":"Updated successfully"
-        }
-    return Response(json.dumps(response, default=str), content_type='application/json')
+
+    return Response(json.dumps({
+        "status": True,
+        "message": f"Updated successfully"
+    }), content_type='application/json')
