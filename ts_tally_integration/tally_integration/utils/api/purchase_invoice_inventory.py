@@ -1083,10 +1083,13 @@ def fetch_response(response):
                     "custom_sync_time": sync_datetime
                 })
 
+
             except Exception as dt_error:
                 frappe.log_error(f"Date/Time format error in response: {item}\nError: {dt_error}", "Tally Purchase Sync DateTime Error")
         else:
             frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
+
+    frappe.db.commit()
 
     return Response(json.dumps({
         "status": True,

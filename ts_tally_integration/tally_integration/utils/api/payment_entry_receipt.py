@@ -185,7 +185,10 @@ def fetch_response(response):
         else:
             frappe.log_error(f"Payment Entry not found for Tally AUTOID: {payment_entry}", "Tally Payment Entry Sync Error")
 
+    frappe.db.commit()
+
     return Response(json.dumps({
         "status": True,
         "message": f"Updated successfully"
     }), content_type='application/json')
+
