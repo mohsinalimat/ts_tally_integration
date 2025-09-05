@@ -194,7 +194,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                         "Narration": (document.remarks).replace("\n",". ") if document.remarks else "",
                     }
                 list_of_purchase_invoices.append(doc_json)
-            
+
             else:
                 parent_acc = frappe.get_doc("Account", key)
                 doc_json = {
@@ -1031,6 +1031,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
     
    
     return list_of_purchase_invoices
+
 
 
 

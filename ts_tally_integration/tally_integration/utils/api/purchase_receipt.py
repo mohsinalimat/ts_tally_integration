@@ -20,8 +20,9 @@ def _get_address_details(address_doc):
     )
 
 
+
 @frappe.whitelist()
-def get_delivery_note(company_id=None):
+def get_purchsase_receipt(company_id=None):
     if not company_id:
         return Response(json.dumps({'status': False, 'message': 'Company Number not found!'}), content_type='application/json')
 
@@ -34,20 +35,20 @@ def get_delivery_note(company_id=None):
 
     all_vouchers = []
 
-    delivery_notes = frappe.get_list('Delivery Note', filters={
+    delivery_notes = frappe.get_list('Purchase Receipt', filters={
         'company': company_name, 'is_return': 0, 'docstatus': 1
     }, fields=['*'])
 
     for doc in delivery_notes:
         # Customer address
-        cus_address = frappe.get_list('Address', filters={'name': doc.customer_address}, fields=['*']) if doc.customer_address else []
+        cus_address = frappe.get_list('Address', filters={'name': doc.supplier_address}, fields=['*']) if doc.supplier_address else []
         addr = _get_address_details(cus_address)
         customer_pan = frappe.get_value('Customer', doc.customer_name, 'pan')
         # Shipping address
-        cus_ship_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
+        cus_ship_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Supplier', 'link_name': doc['supplier']}, fields=['parent'])
         cus_ship_address = frappe.get_list('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
         ship_addr = _get_address_details(cus_ship_address)
-        cust_doc = frappe.get_doc('Customer', doc.customer)
+        cust_doc = frappe.get_doc('Supplier', doc.supplier)
         gst_category = {
             "Unregistered": "Unregistered/Consumer",
             "Registered Regular": "Regular",
@@ -63,8 +64,8 @@ def get_delivery_note(company_id=None):
             "Voucherid": doc.name,
             "VoucherNumber": doc.name,
             "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-            "VoucherType": "Delivery Note",
-            "VoucherTypeParent": "Delivery Note",
+            "VoucherType": "Purchase Receipt",
+            "VoucherTypeParent": "Purchase Receipt",
             "LedgerName": doc.customer_name,
             "LedgerParent": "Sundry Debtors",
             "LedgerAddress": addr['city'],
@@ -149,7 +150,7 @@ def get_delivery_note(company_id=None):
         })
 
         # 2. GST Ledgers (per item, for demo — you may need to aggregate instead of per row)
-        items = frappe.get_all('Delivery Note Item', filters={'parent': doc.name}, fields=['*'])
+        items = frappe.get_all('Purchase Receipt Item', filters={'parent': doc.name}, fields=['*'])
         for item in items:
             # Only add tax ledgers if present
             if float(item.get('cgst_rate') or 0) > 0:
@@ -161,8 +162,8 @@ def get_delivery_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": "Delivery Note",
-                    "VoucherTypeParent": "Delivery Note",
+                    "VoucherType": "Purchase Receipt",
+                    "VoucherTypeParent": "Purchase Receipt",
                     "LedgerName": f"Input CGST @ {item['cgst_rate']}%",
                     "LedgerParent": "Duties & Taxes",
                     "LedgerAddress": "",
@@ -255,8 +256,8 @@ def get_delivery_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": "Delivery Note",
-                    "VoucherTypeParent": "Delivery Note",
+                    "VoucherType": "Purchase Receipt",
+                    "VoucherTypeParent": "Purchase Receipt",
                     "LedgerName":  f"Input SGST @ {item.get('sgst_rate')}%",
                     "LedgerParent": "Duties & Taxes",
                     "LedgerAddress": "",
@@ -350,8 +351,8 @@ def get_delivery_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": "Delivery Note",
-                    "VoucherTypeParent": "Delivery Note",
+                    "VoucherType": "Purchase Receipt",
+                    "VoucherTypeParent": "Purchase Receipt",
                     "LedgerName": f"Input IGST @ {item['igst_rate']}%",
                     "LedgerParent": "Duties & Taxes",
                     "LedgerAddress": "",
@@ -435,7 +436,7 @@ def get_delivery_note(company_id=None):
                     "Narration": ""
                 })
 
-        items = frappe.get_all('Delivery Note Item', filters={'parent': doc.name}, fields=['*'])
+        items = frappe.get_all('Purchase Receipt Item', filters={'parent': doc.name}, fields=['*'])
         for item in items:
             gst_percent = (item.get('cgst_rate') or 0) + (item.get('sgst_rate') or 0) + (item.get('igst_rate') or 0)
             ledger_name = f"Sales @ {gst_percent}%"
@@ -447,8 +448,8 @@ def get_delivery_note(company_id=None):
                 "Voucherid": doc.name,
                 "VoucherNumber": doc.name,
                 "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                "VoucherType": "Delivery Note",
-                "VoucherTypeParent": "Delivery Note",
+                "VoucherType": "Purchase Receipt",
+                "VoucherTypeParent": "Purchase Receipt",
                 "LedgerName": ledger_name,
                 "LedgerParent": "Sales Accounts",
                 "LedgerAddress": "",
@@ -544,8 +545,8 @@ def get_delivery_note(company_id=None):
                 "Voucherid": doc.name,
                 "VoucherNumber": doc.name,
                 "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                "VoucherType": "Delivery Note",
-                "VoucherTypeParent": "Delivery Note",
+                "VoucherType": "Purchase Receipt",
+                "VoucherTypeParent": "Purchase Receipt",
                 "LedgerName": expense.description,
                 "LedgerParent": parent_account,
                 "LedgerAddress": "",
@@ -640,8 +641,8 @@ def get_delivery_note(company_id=None):
                 "Voucherid": doc.name,
                 "VoucherNumber": doc.name,
                 "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                "VoucherType": "Delivery Note",
-                "VoucherTypeParent": "Delivery Note",
+                "VoucherType": "Purchase Receipt",
+                "VoucherTypeParent": "Purchase Receipt",
                 "LedgerName": "Round Off",
                 "LedgerParent": "Indirect Expenses",
                 "LedgerAddress": "",
@@ -735,32 +736,32 @@ def get_delivery_note(company_id=None):
 @frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
-    delivery_response = data.get("DELIVERYNOTE RESPONSE", [])
+    purchasereceipt_response = data.get("PURCHASERECEIPT RESPONSE", [])
 
-    for response in delivery_response:
-        delivery_note_entry = response.get("AUTOID")
+    for response in purchasereceipt_response:
+        purchasereceipt_response = response.get("AUTOID")
         guid = response.get("GUID")
         ref_no = response.get("REFNO")
         import_date = response.get("IMPORTDATE")
         import_time = response.get("IMPORTTIME")
 
-        if not existing_delivery:
+        if not purchasereceipt_response:
             continue
 
-        existing_delivery = frappe.db.get_value("Delivery Note", {"name": delivery_note_entry}, "name")
-        if existing_delivery:
+        existing_purchase = frappe.db.get_value("Purchase Receipt", {"name": purchasereceipt_response}, "name")
+        if existing_purchase:
             import_date = datetime.strptime(import_date, "%Y%m%d").date()
             import_time = datetime.strptime(import_time, "%H:%M:%S").time()
 
-            frappe.db.set_value("Delivery Note", existing_delivery, {
-                "custom_tally_auto_id": existing_delivery,
+            frappe.db.set_value("Purchase Receipt", existing_purchase, {
+                "custom_tally_auto_id": existing_purchase,
                 "custom_tally_guid": guid,
                 "custom_tally_refno": ref_no,
                 "custom_sync_time": datetime.combine(import_date, import_time)
             })
 
         else:
-            frappe.log_error(f"Delivery Note not found for Tally AUTOID: {existing_delivery}", "Tally Delivery Note Sync Error")
+            frappe.log_error(f"Purchase Receipt not found for Tally AUTOID: {existing_purchase}", "Tally Purchase Receipt Sync Error")
 
     response =  {
         "status":True,

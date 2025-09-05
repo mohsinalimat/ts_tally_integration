@@ -20,7 +20,7 @@ def get_sales_inv(company_id = None):
         return Response(json.dumps(empty, default=str), content_type='application/json')
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
-    
+
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
     company_address = frappe.get_list('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
     company_gst = frappe.get_value('Company', {'name': company_name}, ['gstin'])
@@ -64,6 +64,8 @@ def get_sales_inv(company_id = None):
             if account_type == 'Income Account':
                 ledgername = invoice['account']
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+
+                ledger_suffix = None
 
                 sales_item = frappe.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
@@ -152,8 +154,8 @@ def get_sales_inv(company_id = None):
                             "CmpGstState":company_address[0]['state'],
                             "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
                             "GstOvrdnTypeofsupply":"Goods",
-                            "GstHsnName":item['gst_hsn_code'],
-                            "GstHsnDescription":hsn_desc.replace('\n', ' '),
+                            "GstHsnName":item['gst_hsn_code'] if item['gst_hsn_code'] else "",
+                            "GstHsnDescription":hsn_desc.replace('\n', ' ') if item['gst_hsn_code'] else "",
                             "CgstGstRateDutyhead":"CGST",
                             "CgstGstRateValuationtype":"Based on Value",
                             "CgstGstRate":item['cgst_rate'] if item['cgst_rate'] else "",
@@ -764,8 +766,8 @@ def get_sales_inv(company_id = None):
                 }
 
                 all_vouchers.append(ledger_dict)
-                
-                
+
+
             elif account_type == 'Round Off':
                 ledgername = 'Roundoff'
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')

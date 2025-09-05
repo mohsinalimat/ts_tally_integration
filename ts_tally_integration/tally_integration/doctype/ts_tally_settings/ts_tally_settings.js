@@ -7,6 +7,7 @@ frappe.ui.form.on('TS Tally Settings', {
     }
 });
 
+
 function fetch_unmapped_accounts(frm) {
     if (frm.fields_dict['unmapped_accounts']) {
         frappe.call({
@@ -34,7 +35,7 @@ function fetch_unmapped_accounts(frm) {
                             </tr>
                         `;
                     });
-                    
+
 
                     frm.fields_dict['unmapped_accounts'].html(table);
                 } else {
@@ -44,3 +45,5 @@ function fetch_unmapped_accounts(frm) {
         });
     }
 }
+
+
