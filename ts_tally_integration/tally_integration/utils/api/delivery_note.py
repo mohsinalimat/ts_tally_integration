@@ -20,7 +20,7 @@ def _get_address_details(address_doc):
     )
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_delivery_note(company_id=None):
     if not company_id:
         return Response(json.dumps({'status': False, 'message': 'Company Number not found!'}), content_type='application/json')
@@ -732,7 +732,7 @@ def get_delivery_note(company_id=None):
 
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     delivery_response = data.get("DELIVERYNOTE RESPONSE", [])

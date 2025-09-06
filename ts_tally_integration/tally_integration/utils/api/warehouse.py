@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from werkzeug.wrappers import Response
 
-@frappe.whitelist(allow_guest = True)
+@frappe.whitelist(allow_guest=True)
 def get_warehouse(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')

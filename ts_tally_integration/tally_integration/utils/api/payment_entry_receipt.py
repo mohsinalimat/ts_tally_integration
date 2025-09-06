@@ -5,7 +5,7 @@ from werkzeug.wrappers import Response
 from itertools import chain
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_payment_entry(company_id=None):
 
     if company_id == None:
@@ -138,7 +138,7 @@ def get_payment_entry(company_id=None):
 
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def fetch_response(response):
     if not response:
         frappe.log_error("No response received from Tally", "Tally Payment Entry")

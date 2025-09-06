@@ -4,7 +4,7 @@ import json
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def credit_note_non_inv(company_id = None):
     if company_id == None:
         return Response(json.dumps('Company Number not found!', default=str), content_type='application/json')
@@ -782,7 +782,7 @@ def credit_note_non_inv(company_id = None):
     return final_voucher
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     sales_response = data.get("CREDITNOTE RESPONSE", [])

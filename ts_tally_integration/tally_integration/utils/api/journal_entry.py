@@ -4,7 +4,7 @@ from datetime import datetime
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_journal(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
@@ -84,7 +84,7 @@ def get_journal(company_id = None):
 
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def fetch_response(response):
     if not response:
         frappe.log_error("No response received from Tally", "Tally Journal Entry")

@@ -4,7 +4,7 @@ import json
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_sales_non_inv(company_id = None):
     if company_id == None:
         return Response(json.dumps('Company Number not found!', default=str), content_type='application/json')
@@ -784,7 +784,7 @@ def get_sales_non_inv(company_id = None):
 
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     sales_response = data.get("SALES RESPONSE", [])

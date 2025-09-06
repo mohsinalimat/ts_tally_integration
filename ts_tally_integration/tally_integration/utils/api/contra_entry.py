@@ -4,7 +4,7 @@ from datetime import datetime
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_contra(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
@@ -72,7 +72,7 @@ def get_contra(company_id = None):
     return final_voucher
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     contra_response = data.get("CONTRA RESPONSE", [])
