@@ -13,11 +13,11 @@ def get_contra(company_id = None):
 
     all_vouchers = []
 
-    journal_list = frappe.get_list('Journal Entry',
+    journal_list = frappe.get_all('Journal Entry',
                                    filters={'company':company_name,'voucher_type':'Contra Entry', 'custom_tally_guid': ['in', ['', None]]},
                                    fields=['*'])
     for list in journal_list:
-        journal_gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
+        journal_gl_entry = frappe.get_all('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
 
         for entry in journal_gl_entry:
             parent_account = frappe.get_value('Account', entry['account'], 'custom_tally_parent_account')

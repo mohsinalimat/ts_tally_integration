@@ -16,7 +16,7 @@ def get_payment_entry(company_id=None):
     if not tally_company_table:
         return Response(json.dumps("Company is not found. Please check the company id!", default=str), content_type='application/json', status=404)
   
-    doc_list = frappe.get_list('Payment Entry',
+    doc_list = frappe.get_all('Payment Entry',
                                filters={'docstatus': 1, "company" : tally_company_table.company_name, 'payment_type': 'Pay', 'custom_tally_guid': ['is', 'not set']},
                                fields=['*'])
 

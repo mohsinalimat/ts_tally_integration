@@ -24,7 +24,7 @@ def get_purchase_invoice(company_id=None):
             })
         return Response(json.dumps(empty, default=str), content_type='application/json')
 
-    doc_list = frappe.get_list('Purchase Invoice',
+    doc_list = frappe.get_all('Purchase Invoice',
                                filters = {'docstatus': 1, "company" : tally_company_table.company_name,"update_stock":0, 'is_return': 0, 'custom_tally_guid': ['in', ['', None]]},
                                fields = ['*'])
     list_of_purchases= []

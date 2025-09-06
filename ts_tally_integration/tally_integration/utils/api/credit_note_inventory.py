@@ -21,12 +21,12 @@ def credit_note_inv(company_id = None):
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
-    company_address = frappe.get_list('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
+    company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
     company_gst = frappe.get_value('Company', {'name': company_name}, ['gstin'])
     
     all_vouchers = []
 
-    credit_list = frappe.get_list('Sales Invoice',
+    credit_list = frappe.get_all('Sales Invoice',
                                   filters = {'company':company_name,'is_return':1, 'update_stock':1, 'docstatus':1, 'custom_tally_guid': ['in', ['', None]]},
                                   fields = ['*'])
     for doc in credit_list:
@@ -34,14 +34,14 @@ def credit_note_inv(company_id = None):
         tax_processed = False
 
         if doc.customer_address:
-            cus_address = frappe.get_list('Address', filters={'name': doc.customer_address}, fields=['*'])
+            cus_address = frappe.get_all('Address', filters={'name': doc.customer_address}, fields=['*'])
         else:
             cus_address = []
 
         customer_pan = frappe.get_value('Customer', {'name': doc.customer_name}, ['pan'])
 
         cus_ship_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
-        cus_ship_address = frappe.get_list('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
+        cus_ship_address = frappe.get_all('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
 
         cust_gstin = frappe.get_doc('Customer', doc.customer)
 
@@ -53,7 +53,7 @@ def credit_note_inv(company_id = None):
         }.get(cust_gstin.gst_category, cust_gstin.gst_category)
 
 
-        gl_entry = frappe.get_list('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
+        gl_entry = frappe.get_all('GL Entry', filters = {'voucher_no':doc.name}, fields = ['*'])
         gl_entry = gl_entry[::-1]
 
         for ledger in gl_entry:

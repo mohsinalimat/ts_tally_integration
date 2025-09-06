@@ -34,18 +34,18 @@ def get_delivery_note(company_id=None):
 
     all_vouchers = []
 
-    delivery_notes = frappe.get_list('Delivery Note', filters={
+    delivery_notes = frappe.get_all('Delivery Note', filters={
         'company': company_name, 'is_return': 0, 'docstatus': 1
     }, fields=['*'])
 
     for doc in delivery_notes:
         # Customer address
-        cus_address = frappe.get_list('Address', filters={'name': doc.customer_address}, fields=['*']) if doc.customer_address else []
+        cus_address = frappe.get_all('Address', filters={'name': doc.customer_address}, fields=['*']) if doc.customer_address else []
         addr = _get_address_details(cus_address)
         customer_pan = frappe.get_value('Customer', doc.customer_name, 'pan')
         # Shipping address
         cus_ship_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
-        cus_ship_address = frappe.get_list('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
+        cus_ship_address = frappe.get_all('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
         ship_addr = _get_address_details(cus_ship_address)
         cust_doc = frappe.get_doc('Customer', doc.customer)
         gst_category = {

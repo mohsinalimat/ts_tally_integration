@@ -11,12 +11,12 @@ def get_party(company_id = None):
     auto_id = 1
     all_doc = []
 
-    suppliers = frappe.get_list('Supplier', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    suppliers = frappe.get_all('Supplier', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
     
     for supplier in suppliers:
 
         if supplier.get('supplier_primary_address'):
-            supplier_address = frappe.get_list('Address',
+            supplier_address = frappe.get_all('Address',
                 filters={'name': supplier['supplier_primary_address']},
                 fields=['*'])
         else:
@@ -41,11 +41,11 @@ def get_party(company_id = None):
 
         all_doc.append(supplier_dict)
 
-    customers = frappe.get_list('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
 
     for customer in customers:
         if customer.get('customer_primary_address'):
-            customer_address = frappe.get_list('Address',
+            customer_address = frappe.get_all('Address',
                 filters={'name': customer['customer_primary_address']},
                 fields=['*'])
         else:

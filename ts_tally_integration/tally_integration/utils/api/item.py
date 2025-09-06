@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_list('Item', filters={'disabled': 0, 'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
 
     for item in items:
         tax_template = frappe.get_all('Item Tax', filters={'parent': item.name}, fields=['*'])
@@ -23,7 +23,7 @@ def get_item(company_id = None):
         item_tax_template = []
 
         for i in tax_template:
-            item_tax_template = frappe.get_list('Item Tax Template', filters={'company': company_name, 'name': i.item_tax_template}, fields=['*'])
+            item_tax_template = frappe.get_all('Item Tax Template', filters={'company': company_name, 'name': i.item_tax_template}, fields=['*'])
             if item_tax_template:
                 taxability = 'Taxable' if item_tax_template[0]['gst_treatment'] == 'Taxable' else ""
             else:
