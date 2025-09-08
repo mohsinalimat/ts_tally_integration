@@ -5,7 +5,7 @@ from werkzeug.wrappers import Response
 from itertools import chain
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_purchase_invoice(company_id=None):
     if company_id == None:
         return Response(json.dumps("Company ID is not found!", default=str), content_type='application/json', status=404)
@@ -1036,9 +1036,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
 
 
 
-
-
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def fetch_response(response):
     if not response:
         frappe.log_error("No response received from Tally", "Tally Purchase Invoice")

@@ -21,7 +21,7 @@ def _get_address_details(address_doc):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_purchsase_receipt(company_id=None):
     if not company_id:
         return Response(json.dumps({'status': False, 'message': 'Company Number not found!'}), content_type='application/json')
@@ -733,7 +733,7 @@ def get_purchsase_receipt(company_id=None):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     purchasereceipt_response = data.get("PURCHASERECEIPT RESPONSE", [])

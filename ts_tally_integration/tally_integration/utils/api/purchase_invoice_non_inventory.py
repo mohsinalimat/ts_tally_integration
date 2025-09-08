@@ -5,7 +5,7 @@ from werkzeug.wrappers import Response
 from itertools import chain
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_purchase_invoice(company_id=None):
     if company_id == None:
         return Response(json.dumps("Company ID is not found!", default=str), content_type='application/json', status=404)
@@ -1041,7 +1041,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
     return list_of_purchase_invoices
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     purchase_response = data.get("PURCHASE RESPONSE", [])

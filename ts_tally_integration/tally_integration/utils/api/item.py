@@ -4,7 +4,7 @@ from datetime import datetime
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_item(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
@@ -80,7 +80,7 @@ def get_item(company_id = None):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def fetch_response(response=None):
     data = json.loads(response) if isinstance(response, str) else response
     items = data.get("STOCKITEM RESPONSE", [])
@@ -124,3 +124,6 @@ def fetch_response(response=None):
         "message":"Updated successfully"
     }
     return Response(json.dumps(response, default=str), content_type='application/json')
+
+
+

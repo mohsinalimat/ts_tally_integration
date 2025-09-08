@@ -4,7 +4,7 @@ import json
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_stock_entry(company_id=None):
     import json
     from frappe.utils.response import Response
@@ -126,7 +126,7 @@ def get_stock_entry(company_id=None):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     stockjournal_response = data.get("STOCKJOURNAL RESPONSE", [])

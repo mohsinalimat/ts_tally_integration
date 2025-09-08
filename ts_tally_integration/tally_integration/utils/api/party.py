@@ -4,7 +4,7 @@ from datetime import datetime
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_party(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
@@ -85,7 +85,7 @@ def get_party(company_id = None):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
     parties = data.get("LEDGER RESPONSE", [])
