@@ -111,7 +111,7 @@ def get_sales_inv(company_id = None):
                         "Godown": item['warehouse'].split('-')[0].strip(),
                         "BatchNo": "",
                         "Quantity": item['qty'],
-                        "Rate": item['net_rate'],
+                        "Rate": item['net_amount'],
                         "Discount": "",
                         "Amount": item['net_amount'],
                         "OrderNo": "",

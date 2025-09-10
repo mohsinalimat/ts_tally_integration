@@ -113,7 +113,7 @@ def get_sales_non_inv(company_id = None):
                         "Quantity": "",
                         "Rate": "",
                         "Discount": "",
-                        "Amount": item['net_rate'],
+                        "Amount": item['net_amount'],
                         "OrderNo": "",
                         "OrderDate": "",
                         "TrackingNo": "",
