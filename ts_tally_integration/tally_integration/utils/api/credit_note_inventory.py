@@ -591,7 +591,7 @@ def credit_note_inv(company_id = None):
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "VoucherType": 'Credit Note',
                     "VoucherTypeParent": "Credit Note",
-                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerName": ledgername,
                     "LedgerParent": tally_parent,
 
                     "LedgerAddress": cus_address[0]['city'] if cus_address and tally_parent== "Sundry Debtors" else "", 

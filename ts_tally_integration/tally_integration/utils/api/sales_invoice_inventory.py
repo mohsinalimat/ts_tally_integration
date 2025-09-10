@@ -155,7 +155,7 @@ def get_sales_inv(company_id = None):
                             "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
                             "GstOvrdnTypeofsupply":"Goods",
                             "GstHsnName":item['gst_hsn_code'] if item['gst_hsn_code'] else "",
-                            "GstHsnDescription":hsn_desc.replace('\n', ' ') if item['gst_hsn_code'] else "",
+                            "GstHsnDescription": (hsn_desc or "").replace('\n', ' ') if item.get('gst_hsn_code') else "",
                             "CgstGstRateDutyhead":"CGST",
                             "CgstGstRateValuationtype":"Based on Value",
                             "CgstGstRate":item['cgst_rate'] if item['cgst_rate'] else "",
@@ -590,7 +590,7 @@ def get_sales_inv(company_id = None):
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "VoucherType": 'sales',
                     "VoucherTypeParent": "Sales",
-                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerName": ledgername,
                     "LedgerParent": parent_account,
 
                     "LedgerAddress": cus_address[0]['city'] if cus_address and parent_account== "Sundry Debtors" else "", 

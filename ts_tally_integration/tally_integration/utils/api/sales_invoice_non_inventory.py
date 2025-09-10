@@ -70,14 +70,14 @@ def get_sales_non_inv(company_id = None):
                 sales_item = frappe.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
                 for item in sales_item:
-                        
-                        hsn_desc = frappe.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
-                        if item['sgst_rate']:
-                            ledger_suffix = item['sgst_rate'] + item['cgst_rate']
-                        elif item['gst_treatment'] == 'Exempted':
-                            ledger_suffix = 'Exempt'
-                        elif item['igst_rate']:
-                            ledger_suffix = item['igst_rate']
+
+                    hsn_desc = frappe.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
+                    if item['sgst_rate']:
+                        ledger_suffix = item['sgst_rate'] + item['cgst_rate']
+                    elif item['gst_treatment'] == 'Exempted':
+                        ledger_suffix = 'Exempt'
+                    elif item['igst_rate']:
+                        ledger_suffix = item['igst_rate']
 
                         ledger_dict = {
                             "Autoid": doc.name,
@@ -590,7 +590,7 @@ def get_sales_non_inv(company_id = None):
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "VoucherType": 'sales',
                     "VoucherTypeParent": "Sales",
-                    "LedgerName": ledgername.split(" - ")[0],
+                    "LedgerName": ledgername,
                     "LedgerParent": parent_account,
 
                     "LedgerAddress": cus_address[0]['city'] if cus_address and parent_account== "Sundry Debtors" else "", 

@@ -4,67 +4,57 @@ from werkzeug.wrappers import Response
 from collections import defaultdict, deque
 from datetime import datetime
 
+
+
 @frappe.whitelist()
-def get_itemgroup(company_id=None):
-    if not company_id:
+def get_itemgroup(company_id = None):
+    if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
+    non_group = []
+    group_item_group = []
 
-    item_groups = frappe.get_all(
-        'Item Group',
-        filters={'custom_status': ['!=', 'SUCCESS']},
-        fields=['name', 'is_group', 'parent_item_group']
-    )
-
-    # Organize item groups by parent
-    parent_map = defaultdict(list)
-    items_by_name = {}
-
+    item_groups = frappe.get_all('Item Group', filters = {'custom_status': ['!=', 'SUCCESS']}, fields = ['name', 'is_group', 'parent_item_group'])
     for group in item_groups:
-        items_by_name[group['name']] = group
-        parent = group['parent_item_group'] or 'Primary'
-        parent_map[parent].append(group['name'])
 
-    result = []
-    visited = set()
-
-    def process_group(group_name):
-        if group_name in visited:
-            return
-        visited.add(group_name)
-
-        group = items_by_name.get(group_name)
-        if group:
+        if not group.is_group:
             item_group_dict = {
-                "Autoid": group['name'],
+                "Autoid": group.name,
                 "CompanyNumber": str(company_id),
-                "Name": group['name'],
-                "Parent": group['parent_item_group'] or 'Primary',
+                "Name": group.name,
+                "Parent": group.parent_item_group,
             }
-            result.append(item_group_dict)
 
-        for child in parent_map.get(group_name, []):
-            process_group(child)
+            non_group.append(item_group_dict)
 
-    # Start from root nodes (parent = 'Primary')
-    for root_group in parent_map['Primary']:
-        process_group(root_group)
+        if group.is_group:
+            item_group_dict = {
+                "Autoid": group.name,
+                "CompanyNumber": str(company_id),
+                "Name": group.name,
+                "Parent": 'Primary',
+            }
 
-    final_voucher = {
+            group_item_group.append(item_group_dict)
+
+
+    final_voucher = ({
         "status": True,
         "VOUCHERDETAILS": {
-            "STOCKGROUPS": result
+            "STOCKGROUPS": non_group + group_item_group
         }
-    }
+    })
 
-    response = Response(json.dumps(final_voucher, default=str), content_type='application/json')
-    response.status_code = 200
-    return response
+    final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
+    final_voucher.status_code = 200
+
+    return final_voucher
 
 
 
 
 @frappe.whitelist()
 def fetch_response(response):
+    frappe.log_error(f"Response from Tally: {response}", "Tally Item Group Response")
     data = json.loads(response) if isinstance(response, str) else response
     item_group_list = data.get("STOCKGROUP RESPONSE", [])
 
