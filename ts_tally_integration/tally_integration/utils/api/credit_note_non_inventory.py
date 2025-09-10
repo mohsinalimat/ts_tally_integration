@@ -69,7 +69,9 @@ def credit_note_non_inv(company_id = None):
                 sales_item = frappe.db.get_all('Sales Invoice Item', filters={'parent':doc.name}, fields=['*'])
 
                 for item in sales_item:
-                    hsn_desc = frappe.db.get_value('GST HSN Code', {'name': item['gst_hsn_code']}, 'description')
+                    hsn_desc = frappe.get_value('GST HSN Code', {'name': item.get('gst_hsn_code')}, 'description')
+                    gst_hsn_description = hsn_desc.replace('\n', ' ') if hsn_desc else ""
+
                     if item['sgst_rate']:
                         ledger_suffix = item['sgst_rate'] + item['cgst_rate']
                     elif item['gst_treatment'] == 'Exempted':
@@ -153,7 +155,7 @@ def credit_note_non_inv(company_id = None):
                             "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
                             "GstOvrdnTypeofsupply":"Goods",
                             "GstHsnName":item['gst_hsn_code'] if item['gst_hsn_code'] else "",
-                            "GstHsnDescription":hsn_desc.replace('\n', ' ') if hsn_desc else "",
+                            "GstHsnDescription":gst_hsn_description,
                             "CgstGstRateDutyhead":"CGST",
                             "CgstGstRateValuationtype":"Based on Value",
                             "CgstGstRate":item['cgst_rate'] if item['cgst_rate'] else "",
