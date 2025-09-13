@@ -5,49 +5,66 @@ from collections import defaultdict, deque
 from datetime import datetime
 
 
-
 @frappe.whitelist()
-def get_itemgroup(company_id = None):
-    if company_id == None:
+def get_itemgroup(company_id=None):
+    if company_id is None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
+
+    # Step 1: Fetch all item groups
+    item_groups = frappe.get_all(
+        'Item Group',
+        filters={'custom_status': ['!=', 'SUCCESS']},
+        fields=['name', 'is_group', 'parent_item_group']
+    )
+
+    # Step 2: Build a lookup dict by parent
+    tree = {}
+    group_lookup = {}
+
+    for group in item_groups:
+        group_lookup[group['name']] = group
+        parent = group['parent_item_group'] if group['parent_item_group'] else 'Primary'
+        if parent not in tree:
+            tree[parent] = []
+        tree[parent].append(group['name'])
+
+    # Step 3: Recursive function to traverse the tree
     non_group = []
     group_item_group = []
 
-    item_groups = frappe.get_all('Item Group', filters = {'custom_status': ['!=', 'SUCCESS']}, fields = ['name', 'is_group', 'parent_item_group'])
-    for group in item_groups:
-
-        if not group.is_group:
+    def traverse(parent):
+        children = tree.get(parent, [])
+        for child_name in children:
+            group = group_lookup[child_name]
             item_group_dict = {
-                "Autoid": group.name,
+                "Autoid": group['name'],
                 "CompanyNumber": str(company_id),
-                "Name": group.name,
-                "Parent": group.parent_item_group,
+                "Name": group['name'],
+                "Parent": group['parent_item_group'] if group['parent_item_group'] else 'Primary'
             }
 
-            non_group.append(item_group_dict)
+            if not group['is_group']:
+                non_group.append(item_group_dict)
+            else:
+                group_item_group.append(item_group_dict)
 
-        if group.is_group:
-            item_group_dict = {
-                "Autoid": group.name,
-                "CompanyNumber": str(company_id),
-                "Name": group.name,
-                "Parent": 'Primary',
-            }
+            # Continue traversing deeper
+            traverse(group['name'])
 
-            group_item_group.append(item_group_dict)
+    # Start traversal from 'Primary'
+    traverse('Primary')
 
-
-    final_voucher = ({
+    # Step 4: Prepare response
+    final_voucher = {
         "status": True,
         "VOUCHERDETAILS": {
-            "STOCKGROUPS": non_group + group_item_group
+            "STOCKGROUPS": group_item_group + non_group  # Groups first, then non-groups
         }
-    })
+    }
 
-    final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
-    final_voucher.status_code = 200
-
-    return final_voucher
+    response = Response(json.dumps(final_voucher, default=str), content_type='application/json')
+    response.status_code = 200
+    return response
 
 
 
