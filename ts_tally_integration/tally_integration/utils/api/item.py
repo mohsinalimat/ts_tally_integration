@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ['!=', '']}, fields=['*'])
 
     for item in items:
         tax_template = frappe.get_all('Item Tax', filters={'parent': item.name}, fields=['*'])
@@ -35,15 +35,15 @@ def get_item(company_id = None):
         hsn_code = item.gst_hsn_code if is_gst_applicable == 'Applicable' else ''
         hsn_desc_clean = hsn_desc.replace('\n', ' ') if is_gst_applicable == 'Applicable' else ''
         gst_type_of_supply = "Goods" if is_gst_applicable == 'Applicable' else ''
-        cgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else ""
-        sgst = str(int(item_tax_template[0]['gst_rate'] / 2)) if item_tax_template and is_gst_applicable == 'Applicable' else ""
-        igst = str(int(item_tax_template[0]['gst_rate'])) if item_tax_template and is_gst_applicable == 'Applicable' else ""
+        cgst = "{:.1f}".format(item_tax_template[0]['gst_rate'] / 2) if item_tax_template and is_gst_applicable == 'Applicable' else ""
+        sgst = "{:.1f}".format(item_tax_template[0]['gst_rate'] / 2) if item_tax_template and is_gst_applicable == 'Applicable' else ""
+        igst = "{:.1f}".format(item_tax_template[0]['gst_rate']) if item_tax_template and is_gst_applicable == 'Applicable' else ""
 
         item_dict = {
             "Autoid": item.item_name,
             "CompanyNumber": str(company_id),
             "Name": item.item_name,
-            "Parent": item.item_group,
+            "Parent": "All Item Groups",
             "Category": "",
             "BaseUnits": item.stock_uom,
             "IsBatchWiseOn": 'Yes' if item.has_batch_no else "No",

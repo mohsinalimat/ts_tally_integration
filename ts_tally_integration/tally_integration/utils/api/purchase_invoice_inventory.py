@@ -19,7 +19,7 @@ def get_purchase_invoice(company_id=None):
         return Response(json.dumps("Company is Non-Inventory. But requested for Inventory!", default=str), content_type='application/json', status=400)
 
     doc_list = frappe.get_all('Purchase Invoice',
-                               filters={'docstatus': 1, "company" : tally_company_table.company_name,"update_stock":1, 'is_return': 0, 'custom_tally_guid': ['in', ['', None]]},
+                               filters={'docstatus': 1, "company" : tally_company_table.company_name, 'is_return': 0, 'custom_tally_guid': ['in', ['', None]]},
                                fields=['*'])
     list_of_purchases= []
     for doc in doc_list:
@@ -698,7 +698,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (row.warehouse).split(" - ")[0] if row.warehouse else "",
+                                "Godown": "Stores",
                                 "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
@@ -787,7 +787,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (row.warehouse).split(" - ")[0] if row.warehouse else "",
+                                "Godown": "Stores",
                                 "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",
@@ -876,7 +876,7 @@ def purchase_invoice_json(tagged_acc, supplier, supplier_add, doc, company_id):
                                 "CostCategory": "",
                                 "CostCentre": (cost_center.company) if cost_center else "",
                                 "Stockitem": row.item_name if row.item_name else "",
-                                "Godown": (row.warehouse).split(" - ")[0] if row.warehouse else "",
+                                "Godown": "Stores",
                                 "BatchNo": row.batch_no if row.batch_no else batch_no or "Primary Batch",
                                 "Quantity": str(abs(row.qty)) if row.qty else "",
                                 "Rate": str(abs(row.net_rate)) if row.net_rate else "",

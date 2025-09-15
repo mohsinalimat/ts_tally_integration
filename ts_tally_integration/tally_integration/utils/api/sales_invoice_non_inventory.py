@@ -27,7 +27,7 @@ def get_sales_non_inv(company_id = None):
     all_vouchers = []
 
     sales_list = frappe.get_all('Sales Invoice',
-                                 filters={'company':company_name,'is_return':0, 'update_stock':0, 'docstatus':1, 'custom_tally_guid': ['in', ['', None]]},
+                                 filters={'company':company_name,'is_return':0, 'docstatus':1, 'custom_tally_guid': ['in', ['', None]]},
                                  fields=['*'])
 
     for doc in sales_list:
