@@ -4,7 +4,7 @@ import json
 from werkzeug.wrappers import Response
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_sales_inv(company_id = None):
     if company_id == None:
         return Response(json.dumps('Company Number not found!', default=str), content_type='application/json')
@@ -113,7 +113,7 @@ def get_sales_inv(company_id = None):
                         "Quantity": item['qty'],
                         "Rate": item['net_amount'],
                         "Discount": "",
-                        "Amount": item['net_amount'],
+                        "Amount": round(item['net_amount'], 2),
                         "OrderNo": "",
                         "OrderDate": "",
                         "TrackingNo": "",
@@ -237,7 +237,7 @@ def get_sales_inv(company_id = None):
                                     "Quantity": "",
                                     "Rate": "",
                                     "Discount": "",
-                                    "Amount": item['cgst_amount'],
+                                    "Amount": round(item['cgst_amount'], 2),
                                     "OrderNo": "",
                                     "OrderDate": "",
                                     "TrackingNo": "",
@@ -330,7 +330,7 @@ def get_sales_inv(company_id = None):
                                     "Quantity": "",
                                     "Rate": "",
                                     "Discount": "",
-                                    "Amount": item['cgst_amount'],
+                                    "Amount": round(item['cgst_amount'], 2),
                                     "OrderNo": "",
                                     "OrderDate": "",
                                     "TrackingNo": "",
@@ -422,7 +422,7 @@ def get_sales_inv(company_id = None):
                                     "Quantity": "",
                                     "Rate": "",
                                     "Discount": "",
-                                    "Amount": item['igst_amount'],
+                                    "Amount": round(item['igst_amount'], 2),
                                     "OrderNo": "",
                                     "OrderDate": "",
                                     "TrackingNo": "",
@@ -519,7 +519,7 @@ def get_sales_inv(company_id = None):
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": amount,
+                    "Amount": round(amount, 2),
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -615,7 +615,7 @@ def get_sales_inv(company_id = None):
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": amount,
+                    "Amount": round(amount, 2),
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -710,7 +710,7 @@ def get_sales_inv(company_id = None):
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": amount,
+                    "Amount": round(amount, 2),
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",
@@ -806,7 +806,7 @@ def get_sales_inv(company_id = None):
                     "Quantity": "",
                     "Rate": "",
                     "Discount": "",
-                    "Amount": amount,
+                    "Amount": round(amount, 2),
                     "OrderNo": "",
                     "OrderDate": "",
                     "TrackingNo": "",

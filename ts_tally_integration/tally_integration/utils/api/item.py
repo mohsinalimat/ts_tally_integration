@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ['!=', '']}, fields=['*'])
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ['=', '']}, fields=['*'])
 
     for item in items:
         tax_template = frappe.get_all('Item Tax', filters={'parent': item.name}, fields=['*'])
