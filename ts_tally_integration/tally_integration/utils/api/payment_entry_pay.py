@@ -19,6 +19,7 @@ def get_payment_entry(company_id=None):
         'Payment Entry',
         filters={
             'docstatus': 1,
+            'payment_type': 'Pay',
             'company': company_name,
             'custom_tally_guid': ['is', 'not set']
         },
