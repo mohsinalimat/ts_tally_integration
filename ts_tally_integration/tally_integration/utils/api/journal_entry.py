@@ -14,7 +14,7 @@ def get_journal(company_id = None):
     all_vouchers = []
 
     journal_list = frappe.get_all('Journal Entry',
-                                   filters={'company':company_name,'voucher_type':'Journal Entry', 'custom_tally_guid': ['in', ['', None]]},
+                                   filters={'company':company_name,'voucher_type': ['!=', 'Contra Entry'], 'custom_tally_guid': ['in', ['', None]]},
                                    fields=['*'])
 
     for list in journal_list:
