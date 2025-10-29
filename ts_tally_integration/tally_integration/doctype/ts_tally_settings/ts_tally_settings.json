@@ -11,7 +11,9 @@
   "unmapped_accounts",
   "api_tab",
   "api_details",
-  "response_api_details"
+  "response_api_details",
+  "tab_break_gruq",
+  "redirect_tally_function"
  ],
  "fields": [
   {
@@ -49,12 +51,23 @@
    "fieldname": "response_api_details",
    "fieldtype": "Text",
    "label": "Response API Details"
+  },
+  {
+   "fieldname": "tab_break_gruq",
+   "fieldtype": "Tab Break",
+   "label": "Redirect Function"
+  },
+  {
+   "fieldname": "redirect_tally_function",
+   "fieldtype": "Table",
+   "label": "Redirect Tally Function",
+   "options": "Tally Different Function"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-05-16 17:27:17.749923",
+ "modified": "2025-10-28 11:11:03.323630",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Settings",
