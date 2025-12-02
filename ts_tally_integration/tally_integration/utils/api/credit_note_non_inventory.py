@@ -209,8 +209,8 @@ def credit_note_non_inv(company_id = None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'sales',
-                                    "VoucherTypeParent": "Sales",
+                                    "VoucherType": 'Credit Note',
+                                    "VoucherTypeParent": "Credit Note",
                                     "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
 
@@ -302,8 +302,8 @@ def credit_note_non_inv(company_id = None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'sales',
-                                    "VoucherTypeParent": "Sales",
+                                    "VoucherType": 'Credit Note',
+                                    "VoucherTypeParent": "Credit Note",
                                     "LedgerName": f"Output Tax SGST @ {item['sgst_rate']}",
                                     "LedgerParent": parent_account,
 
@@ -395,8 +395,8 @@ def credit_note_non_inv(company_id = None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'sales',
-                                    "VoucherTypeParent": "Sales",
+                                    "VoucherType": 'Credit Note',
+                                    "VoucherTypeParent": "Credit Note",
                                     "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                     "LedgerParent": parent_account,
 
