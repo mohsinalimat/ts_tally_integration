@@ -45,11 +45,11 @@ def credit_note_inv(company_id = None):
         company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
         company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
         company_gst = frappe.get_value('Company', {'name': company_name}, ['gstin'])
-        
+
         all_vouchers = []
 
         credit_list = frappe.get_all('Sales Invoice',
-                                    filters = {'company':company_name,'is_return':1, 'update_stock':1, 'docstatus':1, 'custom_tally_guid': ['in', ['', None]]},
+                                    filters = {'company':company_name,'is_return':1, 'docstatus':1, 'custom_tally_guid': ['is', 'not set']},
                                     fields = ['*'])
         for doc in credit_list:
 
@@ -232,8 +232,8 @@ def credit_note_inv(company_id = None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'sales',
-                                        "VoucherTypeParent": "Sales",
+                                        "VoucherType": 'Credit Note',
+                                        "VoucherTypeParent": "Credit Note",
                                         "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                         "LedgerParent": tally_parent,
 
@@ -326,8 +326,8 @@ def credit_note_inv(company_id = None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'sales',
-                                        "VoucherTypeParent": "Sales",
+                                        "VoucherType": 'Credit Note',
+                                        "VoucherTypeParent": "Credit Note",
                                         "LedgerName": f"Output Tax SGST @ {item['sgst_rate']}",
                                         "LedgerParent": tally_parent,
 
@@ -419,8 +419,8 @@ def credit_note_inv(company_id = None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'sales',
-                                        "VoucherTypeParent": "Sales",
+                                        "VoucherType": 'Credit Note',
+                                        "VoucherTypeParent": "Credit Note",
                                         "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                         "LedgerParent": tally_parent,
 
@@ -809,39 +809,39 @@ def credit_note_inv(company_id = None):
 
 
 
-    @frappe.whitelist()
-    def fetch_response(response):
-        data = json.loads(response) if isinstance(response, str) else response
-        sales_response = data.get("CREDITNOTE RESPONSE", [])
+@frappe.whitelist()
+def fetch_response(response):
+    data = json.loads(response) if isinstance(response, str) else response
+    sales_response = data.get("CREDITNOTE RESPONSE", [])
 
-        for response in sales_response:
-            sales_entry = response.get("AUTOID")
-            guid = response.get("GUID")
-            ref_no = response.get("REFNO")
-            import_date = response.get("IMPORTDATE")
-            import_time = response.get("IMPORTTIME")
+    for response in sales_response:
+        sales_entry = response.get("AUTOID")
+        guid = response.get("GUID")
+        ref_no = response.get("REFNO")
+        import_date = response.get("IMPORTDATE")
+        import_time = response.get("IMPORTTIME")
 
-            if not sales_entry:
-                continue
+        if not sales_entry:
+            continue
 
-            existing_item = frappe.db.get_value("Sales Invoice", {"name": sales_entry}, "name")
-            if existing_item:
-                import_date = datetime.strptime(import_date, "%Y%m%d").date()
-                import_time = datetime.strptime(import_time, "%H:%M:%S").time()
+        existing_item = frappe.db.get_value("Sales Invoice", {"name": sales_entry}, "name")
+        if existing_item:
+            import_date = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time = datetime.strptime(import_time, "%H:%M:%S").time()
 
-                frappe.db.set_value("Sales Invoice", existing_item, {
-                    "custom_tally_auto_id": sales_entry,
-                    "custom_tally_guid": guid,
-                    "custom_tally_refno": ref_no,
-                    "custom_sync_time": datetime.combine(import_date, import_time)
-                })
+            frappe.db.set_value("Sales Invoice", existing_item, {
+                "custom_tally_auto_id": sales_entry,
+                "custom_tally_guid": guid,
+                "custom_tally_refno": ref_no,
+                "custom_sync_time": datetime.combine(import_date, import_time)
+            })
 
-            else:
-                frappe.log_error(f"Contra Entry not found for Tally AUTOID: {sales_entry}", "Tally Contra Entry Sync Error")
-        
-        response =  {
-            "status":True,
-            "message":"Updated successfully"
-            }
-        return Response(json.dumps(response, default=str), content_type='application/json')
+        else:
+            frappe.log_error(f"Contra Entry not found for Tally AUTOID: {sales_entry}", "Tally Contra Entry Sync Error")
+    
+    response =  {
+        "status":True,
+        "message":"Updated successfully"
+        }
+    return Response(json.dumps(response, default=str), content_type='application/json')
 

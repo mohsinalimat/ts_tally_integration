@@ -48,6 +48,7 @@ def get_delivery_note(company_id=None):
         cus_ship_address = frappe.get_all('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
         ship_addr = _get_address_details(cus_ship_address)
         cust_doc = frappe.get_doc('Customer', doc.customer)
+
         gst_category = {
             "Unregistered": "Unregistered/Consumer",
             "Registered Regular": "Regular",

@@ -82,6 +82,7 @@ def get_item(company_id = None):
 
 @frappe.whitelist()
 def fetch_response(response=None):
+    frappe.log_error(title="Tally ITEM Response", message=response)
     data = json.loads(response) if isinstance(response, str) else response
     items = data.get("STOCKITEM RESPONSE", [])
 

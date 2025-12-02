@@ -311,7 +311,7 @@ def fetch_response(response):
     frappe.db.commit()
 
     return Response(json.dumps({
-        "status": True,
-        "message": f"Updated successfully"
+        "status":True,
+        "message":"Updated successfully"
     }), content_type='application/json')
 
