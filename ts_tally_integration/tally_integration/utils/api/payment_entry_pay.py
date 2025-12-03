@@ -8,30 +8,17 @@ from werkzeug.wrappers import Response
 def get_payment_entry(company_id=None):
 
     if not company_id:
-        return Response(json.dumps("Company ID is not found!", default=str),
-                        content_type='application/json', status=404)
+        return Response(json.dumps("Company ID is not found!", default=str),content_type='application/json', status=404)
 
-    company_name = frappe.get_value(
-        "TS Tally Company",
-        {"company_number": company_id},
-        fieldname="company_name"
-    )
+    company_name = frappe.get_value("TS Tally Company",{"company_number": company_id},fieldname="company_name")
 
     if not company_name:
-        return Response(json.dumps("Company is not found!", default=str),
-                        content_type='application/json', status=404)
+        return Response(json.dumps("Company is not found!", default=str),content_type='application/json', status=404)
 
     # Fetch all Payment Entries which are not yet synced with Tally
-    doc_list = frappe.get_all(
-        "Payment Entry",
-        filters={
-            "docstatus": 1,
-            "company": company_name,
-            "payment_type": "Pay",
-            "custom_tally_guid": ["is", "not set"]
-        },
-        fields=["*"]
-    )
+    doc_list = frappe.get_all("Payment Entry",
+        filters={"docstatus": 1,"company": company_name,"payment_type": "Pay","custom_tally_guid": ["is", "not set"]},
+        fields=["*"])
 
     list_of_entries = []
 
@@ -42,11 +29,9 @@ def get_payment_entry(company_id=None):
         ).strftime('%Y%m%d')
 
         # Get GL Entries of this Payment Entry
-        gl_entries = frappe.get_all(
-            "GL Entry",
+        gl_entries = frappe.get_all("GL Entry",
             filters={"voucher_no": doc.name},
-            fields=["party_type", "party", "debit", "credit", "account"]
-        )
+            fields=["party_type", "party", "debit", "credit", "account"])
 
         # Loop through each GL Entry and generate Tally lines
         for gl in gl_entries:
@@ -96,9 +81,7 @@ def get_payment_entry(company_id=None):
                 pan = ""
 
             # Always get parent account
-            ledger_parent = frappe.db.get_value(
-                "Account", gl.account, "custom_tally_parent_account"
-            ) or ""
+            ledger_parent = frappe.db.get_value("Account", gl.account, "custom_tally_parent_account") or ""
 
             # --------------- DR/CR LOGIC ----------------
             if gl.debit > 0:
@@ -118,31 +101,24 @@ def get_payment_entry(company_id=None):
                 "VoucherDate": posting_date,
                 "VoucherType": "Payment",
                 "VoucherTypeParent": "Payment",
-
                 "LedgerName": ledger_name,
                 "LedgerParent": ledger_parent,
-
                 "LedgerAddress": "",
                 "LedgerState": "",
                 "LedgerCountry": "",
                 "LedgerPincode": "",
                 "LedgerMobile": "",
-
                 "LedgerGstReg": gst_category,
                 "LedgerGstin": gstin,
                 "LedgerPan": pan,
-
                 "BillName": "",
                 "BillDate": "",
                 "PlaceOfSupply": "",
-
                 "TransactionDate": posting_date,
                 "CrDr": crdr,
                 "Amount": amount,
-
                 "CostCategory1": "",
                 "CostCentre1": doc.cost_center.split(" - ")[0] if doc.cost_center else "",
-
                 "CostCategory2": "",
                 "CostCentre2": "",
                 "CostCategory3": "",
@@ -151,11 +127,9 @@ def get_payment_entry(company_id=None):
                 "CostCentre4": "",
                 "CostCategory5": "",
                 "CostCentre5": "",
-
                 "BranchCode": "",
                 "Location": "",
                 "State": "",
-
                 "Narration": doc.remarks.replace("\n", ". ") if doc.remarks else None
             }
 
