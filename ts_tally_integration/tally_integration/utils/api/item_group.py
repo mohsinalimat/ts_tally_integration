@@ -1,9 +1,7 @@
 import frappe
 import json
 from werkzeug.wrappers import Response
-from collections import defaultdict, deque
 from datetime import datetime
-
 
 @frappe.whitelist()
 def get_itemgroup(company_id=None):
@@ -13,52 +11,52 @@ def get_itemgroup(company_id=None):
     # Step 1: Fetch all item groups
     item_groups = frappe.get_all(
         'Item Group',
-        filters={'custom_status': ['!=', 'SUCCESS']},
+        filters={'custom_tally_auto_id': ["=", ""]},
         fields=['name', 'is_group', 'parent_item_group']
     )
 
-    # Step 2: Build a lookup dict by parent
+    # Step 2: Build lookup tree
     tree = {}
     group_lookup = {}
 
     for group in item_groups:
         group_lookup[group['name']] = group
-        parent = group['parent_item_group'] if group['parent_item_group'] else 'Primary'
+        parent = group['parent_item_group'] or "All Item Groups"
+
         if parent not in tree:
             tree[parent] = []
         tree[parent].append(group['name'])
 
-    # Step 3: Recursive function to traverse the tree
+    # Step 3: Recursive traversal
     non_group = []
     group_item_group = []
 
     def traverse(parent):
         children = tree.get(parent, [])
-        for child_name in children:
-            group = group_lookup[child_name]
+        for child in children:
+            group = group_lookup[child]
             item_group_dict = {
                 "Autoid": group['name'],
                 "CompanyNumber": str(company_id),
                 "Name": group['name'],
-                "Parent": group['parent_item_group'] if group['parent_item_group'] else 'Primary'
+                "Parent": group['parent_item_group'] or "All Item Groups"
             }
 
-            if not group['is_group']:
-                non_group.append(item_group_dict)
-            else:
+            if group['is_group']:
                 group_item_group.append(item_group_dict)
+            else:
+                non_group.append(item_group_dict)
 
-            # Continue traversing deeper
-            traverse(group['name'])
+            traverse(child)
 
-    # Start traversal from 'Primary'
-    traverse('Primary')
+    # Start from actual root
+    traverse("All Item Groups")
 
-    # Step 4: Prepare response
+    # Step 4: Final response
     final_voucher = {
         "status": True,
         "VOUCHERDETAILS": {
-            "STOCKGROUPS": group_item_group + non_group  # Groups first, then non-groups
+            "STOCKGROUPS": group_item_group + non_group
         }
     }
 

@@ -25,6 +25,13 @@ def get_journal(company_id = None):
 
             cr_dr = "Dr" if entry['debit_in_account_currency'] else "Cr"
             amount = entry['debit_in_account_currency'] or entry['credit_in_account_currency']
+            account_name = entry['account'].split(" - ")[0]
+
+            # Use party name for Debtors or Creditors
+            if account_name in ["Debtors", "Creditors"]:
+                ledger_name = entry.get("party") or account_name
+            else:
+                ledger_name = account_name
 
             ledger_dict = {
                 "Autoid": list['name'],
@@ -35,7 +42,7 @@ def get_journal(company_id = None):
                 "VoucherDate": list['posting_date'].strftime('%d-%m-%Y'),
                 "VoucherType": 'Journal',
                 "VoucherTypeParent": "Journal",
-                "LedgerName": (entry['account']).split(" - ")[0],
+                "LedgerName": ledger_name,
                 "LedgerParent": parent_account,
                 "LedgerAddress": "",
                 "LedgerState": "",

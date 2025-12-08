@@ -20,6 +20,11 @@ def get_sales_non_inv(company_id = None):
         return Response(json.dumps(empty, default=str), content_type='application/json')
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
+    fiscal_year = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['fiscal_year'])
+    fy_doc = frappe.get_doc("Fiscal Year", fiscal_year)
+    start_date = fy_doc.year_start_date
+    end_date = fy_doc.year_end_date
+
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
     company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
     company_gst = frappe.get_value('Company', {'name': company_name}, ['gstin'])
@@ -27,7 +32,8 @@ def get_sales_non_inv(company_id = None):
     all_vouchers = []
 
     sales_list = frappe.get_all('Sales Invoice',
-                                 filters={'company':company_name,'is_return':0, 'docstatus':1, 'custom_tally_guid': ['in', ['', None]]},
+                                 filters={'company':company_name,'is_return':0, 'docstatus':1,
+                                          'custom_tally_guid': ['in', ['', None]], 'posting_date': ['between', [start_date, end_date]]},
                                  fields=['*'])
 
     for doc in sales_list:
