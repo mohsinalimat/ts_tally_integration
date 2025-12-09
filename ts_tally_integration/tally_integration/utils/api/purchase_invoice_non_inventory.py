@@ -22,6 +22,11 @@ def get_purchase_invoice(company_id=None):
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
 
+    fiscal_year = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['fiscal_year'])
+    fy_doc = frappe.get_doc("Fiscal Year", fiscal_year)
+    start_date = fy_doc.year_start_date
+    end_date = fy_doc.year_end_date
+
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
     company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
     company_gst = frappe.get_value('Company', {'name': company_name}, ['gstin'])
@@ -29,7 +34,8 @@ def get_purchase_invoice(company_id=None):
     all_vouchers = []
 
     purchase_list = frappe.get_all('Purchase Invoice',
-                                filters={'company':company_name, 'is_return':0, 'docstatus':1,  'custom_tally_guid': ['is', 'not set']},
+                                filters={'company':company_name, 'is_return':0, 'docstatus':1,
+                                         'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
                                 fields=['*'])
 
     for doc in purchase_list:
@@ -62,7 +68,8 @@ def get_purchase_invoice(company_id=None):
 
             account_type = frappe.get_value('Account', invoice['account'], 'account_type')
 
-            if invoice['account'] in ['Stock In Hand - TSPL', 'Cost of Goods Sold - TSPL', 'Stock Received But Not Billed - TSPL']:
+            account = (invoice.get("account") or "").split(" - ")[0]
+            if account in ["Stock In Hand","Cost of Goods Sold","Stock Received But Not Billed",]:
 
                 ledgername = invoice['account']
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')

@@ -12,12 +12,18 @@ def get_payment_entry(company_id=None):
 
     company_name = frappe.get_value("TS Tally Company",{"company_number": company_id},fieldname="company_name")
 
+    fiscal_year = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['fiscal_year'])
+    fy_doc = frappe.get_doc("Fiscal Year", fiscal_year)
+    start_date = fy_doc.year_start_date
+    end_date = fy_doc.year_end_date
+
     if not company_name:
         return Response(json.dumps("Company is not found!", default=str),content_type='application/json', status=404)
 
     # Fetch all Payment Entries which are not yet synced with Tally
     doc_list = frappe.get_all("Payment Entry",
-        filters={"docstatus": 1,"company": company_name,"payment_type": "Pay","custom_tally_guid": ["is", "not set"]},
+        filters={"docstatus": 1,"company": company_name,"payment_type": "Pay",
+                 "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
         fields=["*"])
 
     list_of_entries = []
