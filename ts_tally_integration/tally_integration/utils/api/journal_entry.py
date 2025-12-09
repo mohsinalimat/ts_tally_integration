@@ -11,10 +11,16 @@ def get_journal(company_id = None):
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
 
+    fiscal_year = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['fiscal_year'])
+    fy_doc = frappe.get_doc("Fiscal Year", fiscal_year)
+    start_date = fy_doc.year_start_date
+    end_date = fy_doc.year_end_date
+
     all_vouchers = []
 
     journal_list = frappe.get_all('Journal Entry',
-                                   filters={'company':company_name,'voucher_type': ['!=', 'Contra Entry'], 'custom_tally_guid': ['in', ['', None]]},
+                                   filters={'company':company_name,'voucher_type': ['!=', 'Contra Entry'],
+                                            'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
                                    fields=['*'])
 
     for list in journal_list:

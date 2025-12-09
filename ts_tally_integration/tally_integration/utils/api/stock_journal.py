@@ -23,10 +23,17 @@ def get_stock_entry(company_id=None):
         }, default=str), content_type='application/json')
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'company_name')
+
+    fiscal_year = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['fiscal_year'])
+    fy_doc = frappe.get_doc("Fiscal Year", fiscal_year)
+    start_date = fy_doc.year_start_date
+    end_date = fy_doc.year_end_date
+
     all_vouchers = []
 
     stock_entries = frappe.get_all('Stock Entry', 
-                                   filters={'company': company_name, 'docstatus': 1, 'custom_tally_guid': ['in', ['', None]]}, 
+                                   filters={'company': company_name, 'docstatus': 1,
+                                            'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
                                    fields=['name', 'posting_date'])
 
     # -------------------------------
