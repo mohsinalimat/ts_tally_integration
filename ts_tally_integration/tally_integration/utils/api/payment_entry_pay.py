@@ -163,7 +163,7 @@ def get_payment_entry(company_id=None):
 
 @frappe.whitelist()
 def fetch_response(response):
-    
+
     data = json.loads(response) if isinstance(response, str) else response
 
     payment_response = data.get("PAYMENT RESPONSE", [])

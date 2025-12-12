@@ -99,17 +99,8 @@ def get_journal(company_id = None):
 
 @frappe.whitelist()
 def fetch_response(response):
-    if not response:
-        frappe.log_error("No response received from Tally", "Tally Journal Entry")
-        return Response(json.dumps({"status": False, "message": "No response received"}), content_type='application/json')
 
-    frappe.log_error(f"Raw Journal Entry Response: {response}", "Tally Journal Entry")
-    
-    try:
-        data = json.loads(response) if isinstance(response, str) else response
-    except Exception as e:
-        frappe.log_error(f"JSON decode failed: {str(e)}", "Tally Journal Entry")
-        return Response(json.dumps({"status": False, "message": "Invalid JSON"}), content_type='application/json')
+    data = json.loads(response) if isinstance(response, str) else response
 
     journal_response = data.get("JOURNAL RESPONSE", [])
 
