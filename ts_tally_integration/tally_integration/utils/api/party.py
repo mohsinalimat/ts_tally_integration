@@ -11,7 +11,7 @@ def get_party(company_id = None):
     auto_id = 1
     all_doc = []
 
-    suppliers = frappe.get_all('Supplier', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'])
     
     for supplier in suppliers:
 
@@ -21,10 +21,10 @@ def get_party(company_id = None):
                 fields=['*'])
         else:
             supplier_address = []
-        
+
 
         supplier_dict = {
-                "Autoid": auto_id,
+                "Autoid": supplier.name,
                 "CompanyNumber": str(company_id),
                 "LedgerName": supplier.name,
                 "LedgerParent": "Sundry Creditors",
