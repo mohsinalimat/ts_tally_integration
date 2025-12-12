@@ -16,6 +16,8 @@ def get_item(company_id = None):
     items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'])
 
     for item in items:
+        item_name_clean = item.item_name.replace('"', '\\"')
+
         tax_template = frappe.get_all('Item Tax', filters={'parent': item.name}, fields=['*'])
 
         # Default taxability
@@ -40,9 +42,9 @@ def get_item(company_id = None):
         igst = "{:.1f}".format(item_tax_template[0]['gst_rate']) if item_tax_template and is_gst_applicable == 'Applicable' else ""
 
         item_dict = {
-            "Autoid": item.item_name,
+            "Autoid": item_name_clean,
             "CompanyNumber": str(company_id),
-            "Name": item.item_name,
+            "Name": item_name_clean,
             "Parent": item.item_group,
             "Category": "",
             "BaseUnits": item.stock_uom,
