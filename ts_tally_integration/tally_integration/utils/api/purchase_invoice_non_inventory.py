@@ -11,7 +11,7 @@ def get_purchase_invoice(company_id=None):
         return Response(json.dumps('Company Number not found!', default=str), content_type='application/json')
 
     stock = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['stock'])
-    if stock == 'Non-Inventory':
+    if stock == 'Inventory':
         empty = ({
             "status": True,
             "VOUCHERDETAILS": {
