@@ -6,6 +6,7 @@ from werkzeug.wrappers import Response
 
 @frappe.whitelist()
 def get_party(company_id = None):
+
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
     auto_id = 1

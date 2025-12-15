@@ -121,7 +121,7 @@ def get_purchase_invoice(company_id=None):
                         "Quantity": item['qty'],
                         "Rate": item['net_rate'],
                         "Discount": "",
-                        "Amount": round(item['valuation_rate'], 2),
+                        "Amount": round(item['qty'] * item['valuation_rate'], 2),
                         "OrderNo": "",
                         "OrderDate": "",
                         "TrackingNo": "",

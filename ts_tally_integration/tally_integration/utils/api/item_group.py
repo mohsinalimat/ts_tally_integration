@@ -12,7 +12,7 @@ def get_itemgroup(company_id=None):
 
     # Fetch item groups ONLY with valid fields
     item_groups = frappe.get_all(
-        "Item Group",
+        "Item Group", filters={'custom_tally_auto_id': ["=", ""]},
         fields=["name", "parent_item_group", "is_group"]
     )
 
