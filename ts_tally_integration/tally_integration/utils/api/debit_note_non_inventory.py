@@ -36,7 +36,8 @@ def get_debit_note(company_id=None):
     purchase_list = frappe.get_all('Purchase Invoice',
                                 filters={'company':company_name, 'is_return':1, 'docstatus':1,
                                          'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                fields=['*'])
+                                fields=['*'], limit = 100
+                                )
 
     for doc in purchase_list:
         tax_processed = False
