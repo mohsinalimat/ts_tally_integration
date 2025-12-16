@@ -176,6 +176,35 @@ def create_account_parentfield():
                 "no_copy": 1
             }
         ],
+        "Employee": [
+            {
+                "fieldname": "tally_tab",
+                "fieldtype": "Tab Break",
+                "label": "Tally",
+                "insert_after": "connections_tab"
+            },
+            {
+                "label": "Tally Auto ID",
+                "fieldname": "custom_tally_auto_id",
+                "fieldtype": "Data",
+                "insert_after": "tally_tab",
+                "no_copy": 1
+            },
+            {
+                "label": "Status",
+                "fieldname": "custom_status",
+                "fieldtype": "Data",
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
+            },
+            {
+                "label": "Sync Time",
+                "fieldname": "custom_sync_time",
+                "fieldtype": "Datetime",
+                "insert_after": "custom_status",
+                "no_copy": 1
+            }
+        ],
         "Sales Invoice": [
             {
                 "label": "Tally",

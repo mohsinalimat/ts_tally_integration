@@ -70,6 +70,30 @@ def get_party(company_id = None):
 
         all_doc.append(customer_dict)
 
+
+    employees = frappe.get_all('Employee', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+
+    for employee in employees:
+
+        employee_dict = {
+            "Autoid": auto_id,
+            "CompanyNumber": str(company_id),
+            "LedgerName": employee.name,
+            "LedgerParent": "Sundry Debtors",
+            "LedgerAddress": "",
+            "LedgerState": '',
+            "LedgerCountry": '',
+            "LedgerPincode": '',
+            "LedgerMobile": employee.cell_number,
+            "LedgerGstReg": "",
+            "LedgerPan": employee.pan_number if employee.pan_number else '',
+            "LedgerGstin": '',
+        }
+        auto_id += 1
+
+        all_doc.append(employee_dict)
+
+
     final_voucher = ({
         "status": True,
         "VOUCHERDETAILS": {
@@ -116,6 +140,14 @@ def fetch_response(response):
 
         if frappe.db.exists("Supplier", {"name": party_name}):
             frappe.db.set_value('Supplier', party_name, {
+                'custom_tally_auto_id': party_name,
+                'custom_status': status,
+                'custom_sync_time': sync_time
+            })
+            updated = True
+
+        if frappe.db.exists("Employee", {"name": party_name}):
+            frappe.db.set_value('Employee', party_name, {
                 'custom_tally_auto_id': party_name,
                 'custom_status': status,
                 'custom_sync_time': sync_time
