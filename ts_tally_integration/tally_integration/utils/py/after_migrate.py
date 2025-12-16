@@ -36,25 +36,28 @@ def create_account_parentfield():
                 "fieldname": "tally_tab",
                 "fieldtype": "Tab Break",
                 "label": "Tally",
-                "insert_after": "total_projected_qty"
+                "insert_after": "total_projected_qty",
             },
             {
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Status",
                 "fieldname": "custom_status",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_status"
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Warehouse": [
@@ -68,19 +71,22 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Status",
                 "fieldname": "custom_status",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_status"
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Item Group": [
@@ -94,19 +100,22 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Status",
                 "fieldname": "custom_status",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_status"
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Supplier": [
@@ -120,19 +129,22 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Status",
                 "fieldname": "custom_status",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_status"
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Customer": [
@@ -146,19 +158,22 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Status",
                 "fieldname": "custom_status",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_status"
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Sales Invoice": [
@@ -172,25 +187,29 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Tally REFNO",
                 "fieldname": "custom_tally_refno",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Tally GUID",
                 "fieldname": "custom_tally_guid",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_refno"
+                "insert_after": "custom_tally_refno",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_status"
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Purchase Invoice": [
@@ -204,25 +223,29 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Tally REFNO",
                 "fieldname": "custom_tally_refno",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Tally GUID",
                 "fieldname": "custom_tally_guid",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_refno"
+                "insert_after": "custom_tally_refno",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_status"
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Stock Entry": [
@@ -236,25 +259,29 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Tally REFNO",
                 "fieldname": "custom_tally_refno",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Tally GUID",
                 "fieldname": "custom_tally_guid",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_refno"
+                "insert_after": "custom_tally_refno",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_tally_guid"
+                "insert_after": "custom_tally_guid",
+                "no_copy": 1
             }
         ],
         "Journal Entry": [
@@ -268,25 +295,29 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Tally REFNO",
                 "fieldname": "custom_tally_refno",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Tally GUID",
                 "fieldname": "custom_tally_guid",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_refno"
+                "insert_after": "custom_tally_refno",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_tally_guid"
+                "insert_after": "custom_tally_guid",
+                "no_copy": 1
             }
         ],
         "Payment Entry": [
@@ -300,25 +331,29 @@ def create_account_parentfield():
                 "label": "Tally Auto ID",
                 "fieldname": "custom_tally_auto_id",
                 "fieldtype": "Data",
-                "insert_after": "tally_tab"
+                "insert_after": "tally_tab",
+                "no_copy": 1
             },
             {
                 "label": "Tally REFNO",
                 "fieldname": "custom_tally_refno",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id"
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
             },
             {
                 "label": "Tally GUID",
                 "fieldname": "custom_tally_guid",
                 "fieldtype": "Data",
-                "insert_after": "custom_tally_refno"
+                "insert_after": "custom_tally_refno",
+                "no_copy": 1
             },
             {
                 "label": "Sync Time",
                 "fieldname": "custom_sync_time",
                 "fieldtype": "Datetime",
-                "insert_after": "custom_tally_guid"
+                "insert_after": "custom_tally_guid",
+                "no_copy": 1
             }
         ]
     }

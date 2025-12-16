@@ -27,7 +27,7 @@ def get_payment_entry(company_id=None):
         "Payment Entry",
         filters={"docstatus": 1,"company": company_name,"payment_type": "Receive",
                  "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
-        fields=["*"]
+        fields=["*"], limit = 100
     )
 
     list_of_entries = []
@@ -178,6 +178,7 @@ def get_payment_entry(company_id=None):
 
 @frappe.whitelist()
 def fetch_response(response):
+    frappe.log_error(f"Payment Entry not found for Tally AUTOID:", "Tally Payment Entry Sync Error")
     data = json.loads(response) if isinstance(response, str) else response
 
     payment_response = data.get("RECEIPT RESPONSE", [])
