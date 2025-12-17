@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'])
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 100)
 
     for item in items:
 
