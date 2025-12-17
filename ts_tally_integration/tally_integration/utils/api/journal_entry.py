@@ -35,7 +35,7 @@ def get_journal(company_id = None):
             account_name = entry['account'].split(" - ")[0]
 
             # Use party name for Debtors or Creditors
-            if account_name in ["Debtors", "Creditors"]:
+            if account_name in ["Debtors", "Creditors", "Payroll Payable"]:
                 ledger_name = entry.get("party") or account_name
             else:
                 ledger_name = account_name
