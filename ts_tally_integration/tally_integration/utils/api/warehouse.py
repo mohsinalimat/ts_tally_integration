@@ -73,7 +73,7 @@ def fetch_response(response):
     
         if not warehouse_name:
             continue
-
+        
         existing_warehouse = frappe.db.get_value("Warehouse", {"warehouse_name": warehouse_name}, "name")
         if existing_warehouse:
             import_date = datetime.strptime(import_date, "%Y%m%d").date()
@@ -87,7 +87,7 @@ def fetch_response(response):
 
         else:
             frappe.log_error(f"Warehouse not found for Tally AUTOID: {warehouse_name}", "Tally Warehouse Sync Error")
-
+    frappe.db.commit()
     response =  {
         "status":True,
         "message":"Updated successfully"

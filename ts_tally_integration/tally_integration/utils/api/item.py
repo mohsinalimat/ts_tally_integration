@@ -83,7 +83,6 @@ def get_item(company_id = None):
 
 @frappe.whitelist()
 def fetch_response(response=None):
-    frappe.log_error(f"Response from Tally: {response}", "Tally Item Response")
     data = json.loads(response) if isinstance(response, str) else response
     items = data.get("STOCKITEM RESPONSE", [])
 
@@ -99,7 +98,7 @@ def fetch_response(response=None):
         item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
 
         if item_docname:
-            frappe.set_value(
+            frappe.db.set_value(
                 "Item",
                 item_docname,
                 {
