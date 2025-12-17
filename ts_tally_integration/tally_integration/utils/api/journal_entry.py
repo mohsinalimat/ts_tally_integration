@@ -35,10 +35,12 @@ def get_journal(company_id = None):
             account_name = entry['account'].split(" - ")[0]
 
             # Use party name for Debtors or Creditors
-            if account_name in ["Debtors", "Creditors", "Payroll Payable"]:
+            if account_name in ["Debtors", "Creditors"]:
                 ledger_name = entry.get("party") or account_name
+            elif account_name in ["Payroll Payable"]:
+                ledger_name = frappe.get_value('Employee', entry['party'], 'employee_name')
             else:
-                ledger_name = account_name
+                ledger_name = frappe.get_value('Account', entry['account'], 'account_name')
 
             ledger_dict = {
                 "Autoid": list['name'],

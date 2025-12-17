@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'])
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 100)
 
     for item in items:
 
@@ -83,6 +83,7 @@ def get_item(company_id = None):
 
 @frappe.whitelist()
 def fetch_response(response=None):
+    frappe.log_error(f"Response from Tally: {response}", "Tally Item Response")
     data = json.loads(response) if isinstance(response, str) else response
     items = data.get("STOCKITEM RESPONSE", [])
 
@@ -94,24 +95,22 @@ def fetch_response(response=None):
 
         if not item_name:
             continue
-
+        
         item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
+
         if item_docname:
-            item_doc = frappe.get_doc("Item", item_docname)
-
-            item_doc.custom_tally_auto_id = item_name
-            item_doc.custom_status = status
-            item_doc.custom_sync_time = datetime.combine(
-                datetime.strptime(import_date, "%Y%m%d").date(),
-                datetime.strptime(import_time, "%H:%M:%S").time()
-            )
-
-            item_doc.save(ignore_permissions=True)
-
-        else:
-            frappe.log_error(
-                title="Tally Item Sync Error",
-                message=f"Item not found for Tally AUTOID: {item_name}"
+            frappe.set_value(
+                "Item",
+                item_docname,
+                {
+                    "custom_tally_auto_id": item_name,
+                    "custom_status": status,
+                    "custom_sync_time": datetime.combine(
+                        datetime.strptime(import_date, "%Y%m%d").date(),
+                        datetime.strptime(import_time, "%H:%M:%S").time()
+                    )
+                },
+                update_modified=True
             )
 
     frappe.db.commit()
