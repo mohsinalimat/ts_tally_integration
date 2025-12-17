@@ -12,7 +12,7 @@ def get_party(company_id = None):
     auto_id = 1
     all_doc = []
 
-    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'])
+    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 10)
     
     for supplier in suppliers:
 
@@ -42,7 +42,7 @@ def get_party(company_id = None):
 
         all_doc.append(supplier_dict)
 
-    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 100)
 
     for customer in customers:
         if customer.get('customer_primary_address'):
@@ -71,7 +71,7 @@ def get_party(company_id = None):
         all_doc.append(customer_dict)
 
 
-    employees = frappe.get_all('Employee', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    employees = frappe.get_all('Employee', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 10)
 
     for employee in employees:
 
@@ -147,7 +147,8 @@ def fetch_response(response):
             updated = True
 
         if frappe.db.exists("Employee", {"employee_name": party_name}):
-            frappe.db.set_value('Employee', party_name, {
+            emp_doc = frappe.db.exists("Employee", {"employee_name": party_name})
+            frappe.db.set_value('Employee', emp_doc, {
                 'custom_tally_auto_id': party_name,
                 'custom_status': status,
                 'custom_sync_time': sync_time
@@ -156,6 +157,8 @@ def fetch_response(response):
 
         if not updated:
             frappe.log_error(f"Neither Customer nor Supplier found for Tally AUTOID: {party_name}", "Tally Sync Error")
+
+    frappe.db.commit()
 
     return Response(json.dumps({
         "status":True,
