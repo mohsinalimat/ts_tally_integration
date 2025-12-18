@@ -41,9 +41,9 @@ def get_item(company_id = None):
         igst = "{:.1f}".format(item_tax_template[0]['gst_rate']) if item_tax_template and is_gst_applicable == 'Applicable' else ""
 
         item_dict = {
-            "Autoid": item.item_name,
+            "Autoid": item.name,
             "CompanyNumber": str(company_id),
-            "Name": item.item_name,
+            "Name": item.name,
             "Parent": item.item_group,
             "Category": "",
             "BaseUnits": item.stock_uom,
@@ -95,7 +95,7 @@ def fetch_response(response=None):
         if not item_name:
             continue
         
-        item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
+        item_docname = frappe.db.get_value("Item", {"name": item_name}, "name")
 
         if item_docname:
             frappe.db.set_value(

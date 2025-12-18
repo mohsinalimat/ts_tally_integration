@@ -116,7 +116,7 @@ def get_purchase_invoice(company_id=None):
                         "CrDr": cr_dr,
                         "CostCategory": "",
                         "CostCentre": item['cost_center'],
-                        "Stockitem": item['item_name'],
+                        "Stockitem": item['item_code'],
                         "Godown": item['warehouse'].split('-')[0].strip(),
                         "BatchNo": "",
                         "Quantity": item['qty'],

@@ -51,7 +51,7 @@ def get_stock_entry(company_id=None):
         stock_entry = frappe.get_doc('Stock Entry', entry.name)
         for item in stock_entry.items:
             base_data = {
-                "Autoid": str(item.item_name),
+                "Autoid": str(item.item_code),
                 "CompanyNumber": str(company_id),
                 "TallyMasterid": 1,
                 "Voucherid": stock_entry.name,
@@ -72,7 +72,7 @@ def get_stock_entry(company_id=None):
                 "BillDate": "",
                 "CostCategory": "",
                 "CostCentre": "",
-                "Stockitem": item.item_name,
+                "Stockitem": item.item_code,
                 "BatchNo": "",
                 "Quantity": float(item.qty),
                 "Rate": float(item.basic_rate),
