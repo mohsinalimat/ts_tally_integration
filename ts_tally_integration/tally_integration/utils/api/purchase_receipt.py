@@ -66,7 +66,7 @@ def get_purchsase_receipt(company_id=None):
             "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
             "VoucherType": "Purchase Receipt",
             "VoucherTypeParent": "Purchase Receipt",
-            "LedgerName": doc.customer_name,
+            "LedgerName": doc.supplier_name,
             "LedgerParent": "Sundry Debtors",
             "LedgerAddress": addr['city'],
             "LedgerState": addr['state'],

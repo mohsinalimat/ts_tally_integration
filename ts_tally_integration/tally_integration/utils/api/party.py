@@ -12,6 +12,9 @@ def get_party(company_id = None):
     auto_id = 1
     all_doc = []
 
+
+
+
     suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 10)
     
     for supplier in suppliers:
@@ -42,6 +45,9 @@ def get_party(company_id = None):
 
         all_doc.append(supplier_dict)
 
+
+
+
     customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 100)
 
     for customer in customers:
@@ -71,6 +77,8 @@ def get_party(company_id = None):
         all_doc.append(customer_dict)
 
 
+
+
     employees = frappe.get_all('Employee', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 10)
 
     for employee in employees:
@@ -92,6 +100,58 @@ def get_party(company_id = None):
         auto_id += 1
 
         all_doc.append(employee_dict)
+
+
+
+
+    default_tally_account = frappe.get_all('Tally Account',
+                              filters = {'status': ['!=', 'SUCCESS']}, fields=['*'])
+
+    for account in default_tally_account:
+
+        account_dict = {
+            "Autoid": auto_id,
+            "CompanyNumber": str(company_id),
+            "LedgerName": account.name,
+            "LedgerParent": account.tally_parent,
+            "LedgerAddress": "",
+            "LedgerState": '',
+            "LedgerCountry": '',
+            "LedgerPincode": '',
+            "LedgerMobile": '',
+            "LedgerGstReg": "",
+            "LedgerPan": '',
+            "LedgerGstin": '',
+        }
+        auto_id += 1
+
+        all_doc.append(account_dict)
+        
+
+
+    accounts = frappe.get_all('Account',
+                              filters = {'custom_tally_parent_account': ['is', 'set'],'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+
+    for account in accounts:
+
+        account_dict = {
+            "Autoid": auto_id,
+            "CompanyNumber": str(company_id),
+            "LedgerName": account.account_name,
+            "LedgerParent": account.custom_tally_parent_account,
+            "LedgerAddress": "",
+            "LedgerState": '',
+            "LedgerCountry": '',
+            "LedgerPincode": '',
+            "LedgerMobile": '',
+            "LedgerGstReg": "",
+            "LedgerPan": '',
+            "LedgerGstin": '',
+        }
+        auto_id += 1
+
+        all_doc.append(account_dict)
+
 
 
     final_voucher = ({
@@ -155,6 +215,26 @@ def fetch_response(response):
             })
             updated = True
 
+        if frappe.db.exists("Account", {"account_name": party_name}):
+            emp_doc = frappe.db.exists("Account", {"account_name": party_name})
+            frappe.db.set_value('Account', emp_doc, {
+                'custom_tally_auto_id': party_name,
+                'custom_status': status,
+                'custom_sync_time': sync_time
+            })
+            updated = True
+
+
+        if frappe.db.exists("Tally Account", {"name": party_name}):
+            acc = frappe.db.exists("Tally Account", {"name": party_name})
+            frappe.db.set_value('Tally Account', acc, {
+                'tally_auto_id': party_name,
+                'status': status,
+                'sync_time': sync_time
+            })
+            updated = True
+
+
         if not updated:
             frappe.log_error(f"Neither Customer nor Supplier found for Tally AUTOID: {party_name}", "Tally Sync Error")
 
@@ -164,3 +244,4 @@ def fetch_response(response):
         "status":True,
         "message":"Updated successfully"
     }, default=str), content_type='application/json')
+
