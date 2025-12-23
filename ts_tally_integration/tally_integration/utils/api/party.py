@@ -15,7 +15,7 @@ def get_party(company_id = None):
 
 
 
-    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 10)
+    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'])
     
     for supplier in suppliers:
 
@@ -48,7 +48,7 @@ def get_party(company_id = None):
 
 
 
-    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 100)
+    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
 
     for customer in customers:
         if customer.get('customer_primary_address'):
