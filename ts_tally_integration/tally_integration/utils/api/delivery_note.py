@@ -185,7 +185,7 @@ def get_delivery_note(company_id=None):
                     "Quantity": item.get("qty"),
                     "Rate": "",
                     "Discount": "",
-                    "Amount": item.get("cgst_amount"),
+                    "Amount": item.get("net_amount"),
                     "OrderNo": "",
 
                     "OrderDate": "",

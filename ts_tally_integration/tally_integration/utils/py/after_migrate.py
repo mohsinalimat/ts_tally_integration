@@ -11,13 +11,90 @@ def after_migrate():
     role_creation(role_name)
     role_permission(role_name)
     user_creation(user_id)
+    create_gst_tally_accounts()
+
+    print('Creating Tally Fields')
     create_account_parentfield()
+    print("Fields Updated...")
 
     print("Updating Account's Parent Field by Thirvusoft...")
     create_tally_parent_account()
     print("Account ParentField Updated by Thirvusoft...")
 
 
+
+from datetime import datetime
+
+def create_gst_tally_accounts():
+    ledgers = [
+        # Sales & Purchase
+        ("Sales @ 5.0", "Sales Accounts"),
+        ("Purchase @ 5.0", "Purchase Accounts"),
+
+        ("Sales @ 12.0", "Sales Accounts"),
+        ("Purchase @ 12.0", "Purchase Accounts"),
+
+        ("Sales @ 18.0", "Sales Accounts"),
+        ("Purchase @ 18.0", "Purchase Accounts"),
+
+        ("Sales @ 28.0", "Sales Accounts"),
+        ("Purchase @ 28.0", "Purchase Accounts"),
+
+        ("Sales @ Exempt", "Sales Accounts"),
+        ("Purchase @ Exempt", "Purchase Accounts"),
+
+        # Input Tax
+        ("Input Tax CGST @ 2.5", "Duties & Taxes"),
+        ("Input Tax SGST @ 2.5", "Duties & Taxes"),
+        ("Input Tax IGST @ 5.0", "Duties & Taxes"),
+
+        ("Input Tax CGST @ 6.0", "Duties & Taxes"),
+        ("Input Tax SGST @ 6.0", "Duties & Taxes"),
+        ("Input Tax IGST @ 12.0", "Duties & Taxes"),
+
+        ("Input Tax CGST @ 9.0", "Duties & Taxes"),
+        ("Input Tax SGST @ 9.0", "Duties & Taxes"),
+        ("Input Tax IGST @ 18.0", "Duties & Taxes"),
+
+        ("Input Tax CGST @ 14.0", "Duties & Taxes"),
+        ("Input Tax SGST @ 14.0", "Duties & Taxes"),
+        ("Input Tax IGST @ 28.0", "Duties & Taxes"),
+
+        # Output Tax
+        ("Output Tax CGST @ 2.5", "Duties & Taxes"),
+        ("Output Tax SGST @ 2.5", "Duties & Taxes"),
+        ("Output Tax IGST @ 5.0", "Duties & Taxes"),
+
+        ("Output Tax CGST @ 6.0", "Duties & Taxes"),
+        ("Output Tax SGST @ 6.0", "Duties & Taxes"),
+        ("Output Tax IGST @ 12.0", "Duties & Taxes"),
+
+        ("Output Tax CGST @ 9.0", "Duties & Taxes"),
+        ("Output Tax SGST @ 9.0", "Duties & Taxes"),
+        ("Output Tax IGST @ 18.0", "Duties & Taxes"),
+
+        ("Output Tax CGST @ 14.0", "Duties & Taxes"),
+        ("Output Tax SGST @ 14.0", "Duties & Taxes"),
+        ("Output Tax IGST @ 28.0", "Duties & Taxes"),
+    ]
+
+    for ledger_name, parent in ledgers:
+        # Avoid duplicates
+        if frappe.db.exists("Tally Account", {"account": ledger_name}):
+            continue
+
+        doc = frappe.get_doc({
+            "doctype": "Tally Account",
+            "account": ledger_name,
+            "tally_parent": parent
+            })
+        doc.insert(ignore_permissions=True)
+
+    frappe.db.commit()
+
+
+
+    
 def create_account_parentfield():
     custom_fields = {
         "Account": [
@@ -29,6 +106,33 @@ def create_account_parentfield():
                 "insert_after": "parent_account",
                 "depends_on": "eval: doc.is_group == 0",
                 "mandatory_depends_on": "eval: doc.is_group == 0",
+            },
+            {
+                "label": "Tally",
+                "fieldname": "tally_tab",
+                "fieldtype": "Tab Break",
+                "insert_after": "include_in_gross"
+            },
+            {
+                "label": "Tally Auto ID",
+                "fieldname": "custom_tally_auto_id",
+                "fieldtype": "Data",
+                "insert_after": "tally_tab",
+                "no_copy": 1
+            },
+            {
+                "label": "Status",
+                "fieldname": "custom_status",
+                "fieldtype": "Data",
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
+            },
+            {
+                "label": "Sync Time",
+                "fieldname": "custom_sync_time",
+                "fieldtype": "Datetime",
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Item": [
@@ -463,7 +567,6 @@ def create_tally_parent_account():
         {"account_name": "Unsecured Loans", "custom_tally_parent_account": "Current Liabilities"},
         {"account_name": "Asset Received But Not Billed", "custom_tally_parent_account": "Current Liabilities"},
         {"account_name": "Stock Received But Not Billed", "custom_tally_parent_account": "Current Liabilities"}
-        
         ]
 
 
