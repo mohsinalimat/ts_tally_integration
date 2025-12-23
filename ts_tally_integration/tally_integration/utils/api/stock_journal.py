@@ -2,6 +2,7 @@ import frappe
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
+from frappe.utils import getdate, today
 
 
 @frappe.whitelist()
@@ -24,12 +25,13 @@ def get_stock_entry(company_id=None):
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'company_name')
 
-    fiscal_year = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['fiscal_year'])
-    fy_doc = frappe.get_doc("Fiscal Year", fiscal_year)
-    start_date = fy_doc.year_start_date
-    end_date = fy_doc.year_end_date
 
     all_vouchers = []
+
+    sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
+
+    start_date = getdate(sync_from)
+    end_date = getdate(today())
 
     stock_entries = frappe.get_all('Stock Entry', 
                                    filters={'company': company_name, 'docstatus': 1,
