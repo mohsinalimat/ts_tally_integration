@@ -136,7 +136,7 @@ def get_sales_inv(company_id=None):
                             "CrDr": cr_dr,
                             "CostCategory": "",
                             "CostCentre": item['cost_center'],
-                            "Stockitem": item['item_code'],
+                            "Stockitem": item['item_name'],
                             "Godown": item['warehouse'].split('-')[0].strip() if item.get('warehouse') else None,
                             "BatchNo": "",
                             "Quantity": item['qty'],

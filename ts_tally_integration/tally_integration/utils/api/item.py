@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 100)
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'])
 
     for item in items:
 
@@ -41,9 +41,9 @@ def get_item(company_id = None):
         igst = "{:.1f}".format(item_tax_template[0]['gst_rate']) if item_tax_template and is_gst_applicable == 'Applicable' else ""
 
         item_dict = {
-            "Autoid": item.name,
+            "Autoid": item.item_name,
             "CompanyNumber": str(company_id),
-            "Name": item.name,
+            "Name": item.item_name,
             "Parent": item.item_group,
             "Category": "",
             "BaseUnits": item.stock_uom,
