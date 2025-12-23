@@ -104,31 +104,6 @@ def get_party(company_id = None):
 
 
 
-    default_tally_account = frappe.get_all('Tally Account',
-                              filters = {'status': ['!=', 'SUCCESS']}, fields=['*'])
-
-    for account in default_tally_account:
-
-        account_dict = {
-            "Autoid": auto_id,
-            "CompanyNumber": str(company_id),
-            "LedgerName": account.name,
-            "LedgerParent": account.tally_parent,
-            "LedgerAddress": "",
-            "LedgerState": '',
-            "LedgerCountry": '',
-            "LedgerPincode": '',
-            "LedgerMobile": '',
-            "LedgerGstReg": "",
-            "LedgerPan": '',
-            "LedgerGstin": '',
-        }
-        auto_id += 1
-
-        all_doc.append(account_dict)
-        
-
-
     accounts = frappe.get_all('Account',
                               filters = {'custom_tally_parent_account': ['is', 'set'],'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
 

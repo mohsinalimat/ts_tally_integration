@@ -13,7 +13,9 @@ def after_migrate():
     user_creation(user_id)
     create_gst_tally_accounts()
 
+    print('Creating Tally Fields')
     create_account_parentfield()
+    print("Fields Updated...")
 
     print("Updating Account's Parent Field by Thirvusoft...")
     create_tally_parent_account()
@@ -104,6 +106,33 @@ def create_account_parentfield():
                 "insert_after": "parent_account",
                 "depends_on": "eval: doc.is_group == 0",
                 "mandatory_depends_on": "eval: doc.is_group == 0",
+            },
+            {
+                "label": "Tally",
+                "fieldname": "tally_tab",
+                "fieldtype": "Tab Break",
+                "insert_after": "include_in_gross"
+            },
+            {
+                "label": "Tally Auto ID",
+                "fieldname": "custom_tally_auto_id",
+                "fieldtype": "Data",
+                "insert_after": "tally_tab",
+                "no_copy": 1
+            },
+            {
+                "label": "Status",
+                "fieldname": "custom_status",
+                "fieldtype": "Data",
+                "insert_after": "custom_tally_auto_id",
+                "no_copy": 1
+            },
+            {
+                "label": "Sync Time",
+                "fieldname": "custom_sync_time",
+                "fieldtype": "Datetime",
+                "insert_after": "custom_status",
+                "no_copy": 1
             }
         ],
         "Item": [
@@ -459,35 +488,6 @@ def create_account_parentfield():
                 "insert_after": "custom_tally_guid",
                 "no_copy": 1
             }
-        ],
-        "Account": [
-            {
-                "label": "Tally",
-                "fieldname": "tally_tab",
-                "fieldtype": "Tab Break",
-                "insert_after": "include_in_gross"
-            },
-            {
-                "label": "Tally Auto ID",
-                "fieldname": "custom_tally_auto_id",
-                "fieldtype": "Data",
-                "insert_after": "tally_tab",
-                "no_copy": 1
-            },
-            {
-                "label": "Status",
-                "fieldname": "custom_status",
-                "fieldtype": "Data",
-                "insert_after": "custom_tally_auto_id",
-                "no_copy": 1
-            },
-            {
-                "label": "Sync Time",
-                "fieldname": "custom_sync_time",
-                "fieldtype": "Datetime",
-                "insert_after": "custom_status",
-                "no_copy": 1
-            }
         ]
     }
     create_custom_fields(custom_fields)
@@ -567,7 +567,6 @@ def create_tally_parent_account():
         {"account_name": "Unsecured Loans", "custom_tally_parent_account": "Current Liabilities"},
         {"account_name": "Asset Received But Not Billed", "custom_tally_parent_account": "Current Liabilities"},
         {"account_name": "Stock Received But Not Billed", "custom_tally_parent_account": "Current Liabilities"}
-        
         ]
 
 

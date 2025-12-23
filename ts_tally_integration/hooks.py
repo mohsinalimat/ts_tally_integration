@@ -82,7 +82,6 @@ required_apps = ["frappe/erpnext"]
 # Installation
 # ------------
 
-# before_install = "ts_tally_integration.install.before_install"
 after_migrate = "ts_tally_integration.tally_integration.utils.py.after_migrate.after_migrate"
 
 

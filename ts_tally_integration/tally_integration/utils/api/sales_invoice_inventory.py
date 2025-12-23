@@ -117,7 +117,7 @@ def get_sales_inv(company_id=None):
                             "Voucherid": doc.name,
                             "VoucherNumber": doc.name,
                             "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": 'sales',
+                            "VoucherType": "Sales",
                             "VoucherTypeParent": "Sales",
                             "LedgerName": f"{ledgername.split(' - ')[0]} @ {(ledger_suffix)}",
                             "LedgerParent": parent_account,
@@ -241,7 +241,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'sales',
+                                        "VoucherType": "Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                         "LedgerParent": parent_account,
@@ -334,7 +334,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'sales',
+                                        "VoucherType": "Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
                                         "LedgerParent": parent_account,
@@ -426,7 +426,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'sales',
+                                        "VoucherType": "Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                         "LedgerParent": parent_account,
@@ -523,7 +523,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": "Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -619,7 +619,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": "Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername,
                         "LedgerParent": parent_account,
@@ -714,7 +714,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": "Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": invoice['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -809,7 +809,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": "Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": invoice['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -906,7 +906,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": "Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -1002,6 +1002,7 @@ def get_sales_inv(company_id=None):
         final_voucher.status_code = 200
         
         return final_voucher
+
 
 
 
