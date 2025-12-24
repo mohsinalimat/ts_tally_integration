@@ -6,10 +6,31 @@ from frappe.model.document import Document
 from frappe.core.doctype.user.user import generate_keys
 from frappe.utils import get_url
 from frappe.permissions import add_permission
+from frappe.utils import getdate
 
 
 class TSTallySettings(Document):
-	pass
+
+    def validate(doc):
+        for i in doc.company_table:
+            year_start_date, year_end_date = frappe.get_value(
+                "Fiscal Year",
+                i.fiscal_year,
+                ["year_start_date", "year_end_date"]
+            )
+
+            sync_from_date = getdate(i.sync_from)
+
+            # Compare dates
+            if sync_from_date < year_start_date or sync_from_date > year_end_date:
+                frappe.throw(
+                    f"Row {i.idx}: Sync From date ({sync_from_date}) must be between "
+                    f"{year_start_date} and {year_end_date} for Fiscal Year {i.fiscal_year}"
+                )
+
+
+
+
 
 @frappe.whitelist()
 def get_unmapped_accounts():

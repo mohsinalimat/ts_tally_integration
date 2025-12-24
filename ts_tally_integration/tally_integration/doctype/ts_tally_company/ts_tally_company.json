@@ -10,7 +10,8 @@
   "company_number",
   "company_name",
   "stock",
-  "fiscal_year"
+  "fiscal_year",
+  "sync_from"
  ],
  "fields": [
   {
@@ -41,20 +42,29 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Stock",
-   "options": "Inventory\nNon-Inventory"
+   "options": "Inventory\nNon-Inventory",
+   "reqd": 1
   },
   {
    "fieldname": "fiscal_year",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Fiscal Year",
-   "options": "Fiscal Year"
+   "options": "Fiscal Year",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sync_from",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Sync From",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-12-08 12:14:17.729077",
+ "modified": "2025-12-23 17:17:49.196202",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Company",

@@ -1,34 +1,28 @@
 import frappe
 
-def script():
-    receipt_response = [{"AUTOID":"All Warehouses","STATUS":"SUCCESS","IMPORTDATE":"20251217","IMPORTTIME":"17:23:30"},
-                        {"AUTOID":"Stores","STATUS":"SUCCESS","IMPORTDATE":"20251217","IMPORTTIME":"17:23:30"}]
-    import requests
-    import json
+def create_bulk_items(count=50):
+    for i in range(1, count + 1):
+        item_code = f"AUTO-ITEM-{i:03d}"
 
-    url = "http://106.51.153.24:41635/api/method/ts_tally_integration.tally_integration.utils.api.warehouse.fetch_response"
+        if not frappe.db.exists("Item", item_code):
+            item = frappe.get_doc({
+                "doctype": "Item",
+                "item_code": item_code,
+                "item_name": f"Auto Item {i}",
+                "item_group": "All Item Groups",
+                "stock_uom": "Nos",
+                "gst_hsn_code": '999799',
+                "is_stock_item": 1,
+                "maintain_stock": 1,
+                "is_sales_item": 1,
+                "is_purchase_item": 1
+            })
+            item.insert(ignore_permissions=True)
 
-    headers = {
-        "Authorization": "token c538d9013360afc:0868d0f44207d41",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "response": json.dumps({
-            "GODOWN RESPONSE": receipt_response
-        })
-    }
-
-    res = requests.post(url, headers=headers, json=payload)
-
-    print(res.status_code)
-    print(res.json())
+    frappe.db.commit()
 
 
 
-
-
-import frappe
 
 def duplicate_payment_entry(source_pe = 'ACC-PAY-2025-02280', copies=500):
     for i in range(copies):

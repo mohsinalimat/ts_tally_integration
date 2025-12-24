@@ -94,7 +94,7 @@ def fetch_response(response=None):
 
         if not item_name:
             continue
-        
+
         item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
 
         if item_docname:

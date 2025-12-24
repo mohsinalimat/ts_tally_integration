@@ -2,6 +2,7 @@ import frappe
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
+from frappe.utils import getdate, today
 
 
 @frappe.whitelist()
@@ -24,12 +25,13 @@ def get_stock_entry(company_id=None):
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'company_name')
 
-    fiscal_year = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['fiscal_year'])
-    fy_doc = frappe.get_doc("Fiscal Year", fiscal_year)
-    start_date = fy_doc.year_start_date
-    end_date = fy_doc.year_end_date
 
     all_vouchers = []
+
+    sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
+
+    start_date = getdate(sync_from)
+    end_date = getdate(today())
 
     stock_entries = frappe.get_all('Stock Entry', 
                                    filters={'company': company_name, 'docstatus': 1,
@@ -72,7 +74,7 @@ def get_stock_entry(company_id=None):
                 "BillDate": "",
                 "CostCategory": "",
                 "CostCentre": "",
-                "Stockitem": item.item_code,
+                "Stockitem": item.item_name,
                 "BatchNo": "",
                 "Quantity": float(item.qty),
                 "Rate": float(item.basic_rate),
@@ -143,9 +145,6 @@ def fetch_response(response):
         import_time = response.get("IMPORTTIME")
 
         existing_stock_entry = frappe.db.get_value("Stock Entry", {"name": stock_entry_id}, "name")
-        if not existing_stock_entry:
-            frappe.log_error(f"Stock Entry not found for Tally AUTOID: {stock_entry_id}", "Tally Stock Entry Sync Error")
-            continue
 
         import_date = datetime.strptime(import_date, "%Y%m%d").date()
         import_time = datetime.strptime(import_time, "%H:%M:%S").time()
@@ -157,7 +156,6 @@ def fetch_response(response):
             "custom_sync_time": datetime.combine(import_date, import_time)
         })
 
-        frappe.logger("Tally Sync").info(f"Stock Entry {existing_stock_entry} updated with GUID: {guid}, REFNO: {ref_no}")
     frappe.db.commit()
     response = {
         "status":True,
