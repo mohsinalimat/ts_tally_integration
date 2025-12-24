@@ -137,6 +137,12 @@ def create_account_parentfield():
         ],
         "Item": [
             {
+                "fieldname": "custom_tally_item_name",
+                "label": "Tally Item Name",
+                "insert_after": "stock_uom",
+                "field_type": "Data"
+            },
+            {
                 "fieldname": "tally_tab",
                 "fieldtype": "Tab Break",
                 "label": "Tally",

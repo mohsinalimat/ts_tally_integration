@@ -74,7 +74,7 @@ def get_stock_entry(company_id=None):
                 "BillDate": "",
                 "CostCategory": "",
                 "CostCentre": "",
-                "Stockitem": item.item_code,
+                "Stockitem": item.item_name,
                 "BatchNo": "",
                 "Quantity": float(item.qty),
                 "Rate": float(item.basic_rate),
@@ -145,9 +145,6 @@ def fetch_response(response):
         import_time = response.get("IMPORTTIME")
 
         existing_stock_entry = frappe.db.get_value("Stock Entry", {"name": stock_entry_id}, "name")
-        if not existing_stock_entry:
-            frappe.log_error(f"Stock Entry not found for Tally AUTOID: {stock_entry_id}", "Tally Stock Entry Sync Error")
-            continue
 
         import_date = datetime.strptime(import_date, "%Y%m%d").date()
         import_time = datetime.strptime(import_time, "%H:%M:%S").time()
@@ -159,7 +156,6 @@ def fetch_response(response):
             "custom_sync_time": datetime.combine(import_date, import_time)
         })
 
-        frappe.logger("Tally Sync").info(f"Stock Entry {existing_stock_entry} updated with GUID: {guid}, REFNO: {ref_no}")
     frappe.db.commit()
     response = {
         "status":True,
