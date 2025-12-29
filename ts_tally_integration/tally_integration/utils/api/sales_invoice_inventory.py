@@ -209,6 +209,7 @@ def get_sales_inv(company_id=None):
 
 
                 elif account_type == 'Tax':
+                    print('RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR')
                     
                     if not tax_processed:
                         ledgername = invoice['account']
