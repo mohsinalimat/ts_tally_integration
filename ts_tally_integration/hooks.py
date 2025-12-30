@@ -137,13 +137,20 @@ after_migrate = "ts_tally_integration.tally_integration.utils.py.after_migrate.a
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Sales Invoice": {
+		"validate": "ts_tally_integration.tally_integration.utils.py.amended_from.validate",
+	},
+ 	"Purchase Invoice": {
+		"validate": "ts_tally_integration.tally_integration.utils.py.amended_from.validate",
+	},
+	"Journal Entry": {
+		"validate": "ts_tally_integration.tally_integration.utils.py.amended_from.validate",
+	},
+ 	"Payment Entry": {
+		"validate": "ts_tally_integration.tally_integration.utils.py.amended_from.validate",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
