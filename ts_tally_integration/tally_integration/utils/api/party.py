@@ -86,7 +86,7 @@ def get_party(company_id = None):
         employee_dict = {
             "Autoid": auto_id,
             "CompanyNumber": str(company_id),
-            "LedgerName": employee.employee_name,
+            "LedgerName": employee.name,
             "LedgerParent": "Sundry Debtors",
             "LedgerAddress": "",
             "LedgerState": '',
@@ -181,8 +181,8 @@ def fetch_response(response):
             })
             updated = True
 
-        if frappe.db.exists("Employee", {"employee_name": party_name}):
-            emp_doc = frappe.db.exists("Employee", {"employee_name": party_name})
+        if frappe.db.exists("Employee", {"name": party_name}):
+            emp_doc = frappe.db.exists("Employee", {"name": party_name})
             frappe.db.set_value('Employee', emp_doc, {
                 'custom_tally_auto_id': party_name,
                 'custom_status': status,
@@ -219,4 +219,6 @@ def fetch_response(response):
         "status":True,
         "message":"Updated successfully"
     }, default=str), content_type='application/json')
+
+
 

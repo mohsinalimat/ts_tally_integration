@@ -149,6 +149,9 @@ doc_events = {
 	},
  	"Payment Entry": {
 		"validate": "ts_tally_integration.tally_integration.utils.py.amended_from.validate",
+	},
+ 	"Stock Entry": {
+		"validate": "ts_tally_integration.tally_integration.utils.py.amended_from.validate",
 	}
 }
 

@@ -24,7 +24,7 @@ def create_bulk_items(count=250):
 
 
 
-def duplicate_payment_entry(source_pe = 'ACC-PAY-2025-02280', copies=500):
+def duplicate_payment_entry(source_pe = 'ACC-PAY-2025-00013', copies=500):
     for i in range(copies):
         new_pe = frappe.copy_doc(
             frappe.get_doc("Payment Entry", source_pe)
