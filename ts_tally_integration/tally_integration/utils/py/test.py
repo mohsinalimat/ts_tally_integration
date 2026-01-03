@@ -1,6 +1,6 @@
 import frappe
 
-def create_bulk_items(count=50):
+def create_bulk_items(count=250):
     for i in range(1, count + 1):
         item_code = f"AUTO-ITEM-{i:03d}"
 
@@ -24,7 +24,7 @@ def create_bulk_items(count=50):
 
 
 
-def duplicate_payment_entry(source_pe = 'ACC-PAY-2025-02280', copies=500):
+def duplicate_payment_entry(source_pe = 'ACC-PAY-2025-00013', copies=500):
     for i in range(copies):
         new_pe = frappe.copy_doc(
             frappe.get_doc("Payment Entry", source_pe)
@@ -38,3 +38,4 @@ def duplicate_payment_entry(source_pe = 'ACC-PAY-2025-02280', copies=500):
         new_pe.insert(ignore_permissions=True)
 
     frappe.db.commit()
+
