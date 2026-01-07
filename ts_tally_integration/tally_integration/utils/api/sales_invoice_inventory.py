@@ -117,7 +117,7 @@ def get_sales_inv(company_id=None):
                             "Voucherid": doc.name,
                             "VoucherNumber": doc.name,
                             "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": "Sales",
+                            "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                             "VoucherTypeParent": "Sales",
                             "LedgerName": f"{ledgername.split(' - ')[0]} @ {(ledger_suffix)}",
                             "LedgerParent": parent_account,
@@ -209,7 +209,6 @@ def get_sales_inv(company_id=None):
 
 
                 elif account_type == 'Tax':
-                    print('RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR')
                     
                     if not tax_processed:
                         ledgername = invoice['account']
@@ -242,7 +241,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": "Sales",
+                                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                         "LedgerParent": parent_account,
@@ -335,7 +334,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": "Sales",
+                                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
                                         "LedgerParent": parent_account,
@@ -427,7 +426,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": "Sales",
+                                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                         "LedgerParent": parent_account,
@@ -524,7 +523,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Sales",
+                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -620,7 +619,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Sales",
+                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername,
                         "LedgerParent": parent_account,
@@ -715,7 +714,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Sales",
+                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": invoice['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -810,7 +809,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Sales",
+                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": invoice['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -895,6 +894,100 @@ def get_sales_inv(company_id=None):
                     all_vouchers.append(ledger_dict)
 
 
+                elif account_type == "Cash":
+                    parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
+
+                    ledger_dict = {
+                        "Autoid": doc.name,
+                        "CompanyNumber": str(company_id),
+                        "TallyMasterid": 1,
+                        "Voucherid": doc.name,
+                        "VoucherNumber": doc.name,
+                        "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                        "VoucherTypeParent": "Sales",
+                        "LedgerName": invoice['account'].split(" - ")[0],
+                        "LedgerParent": parent_account,
+
+                        "LedgerAddress": cus_address[0]['city'] if cus_address and parent_account== "Sundry Debtors" else "", 
+                        "LedgerState": cus_address[0]['state'] if cus_address and parent_account== "Sundry Debtors" else "", 
+                        "LedgerCountry": cus_address[0]['country'] if cus_address and parent_account== "Sundry Debtors" else "", 
+                        "LedgerPincode": cus_address[0]['pincode'] if cus_address and parent_account== "Sundry Debtors" else "", 
+                        "LedgerMobile": cus_address[0]['phone'] if cus_address and parent_account== "Sundry Debtors" else "", 
+                        "LedgerGstReg": gst_category if parent_account== "Sundry Debtors" else "", 
+                        "LedgerPan": customer_pan if parent_account== "Sundry Debtors" else "", 
+                        "LedgerGstin": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
+
+                        "BillName": doc.name,
+                        "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
+                        "CrDr": cr_dr,
+                        "CostCategory": "",
+                        "CostCentre": doc.company,
+                        "Stockitem": "",
+                        "Godown": "",
+                        "BatchNo": "",
+                        "Quantity": "",
+                        "Rate": "",
+                        "Discount": "",
+                        "Amount": round(amount, 2),
+                        "OrderNo": "",
+                        "OrderDate": "",
+                        "TrackingNo": "",
+                        "TrackingDate": "",
+                        "TermsOfPayment": "",
+                        "OtherRef": "",
+                        "TermsOfDelivery1": "",
+                        "TermsOfDelivery2": "",
+                        "DispatchDocNo": "",
+                        "ReceiptDocNo": "",
+                        "DispatchedThrough": "",
+                        "Destination": "",
+                        "CarrierName": "",
+                        "BillOfLanding": "",
+                        "BillOfLandingDate": "",
+                        "VehicleNo": "",
+
+                        "BuyerName": doc.customer if parent_account== "Sundry Debtors" else "",
+                        "BuyerMailingName": doc.customer if parent_account== "Sundry Debtors" else "",
+                        "BuyerAddress1": cus_address[0]['address_line1'] if parent_account== "Sundry Debtors" and cus_address else "",
+                        "BuyerAddress2": cus_address[0]['address_line2'] if parent_account== "Sundry Debtors" and cus_address else "",
+                        "BuyerState": cus_address[0]['state'] if parent_account== "Sundry Debtors" and cus_address else "",
+                        "BuyerCountry": cus_address[0]['country'] if parent_account== "Sundry Debtors" and cus_address else "",
+                        "BuyerGstReg": gst_category if parent_account== "Sundry Debtors" else "",
+                        "BuyerGSTIN": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
+                        "BuyerPincode": cus_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_address else "",
+
+                        "ConsigneeName": cus_ship_address[0]['address_title'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
+                        "ConsigneeMailingName": cus_ship_address[0]['address_title'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
+                        "ConsigneeAddress1": cus_ship_address[0]['address_line1'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
+                        "ConsigneeAddress2": cus_ship_address[0]['address_line2'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
+                        "ConsigneeState": cus_ship_address[0]['state'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
+                        "ConsigneeCountry": cus_ship_address[0]['country'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
+                        "ConsigneeGSTIN": cust_gstin.gstin if parent_account== "Sundry Debtors" else "",
+                        "ConsigneePincode": cus_ship_address[0]['pincode'] if parent_account== "Sundry Debtors" and cus_ship_address else "",
+                        "PlaceOfSupply" : cus_ship_address[0]['state'] if cus_ship_address and parent_account== "Sundry Debtors" else "",
+
+                        "CmpGstRegistrationType":gst_category,
+                        "CmpGstin":company_gst,
+                        "CmpGstState":company_address[0]['state'],
+                        "GstOvrdnTaxability":"",
+                        "GstOvrdnTypeofsupply":"",
+                        "GstHsnName":"",
+                        "GstHsnDescription":"",
+                        "CgstGstRateDutyhead":"",
+                        "CgstGstRateValuationtype":"",
+                        "CgstGstRate":"",
+                        "SgstGstRateDutyhead":"",
+                        "SgstGstRateValuationtype":"",
+                        "SgstGstRate":"",
+                        "IgstGstRateDutyhead":"",
+                        "IgstGstRateValuationtype":"",
+                        "IgstGstRate":"",
+                        "Narration": ""
+                    }
+
+                    all_vouchers.append(ledger_dict)
+                    
 
                 elif account_type == 'Round Off':
                     ledgername = 'Roundoff'
@@ -907,7 +1000,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "Sales",
+                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": parent_account,
