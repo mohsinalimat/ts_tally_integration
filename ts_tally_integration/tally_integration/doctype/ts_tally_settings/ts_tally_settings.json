@@ -67,7 +67,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-10-28 11:11:03.323630",
+ "modified": "2026-01-09 12:45:50.153744",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Settings",
@@ -87,5 +87,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

@@ -56,7 +56,7 @@ def get_itemgroup(company_id=None):
 
 @frappe.whitelist()
 def fetch_response(response):
-    frappe.log_error(f"Response from Tally: {response}", "Tally Item Group Response")
+
     data = json.loads(response) if isinstance(response, str) else response
     item_group_list = data.get("STOCKGROUP RESPONSE", [])
 
@@ -85,8 +85,7 @@ def fetch_response(response):
                 'custom_sync_time': sync_datetime
             })
 
-        else:
-            frappe.log_error(f"Item Group not found for Tally AUTOID: {item_group_name}", "Tally Item Sync Error")
+    frappe.db.commit()
 
     return Response(json.dumps({
         "status":True,
