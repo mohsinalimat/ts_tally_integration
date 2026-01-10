@@ -7,7 +7,6 @@ from frappe.utils import getdate, today
 
 @frappe.whitelist()
 def get_sales_inv(company_id=None):
-
     redirect_record = frappe.get_value(
         'Tally Different Function',
         {
