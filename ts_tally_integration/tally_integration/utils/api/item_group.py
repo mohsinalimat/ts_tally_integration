@@ -71,13 +71,9 @@ def fetch_response(response):
 
         existing_item_group = frappe.db.get_value("Item Group", {"name": item_group_name}, "name")
         if existing_item_group:
-            try:
-                import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
-                import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
-                sync_datetime = datetime.combine(import_date_obj, import_time_obj)
-            except Exception as e:
-                frappe.log_error(f"Invalid date/time in response: {item}\nError: {e}", "Tally DateTime Error")
-                continue
+            import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
+            sync_datetime = datetime.combine(import_date_obj, import_time_obj)
 
             frappe.db.set_value('Item Group', existing_item_group, {
                 'custom_tally_auto_id': item_group_name,

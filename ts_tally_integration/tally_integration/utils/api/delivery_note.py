@@ -760,8 +760,7 @@ def fetch_response(response):
                 "custom_sync_time": datetime.combine(import_date, import_time)
             })
 
-        else:
-            frappe.log_error(f"Delivery Note not found for Tally AUTOID: {existing_delivery}", "Tally Delivery Note Sync Error")
+    frappe.db.commit()
 
     response =  {
         "status":True,

@@ -1008,23 +1008,16 @@ def fetch_response(response):
 
         existing_purchase = frappe.db.get_value("Purchase Invoice", {"name": purchase_entry}, "name")
         if existing_purchase:
-            try:
-                import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
-                import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
-                sync_datetime = datetime.combine(import_date_obj, import_time_obj)
+            import_date_obj = datetime.strptime(import_date, "%Y%m%d").date()
+            import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
+            sync_datetime = datetime.combine(import_date_obj, import_time_obj)
 
-                frappe.db.set_value("Purchase Invoice", existing_purchase, {
-                    "custom_tally_auto_id": purchase_entry,
-                    "custom_tally_guid": guid,
-                    "custom_tally_refno": ref_no,
-                    "custom_sync_time": sync_datetime
-                })
-
-
-            except Exception as dt_error:
-                frappe.log_error(f"Date/Time format error in response: {item}\nError: {dt_error}", "Tally Purchase Sync DateTime Error")
-        else:
-            frappe.log_error(f"Purchase Invoice not found for Tally AUTOID: {purchase_entry}", "Tally Purchase Invoice Sync Error")
+            frappe.db.set_value("Purchase Invoice", existing_purchase, {
+                "custom_tally_auto_id": purchase_entry,
+                "custom_tally_guid": guid,
+                "custom_tally_refno": ref_no,
+                "custom_sync_time": sync_datetime
+            })
 
     frappe.db.commit()
 
