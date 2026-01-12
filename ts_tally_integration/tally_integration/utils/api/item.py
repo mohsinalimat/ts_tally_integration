@@ -98,9 +98,7 @@ def fetch_response(response=None):
         item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
 
         if item_docname:
-            frappe.db.set_value(
-                "Item",
-                item_docname,
+            frappe.db.set_value("Item",item_docname,
                 {
                     "custom_tally_auto_id": item_name,
                     "custom_status": status,

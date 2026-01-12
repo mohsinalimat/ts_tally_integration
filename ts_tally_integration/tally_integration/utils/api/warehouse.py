@@ -85,9 +85,8 @@ def fetch_response(response):
                 'custom_sync_time': datetime.combine(import_date, import_time)
             })
 
-        else:
-            frappe.log_error(f"Warehouse not found for Tally AUTOID: {warehouse_name}", "Tally Warehouse Sync Error")
     frappe.db.commit()
+
     response =  {
         "status":True,
         "message":"Updated successfully"

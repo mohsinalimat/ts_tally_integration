@@ -135,10 +135,7 @@ def fetch_response(response):
                 "custom_tally_refno": ref_no,
                 "custom_sync_time": datetime.combine(import_date, import_time)
             })
-
-        else:
-            frappe.log_error(f"Journal Entry not found for Tally AUTOID: {journal_entry}", "Tally Journal Entry Sync Error")
     
     frappe.db.commit()
-        
+
     return Response(json.dumps({"status": True, "message": "Updated successfully"}), content_type='application/json')

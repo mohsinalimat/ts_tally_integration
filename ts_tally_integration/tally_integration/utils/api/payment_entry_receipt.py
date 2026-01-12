@@ -179,7 +179,6 @@ def get_payment_entry(company_id=None):
 
 @frappe.whitelist()
 def fetch_response(response):
-    frappe.log_error(f"Payment Entry not found for Tally AUTOID:", "Tally Payment Entry Sync Error")
     data = json.loads(response) if isinstance(response, str) else response
 
     payment_response = data.get("RECEIPT RESPONSE", [])
@@ -206,9 +205,6 @@ def fetch_response(response):
                 "custom_tally_refno": ref_no,
                 "custom_sync_time": datetime.combine(import_date, import_time)
             })
-
-        else:
-            frappe.log_error(f"Payment Entry not found for Tally AUTOID: {payment_entry}", "Tally Payment Entry Sync Error")
 
     frappe.db.commit()
 

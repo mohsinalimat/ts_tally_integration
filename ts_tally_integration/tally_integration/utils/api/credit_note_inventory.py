@@ -1033,9 +1033,8 @@ def fetch_response(response):
                 "custom_sync_time": datetime.combine(import_date, import_time)
             })
 
-        else:
-            frappe.log_error(f"Contra Entry not found for Tally AUTOID: {sales_entry}", "Tally Contra Entry Sync Error")
-    
+    frappe.db.commit()
+
     response =  {
         "status":True,
         "message":"Updated successfully"

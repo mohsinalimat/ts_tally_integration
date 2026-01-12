@@ -1014,8 +1014,7 @@ def fetch_response(response):
                 "custom_sync_time": datetime.combine(import_date, import_time)
             })
 
-        else:
-            frappe.log_error(f"Sales Invoice not found for Tally AUTOID: {sales_entry}", "Tally Sales Invoice Sync Error")
+    frappe.db.commit()
 
     response =  {
         "status":True,
