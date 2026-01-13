@@ -13,7 +13,7 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'])
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 150)
 
     for item in items:
 
@@ -39,11 +39,11 @@ def get_item(company_id = None):
         cgst = "{:.1f}".format(item_tax_template[0]['gst_rate'] / 2) if item_tax_template and is_gst_applicable == 'Applicable' else ""
         sgst = "{:.1f}".format(item_tax_template[0]['gst_rate'] / 2) if item_tax_template and is_gst_applicable == 'Applicable' else ""
         igst = "{:.1f}".format(item_tax_template[0]['gst_rate']) if item_tax_template and is_gst_applicable == 'Applicable' else ""
-
+        clean_item_name = item.item_name.strip() if item.item_name else item.name.strip()
         item_dict = {
-            "Autoid": item.item_name,
+            "Autoid": clean_item_name,
             "CompanyNumber": str(company_id),
-            "Name": item.item_name,
+            "Name": clean_item_name,
             "Parent": item.item_group,
             "Category": "",
             "BaseUnits": item.stock_uom,
@@ -95,7 +95,7 @@ def fetch_response(response=None):
         if not item_name:
             continue
 
-        item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
+        item_docname = frappe.db.get_value("Item", {"item_code": item_name}, "name")
 
         if item_docname:
             frappe.db.set_value("Item",item_docname,
