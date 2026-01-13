@@ -55,7 +55,7 @@ def get_sales_inv(company_id=None):
         end_date = getdate(today())
 
         sales_list = frappe.get_all('Sales Invoice',
-                                    filters={'company':company_name, 'is_return':0, 'docstatus':1,
+                                    filters={'company':company_name, 'is_return':0, 'docstatus':1,'name': 'EF-RS-2526-3954',
                                              'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
                                     fields=['*'], limit = 100)
 
@@ -141,7 +141,7 @@ def get_sales_inv(company_id=None):
                             "Quantity": item['qty'],
                             "Rate": item['net_rate'],
                             "Discount": "",
-                            "Amount": round(item['net_amount'], 2),
+                            "Amount": item['taxable_value'],
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",

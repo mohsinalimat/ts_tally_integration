@@ -7,43 +7,55 @@ from datetime import datetime
 @frappe.whitelist()
 def get_itemgroup(company_id=None):
     if not company_id:
-        return Response(json.dumps({"status": False, "message": "Company number not found!"}),
-                        content_type="application/json")
+        return Response(json.dumps({"status": False, "message": "Company ID not found"}), content_type="application/json")
 
-    # Fetch item groups ONLY with valid fields
+    # 1. Fetch ALL groups (we need the full tree to find children of synced parents)
     item_groups = frappe.get_all(
-        "Item Group", filters={'custom_tally_auto_id': ["=", ""]},
-        fields=["name", "parent_item_group", "is_group"]
+        "Item Group",
+        fields=["name", "parent_item_group", "is_group", "custom_tally_auto_id"]
     )
 
-    # Build parent → children map
+    def clean_tally_text(text):
+        if not text: return text
+        text = text.replace("&", "and").replace('"', "").replace("'", "")
+        return " ".join(text.split())
+
+    # 2. Build the tree using ALL items
     tree = {}
     for ig in item_groups:
-        parent = ig.parent_item_group or "Primary"
+        parent = clean_tally_text(ig.parent_item_group) if ig.parent_item_group else "ROOT"
+        ig.name = clean_tally_text(ig.name)
         tree.setdefault(parent, []).append(ig)
 
     final_list = []
+    seen_names = set()
 
-    # Recursive function
-    def add_group(parent_name, display_parent):
-        children = tree.get(parent_name, [])
+    # 3. Recursive builder
+    def add_to_list(parent_key, tally_parent_label):
+        children = tree.get(parent_key, [])
         for child in children:
+            if child.name in seen_names:
+                continue
+            
+            # 4. ONLY ADD TO JSON IF IT IS NOT SYNCED
+            # Checks for None, empty string, or logical False
+            if not child.custom_tally_auto_id:
+                final_list.append({
+                    "Autoid": child.name,
+                    "CompanyNumber": company_id,
+                    "Name": child.name,
+                    "Parent": tally_parent_label,
+                    "IsGroup": "Yes" if child.is_group else "No"
+                })
+            
+            seen_names.add(child.name)
 
-            # Add the group
-            final_list.append({
-                "Autoid": "1",
-                "CompanyNumber": company_id,
-                "Name": child.name,
-                "Parent": display_parent,
-                # "IsGroup": "Yes" if child.is_group else "No"
-            })
+            # Keep recursing even if parent was already synced 
+            # so we can find unsynced children further down
+            if child.name in tree:
+                add_to_list(child.name, child.name)
 
-            # If group has children → recurse
-            if child.is_group:
-                add_group(child.name, child.name)
-
-    # Start recursion from Primary root
-    add_group("Primary", "Primary")
+    add_to_list("ROOT", "Primary")
 
     return Response(json.dumps({
         "status": True,
