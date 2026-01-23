@@ -2,7 +2,7 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
-
+from frappe.utils import get_datetime
 
 @frappe.whitelist()
 def get_item(company_id = None):
@@ -13,7 +13,11 @@ def get_item(company_id = None):
 
     all_doc = []
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 150)
+    sync_master_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_master_from')
+
+    start_date = get_datetime(sync_master_from)
+
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""], 'creation': [">", start_date]}, fields=['*'])
 
     for item in items:
 
