@@ -2,6 +2,7 @@ import frappe
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
+from frappe.utils import get_datetime
 
 
 @frappe.whitelist()
@@ -11,9 +12,6 @@ def get_party(company_id = None):
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
     auto_id = 1
     all_doc = []
-
-
-
 
     suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'])
     
@@ -46,9 +44,12 @@ def get_party(company_id = None):
         all_doc.append(supplier_dict)
 
 
+    sync_master_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_master_from')
+
+    start_date = get_datetime(sync_master_from)
 
 
-    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS'], 'creation': [">", start_date]}, fields=['*'])
 
     for customer in customers:
         if customer.get('customer_primary_address'):
