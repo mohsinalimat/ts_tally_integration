@@ -142,7 +142,7 @@ def credit_note_inv(company_id = None):
                             "Quantity": item['qty'],
                             "Rate": item['net_rate'],
                             "Discount": "",
-                            "Amount": abs(item['net_amount']),
+                            "Amount": item['taxable_value'],
                             "OrderNo": "",
                             "OrderDate": "",
                             "TrackingNo": "",
