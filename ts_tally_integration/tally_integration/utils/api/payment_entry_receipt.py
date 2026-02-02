@@ -28,7 +28,7 @@ def get_payment_entry(company_id=None):
         "Payment Entry",
         filters={"docstatus": 1,"company": company_name,"payment_type": "Receive",
                  "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
-        fields=["*"], limit = 100
+        fields=["*"], limit = 10
     )
 
     list_of_entries = []
