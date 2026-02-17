@@ -114,7 +114,7 @@ def get_payment_entry(company_id=None):
                 "Voucherid": "",
                 "VoucherNumber": doc.name,
                 "VoucherDate": posting_date,
-                "VoucherType": "Receipt",
+                "VoucherType": "ERP Receipt",
                 "VoucherTypeParent": "Receipt",
 
                 "LedgerName": ledger_name,
