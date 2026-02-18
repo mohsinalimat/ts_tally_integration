@@ -107,7 +107,7 @@ def get_payment_entry_receipt(company_id=None):
                 else:
                     # no party (Bank / Cash / Charges)
                     acc = frappe.get_doc("Account", gl.account)
-                    ledger_name = acc.account_name
+                    ledger_name = acc.custom_tally_account_name if acc.custom_tally_account_name else acc.account_name
                     gst_category = ""
                     gstin = ""
                     pan = ""

@@ -108,6 +108,13 @@ def create_account_parentfield():
                 "mandatory_depends_on": "eval: doc.is_group == 0",
             },
             {
+                "label": "Tally Account Name",
+                "fieldname": "custom_tally_account_name",
+                "fieldtype": "Data",
+                "insert_after": "custom_tally_parent_account",
+                "depends_on": "eval: doc.is_group == 0",
+            },
+            {
                 "label": "Tally",
                 "fieldname": "tally_tab",
                 "fieldtype": "Tab Break",
