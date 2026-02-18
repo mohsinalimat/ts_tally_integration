@@ -1,4 +1,4 @@
-import frappe
+import frappe, importlib
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
@@ -6,170 +6,189 @@ from frappe.utils import getdate, today
 
 
 @frappe.whitelist()
-def get_payment_entry(company_id=None):
-
-    if not company_id:
-        return Response(json.dumps("Company ID is not found!", default=str),
-                        content_type='application/json', status=404)
-
-    company_name = frappe.get_value("TS Tally Company",{"company_number": company_id},fieldname="company_name")
-
-    sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
-
-    start_date = getdate(sync_from)
-    end_date = getdate(today())
-
-    if not company_name:
-        return Response(json.dumps("Company is not found!", default=str),
-                        content_type='application/json', status=404)
-
-    # Fetch all Payment Entries which are not yet synced with Tally
-    doc_list = frappe.get_all(
-        "Payment Entry",
-        filters={"docstatus": 1,"company": company_name,"payment_type": "Receive",
-                 "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
-        fields=["*"], limit = 10
+def get_payment_entry_receipt(company_id=None):
+    redirect_record = frappe.get_value(
+        'Tally Different Function',
+        {
+            'parent': 'TS Tally Settings',
+            'tally_function_name': 'get_payment_entry_receipt'
+        },
+        'redirection_path'
     )
 
-    list_of_entries = []
+    if redirect_record:
 
-    for doc in doc_list:
+        module_path, func_name = redirect_record.rsplit('.', 1)
 
-        posting_date = datetime.strptime(
-            str(doc.posting_date), '%Y-%m-%d'
-        ).strftime('%Y%m%d')
+        custom_module = importlib.import_module(module_path)
 
-        # Get GL Entries of this Payment Entry
-        gl_entries = frappe.get_all(
-            "GL Entry",
-            filters={"voucher_no": doc.name},
-            fields=["party_type", "party", "debit", "credit", "account"]
+        func = getattr(custom_module, func_name)
+
+        return func(company_id)
+
+    else:
+        if not company_id:
+            return Response(json.dumps("Company ID is not found!", default=str),
+                            content_type='application/json', status=404)
+
+        company_name = frappe.get_value("TS Tally Company",{"company_number": company_id},fieldname="company_name")
+
+        sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
+
+        start_date = getdate(sync_from)
+        end_date = getdate(today())
+
+        if not company_name:
+            return Response(json.dumps("Company is not found!", default=str),
+                            content_type='application/json', status=404)
+
+        # Fetch all Payment Entries which are not yet synced with Tally
+        doc_list = frappe.get_all(
+            "Payment Entry",
+            filters={"docstatus": 1,"company": company_name,"payment_type": "Receive",
+                    "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
+            fields=["*"], limit = 10
         )
 
-        # Loop through each GL Entry and generate Tally lines
-        for gl in gl_entries:
+        list_of_entries = []
 
-            party_type = gl.party_type
-            party_name = gl.party
+        for doc in doc_list:
 
-            # ---------------- PARTY DETAILS ----------------
-            gst_category = ""
-            gstin = ""
-            pan = None
-            ledger_name = ""
-            ledger_parent = ""
+            posting_date = datetime.strptime(
+                str(doc.posting_date), '%Y-%m-%d'
+            ).strftime('%Y%m%d')
 
-            if party_type == "Customer":
-                cust = frappe.get_doc("Customer", party_name)
-                gst_category = {
-                    "Unregistered": "Unregistered/Consumer",
-                    "Registered Regular": "Regular",
-                    "Registered Composition": "Composition",
-                    "SEZ": "Regular - SEZ"
-                }.get(cust.gst_category, cust.gst_category)
+            # Get GL Entries of this Payment Entry
+            gl_entries = frappe.get_all(
+                "GL Entry",
+                filters={"voucher_no": doc.name},
+                fields=["party_type", "party", "debit", "credit", "account"]
+            )
 
-                ledger_name = cust.customer_name
-                gstin = cust.gstin or ""
-                pan = cust.pan or None
+            # Loop through each GL Entry and generate Tally lines
+            for gl in gl_entries:
 
-            elif party_type == "Supplier":
-                supp = frappe.get_doc("Supplier", party_name)
-                gst_category = supp.supplier_type or ""
-                gstin = supp.gstin or ""
-                pan = supp.pan or None
-                ledger_name = supp.supplier_name
+                party_type = gl.party_type
+                party_name = gl.party
 
-            elif party_type == "Employee":
-                emp = frappe.get_doc("Employee", party_name)
-                ledger_name = emp.employee_name
-                pan = emp.pan_number or None
-                gst_category = "Employee"
-
-            else:
-                # no party (Bank / Cash / Charges)
-                acc = frappe.get_doc("Account", gl.account)
-                ledger_name = acc.account_name
+                # ---------------- PARTY DETAILS ----------------
                 gst_category = ""
                 gstin = ""
-                pan = ""
+                pan = None
+                ledger_name = ""
+                ledger_parent = ""
 
-            # Always get parent account
-            ledger_parent = frappe.db.get_value(
-                "Account", gl.account, "custom_tally_parent_account"
-            ) or ""
+                if party_type == "Customer":
+                    cust = frappe.get_doc("Customer", party_name)
+                    gst_category = {
+                        "Unregistered": "Unregistered/Consumer",
+                        "Registered Regular": "Regular",
+                        "Registered Composition": "Composition",
+                        "SEZ": "Regular - SEZ"
+                    }.get(cust.gst_category, cust.gst_category)
 
-            # --------------- DR/CR LOGIC ----------------
-            if gl.debit > 0:
-                crdr = "Dr"
-                amount = float(gl.debit)
-            else:
-                crdr = "Cr"
-                amount = float(gl.credit)
+                    ledger_name = cust.customer_name
+                    gstin = cust.gstin or ""
+                    pan = cust.pan or None
 
-            # ---------------- BUILD ENTRY ----------------
-            entry = {
-                "Autoid": doc.name,
-                "CompanyNumber": str(company_id),
-                "TallyMasterid": 1,
-                "Voucherid": "",
-                "VoucherNumber": doc.name,
-                "VoucherDate": posting_date,
-                "VoucherType": "ERP Receipt",
-                "VoucherTypeParent": "Receipt",
+                elif party_type == "Supplier":
+                    supp = frappe.get_doc("Supplier", party_name)
+                    gst_category = supp.supplier_type or ""
+                    gstin = supp.gstin or ""
+                    pan = supp.pan or None
+                    ledger_name = supp.supplier_name
 
-                "LedgerName": ledger_name,
-                "LedgerParent": ledger_parent,
+                elif party_type == "Employee":
+                    emp = frappe.get_doc("Employee", party_name)
+                    ledger_name = emp.employee_name
+                    pan = emp.pan_number or None
+                    gst_category = "Employee"
 
-                "LedgerAddress": "",
-                "LedgerState": "",
-                "LedgerCountry": "",
-                "LedgerPincode": "",
-                "LedgerMobile": "",
+                else:
+                    # no party (Bank / Cash / Charges)
+                    acc = frappe.get_doc("Account", gl.account)
+                    ledger_name = acc.account_name
+                    gst_category = ""
+                    gstin = ""
+                    pan = ""
 
-                "LedgerGstReg": gst_category,
-                "LedgerGstin": gstin,
-                "LedgerPan": pan,
+                # Always get parent account
+                ledger_parent = frappe.db.get_value(
+                    "Account", gl.account, "custom_tally_parent_account"
+                ) or ""
 
-                "BillName": "",
-                "BillDate": "",
-                "PlaceOfSupply": "",
+                # --------------- DR/CR LOGIC ----------------
+                if gl.debit > 0:
+                    crdr = "Dr"
+                    amount = float(gl.debit)
+                else:
+                    crdr = "Cr"
+                    amount = float(gl.credit)
 
-                "TransactionDate": posting_date,
-                "CrDr": crdr,
-                "Amount": amount,
+                # ---------------- BUILD ENTRY ----------------
+                entry = {
+                    "Autoid": doc.name,
+                    "CompanyNumber": str(company_id),
+                    "TallyMasterid": 1,
+                    "Voucherid": "",
+                    "VoucherNumber": doc.name,
+                    "VoucherDate": posting_date,
+                    "VoucherType": "Receipt",
+                    "VoucherTypeParent": "Receipt",
 
-                "CostCategory1": "",
-                "CostCentre1": doc.cost_center.split(" - ")[0] if doc.cost_center else "",
+                    "LedgerName": ledger_name,
+                    "LedgerParent": ledger_parent,
 
-                "CostCategory2": "",
-                "CostCentre2": "",
-                "CostCategory3": "",
-                "CostCentre3": "",
-                "CostCategory4": "",
-                "CostCentre4": "",
-                "CostCategory5": "",
-                "CostCentre5": "",
+                    "LedgerAddress": "",
+                    "LedgerState": "",
+                    "LedgerCountry": "",
+                    "LedgerPincode": "",
+                    "LedgerMobile": "",
 
-                "BranchCode": "",
-                "Location": "",
-                "State": "",
+                    "LedgerGstReg": gst_category,
+                    "LedgerGstin": gstin,
+                    "LedgerPan": pan,
 
-                "Narration": doc.remarks.replace("\n", ". ") if doc.remarks else None
-            }
+                    "BillName": "",
+                    "BillDate": "",
+                    "PlaceOfSupply": "",
 
-            list_of_entries.append(entry)
+                    "TransactionDate": posting_date,
+                    "CrDr": crdr,
+                    "Amount": amount,
 
-    # FINAL JSON RESPONSE
-    response_payment = {
-        "status": True,
-        "VOUCHERDETAILS": {"VOUCHER": list_of_entries}
-    }
+                    "CostCategory1": "",
+                    "CostCentre1": doc.cost_center.split(" - ")[0] if doc.cost_center else "",
 
-    return Response(
-        json.dumps(response_payment, default=str),
-        content_type='application/json',
-        status=200
-    )
+                    "CostCategory2": "",
+                    "CostCentre2": "",
+                    "CostCategory3": "",
+                    "CostCentre3": "",
+                    "CostCategory4": "",
+                    "CostCentre4": "",
+                    "CostCategory5": "",
+                    "CostCentre5": "",
+
+                    "BranchCode": "",
+                    "Location": "",
+                    "State": "",
+
+                    "Narration": doc.remarks.replace("\n", ". ") if doc.remarks else None
+                }
+
+                list_of_entries.append(entry)
+
+        # FINAL JSON RESPONSE
+        response_payment = {
+            "status": True,
+            "VOUCHERDETAILS": {"VOUCHER": list_of_entries}
+        }
+
+        return Response(
+            json.dumps(response_payment, default=str),
+            content_type='application/json',
+            status=200
+        )
 
 
 

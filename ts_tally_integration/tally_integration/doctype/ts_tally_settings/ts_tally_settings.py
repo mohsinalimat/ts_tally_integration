@@ -69,8 +69,8 @@ def user_creation(user_id):
     debit_note_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_inventory.get_debit_note" # Purchase Invoice (Return)
     debit_note_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.debit_note_non_inventory.get_debit_note" # Purchase Invoice Return (Non-Inventory) 
 
-    payment_entry_pay = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_pay.get_payment_entry" # Payment Entry type (Pay)
-    payment_entry_receipt = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_receipt.get_payment_entry" # Payment Entry type (Receive)
+    payment_entry_pay = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_pay.get_payment_entry_pay" # Payment Entry type (Pay)
+    payment_entry_receipt = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.payment_entry_receipt.get_payment_entry_receipt" # Payment Entry type (Receive)
 
     sales_invoice_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_invoice_inventory.get_sales_inv" # Sales Invocie (Inventory)
     sales_invoice_non_inventory = f"{base_url}/api/method/ts_tally_integration.tally_integration.utils.api.sales_invoice_non_inventory.get_sales_non_inv" # Sales Invocie (Non-Inventory)
