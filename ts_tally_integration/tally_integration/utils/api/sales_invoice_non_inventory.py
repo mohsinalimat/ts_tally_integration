@@ -20,6 +20,15 @@ def get_sales_non_inv(company_id = None):
             })
         return Response(json.dumps(empty, default=str), content_type='application/json')
 
+    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Sales Invoice (Non Inventory)'}, ['enable_sync'])
+    if not enable_sync:
+        final_voucher = {
+            "status": True,
+            "VOUCHERDETAILS": {
+                "VOUCHER": []
+                }
+            }
+
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
 
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])

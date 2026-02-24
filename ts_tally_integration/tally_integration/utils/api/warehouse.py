@@ -8,13 +8,24 @@ def get_warehouse(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
 
+
+    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Warehouse'}, ['enable_sync'])
+
+    if not enable_sync:
+        final_voucher = {
+            "status": True,
+            "VOUCHERDETAILS": {
+                "GODOWNS": []
+                }
+            }
+
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
 
     group_warehouse = []
     nongroup = []
 
     warehouses = frappe.get_all('Warehouse',
-                                filters={'company': company_name, 'custom_status': ['!=', 'SUCCESS']},
+                                filters={'company': company_name, 'custom_tally_auto_id': ["=", ""]},
                                 fields=['*'])
 
     for warehouse in warehouses:

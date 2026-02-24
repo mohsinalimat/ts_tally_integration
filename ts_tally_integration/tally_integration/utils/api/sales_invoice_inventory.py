@@ -41,7 +41,17 @@ def get_sales_inv(company_id=None):
                 })
             return Response(json.dumps(empty, default=str), content_type='application/json')
 
+        enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Sales Invoice (Inventory)'}, ['enable_sync'])
+        if not enable_sync:
+            final_voucher = {
+                "status": True,
+                "VOUCHERDETAILS": {
+                    "VOUCHER": []
+                    }
+                }
+
         company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
+        cost_center = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['cost_center'])
 
         company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
         company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
@@ -55,7 +65,7 @@ def get_sales_inv(company_id=None):
         end_date = getdate(today())
 
         sales_list = frappe.get_all('Sales Invoice',
-                                    filters={'company':company_name, 'is_return':0, 'docstatus':1,'name': 'EF-RS-2526-3954',
+                                    filters={'company':company_name, 'is_return':0, 'docstatus':1,'cost_center': cost_center,
                                              'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
                                     fields=['*'], limit = 100)
 

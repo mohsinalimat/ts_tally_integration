@@ -30,6 +30,15 @@ def get_payment_entry_pay(company_id=None):
         if not company_id:
             return Response(json.dumps("Company ID is not found!", default=str),content_type='application/json', status=404)
 
+        enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Payment Entry Pay'}, ['enable_sync'])
+        if not enable_sync:
+            list_of_entries = {
+                "status": True,
+                "VOUCHERDETAILS": {
+                    "VOUCHER": []
+                    }
+                }
+
         company_name = frappe.get_value("TS Tally Company",{"company_number": company_id},fieldname="company_name")
 
         sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')

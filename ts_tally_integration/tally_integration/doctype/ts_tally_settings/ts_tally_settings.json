@@ -9,6 +9,8 @@
   "column_break_gorf",
   "company_table",
   "unmapped_accounts",
+  "voucher_sync_control_tab",
+  "voucher_sync_control",
   "api_tab",
   "api_details",
   "response_api_details",
@@ -62,12 +64,23 @@
    "fieldtype": "Table",
    "label": "Redirect Tally Function",
    "options": "Tally Different Function"
+  },
+  {
+   "fieldname": "voucher_sync_control",
+   "fieldtype": "Table",
+   "label": "Voucher Sync Control",
+   "options": "Voucher Sync Control"
+  },
+  {
+   "fieldname": "voucher_sync_control_tab",
+   "fieldtype": "Tab Break",
+   "label": "Voucher Sync Control"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-01-09 12:45:50.153744",
+ "modified": "2026-02-24 16:12:49.249782",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Settings",
