@@ -10,11 +10,22 @@ def get_party(company_id = None):
 
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
+
+    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Party'}, ['enable_sync'])
+    if not enable_sync:
+        final_voucher = {
+            "status": True,
+            "VOUCHERDETAILS": {
+                "LEDGER": all_doc
+                }
+            }
+        return Response(json.dumps(final_voucher, default=str), content_type='application/json')
+
     auto_id = 1
     all_doc = []
 
     suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'])
-    
+
     for supplier in suppliers:
 
         if supplier.get('supplier_primary_address'):
