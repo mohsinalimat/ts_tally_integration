@@ -32,12 +32,13 @@ def get_payment_entry_receipt(company_id=None):
 
         enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Payment Entry Receive'}, ['enable_sync'])
         if not enable_sync:
-            list_of_entries = {
+            final_voucher = {
                 "status": True,
                 "VOUCHERDETAILS": {
                     "VOUCHER": []
                     }
                 }
+            return Response(json.dumps(final_voucher, default=str), content_type='application/json')
 
         company_name = frappe.get_value("TS Tally Company",{"company_number": company_id},fieldname="company_name")
 

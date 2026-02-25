@@ -28,6 +28,7 @@ def credit_note_non_inv(company_id = None):
                 "VOUCHER": []
                 }
             }
+        return Response(json.dumps(final_voucher, default=str), content_type='application/json')
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
 

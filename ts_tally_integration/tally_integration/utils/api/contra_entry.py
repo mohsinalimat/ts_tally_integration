@@ -18,6 +18,8 @@ def get_contra(company_id = None):
                 "VOUCHER": []
                 }
             }
+        return Response(json.dumps(final_voucher, default=str), content_type='application/json')
+
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
     cost_center = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['cost_center'])
@@ -84,7 +86,7 @@ def get_contra(company_id = None):
     })
     final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
     final_voucher.status_code = 200
-    
+
 
     return final_voucher
 
