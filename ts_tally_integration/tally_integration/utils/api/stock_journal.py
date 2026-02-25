@@ -23,6 +23,16 @@ def get_stock_entry(company_id=None):
             }
         }, default=str), content_type='application/json')
 
+    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Journal Entry'}, ['enable_sync'])
+    if not enable_sync:
+        final_voucher = {
+            "status": True,
+            "VOUCHERDETAILS": {
+                "VOUCHER": []
+                }
+            }
+        return Response(json.dumps(final_voucher, default=str), content_type='application/json')
+
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'company_name')
 
 

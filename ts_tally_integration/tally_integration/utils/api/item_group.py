@@ -36,7 +36,7 @@ def get_itemgroup(company_id=None):
         for child in children:
             if child.name in seen_names:
                 continue
-            
+
             # 4. ONLY ADD TO JSON IF IT IS NOT SYNCED
             # Checks for None, empty string, or logical False
             if not child.custom_tally_auto_id:
