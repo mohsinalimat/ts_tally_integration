@@ -13,6 +13,10 @@ def after_migrate():
     user_creation(user_id)
     create_gst_tally_accounts()
 
+    print('Adding Voucher Sync Control....')
+    append_voucher_sync_control()
+    print('Added Sync Control')
+
     print('Creating Tally Fields')
     create_account_parentfield()
     print("Fields Updated...")
@@ -593,3 +597,40 @@ def create_tally_parent_account():
                 "custom_tally_parent_account",
                 account["custom_tally_parent_account"]
             )
+
+
+def append_voucher_sync_control():
+    vouchers = [
+        "Item",
+        "Item Group",
+        "Party",
+        "Warehouse",
+        "Sales Invoice (Inventory)",
+        "Sales Invoice (Non Inventory)",
+        "Purchase Invoice (Inventory)",
+        "Purchase Invoice (Non Inventory)",
+        "Payment Entry Pay",
+        "Payment Entry Receive",
+        "Journal Entry",
+        "Contra Entry",
+        "Delivery Note",
+        "Purchase Receipt",
+        "Stock Journal",
+        "Credit Note (Inventory)",
+        "Credit Note (Non Inventory)",
+        "Debit Note (Inventory)",
+        "Debit Note (Non Inventory)"
+    ]
+
+    settings = frappe.get_single("TS Tally Settings")
+
+    existing_vouchers = [d.voucher_name for d in settings.voucher_sync_control]
+
+    for voucher in vouchers:
+        if voucher not in existing_vouchers:
+            settings.append("voucher_sync_control", {
+                "voucher_name": voucher,
+                "enable_sync": 0
+            })
+
+    settings.save(ignore_permissions=True)

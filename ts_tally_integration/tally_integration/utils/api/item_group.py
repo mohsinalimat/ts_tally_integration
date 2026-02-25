@@ -9,6 +9,16 @@ def get_itemgroup(company_id=None):
     if not company_id:
         return Response(json.dumps({"status": False, "message": "Company ID not found"}), content_type="application/json")
 
+    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Item Group'}, ['enable_sync'])
+    if not enable_sync:
+        final_voucher = {
+            "status": True,
+            "VOUCHERDETAILS": {
+                "STOCKGROUPS": []
+                }
+            }
+        return Response(json.dumps(final_voucher, default=str), content_type='application/json')
+
     # 1. Fetch ALL groups (we need the full tree to find children of synced parents)
     item_groups = frappe.get_all(
         "Item Group",
@@ -59,7 +69,9 @@ def get_itemgroup(company_id=None):
 
     return Response(json.dumps({
         "status": True,
-        "VOUCHERDETAILS": {"STOCKGROUPS": final_list}
+        "VOUCHERDETAILS": {
+            "STOCKGROUPS": final_list
+            }
     }, default=str), content_type="application/json")
 
 
