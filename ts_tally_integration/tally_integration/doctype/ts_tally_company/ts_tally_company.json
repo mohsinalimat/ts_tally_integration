@@ -51,7 +51,7 @@
    "reqd": 1
   },
   {
-   "columns": 1,
+   "columns": 2,
    "fieldname": "fiscal_year",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -68,7 +68,7 @@
    "reqd": 1
   },
   {
-   "columns": 1,
+   "columns": 2,
    "fieldname": "sync_master_from",
    "fieldtype": "Datetime",
    "in_list_view": 1,
@@ -87,7 +87,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-24 15:10:51.702265",
+ "modified": "2026-03-02 17:39:14.569246",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Company",
