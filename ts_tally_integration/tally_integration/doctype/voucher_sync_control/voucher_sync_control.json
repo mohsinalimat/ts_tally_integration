@@ -16,7 +16,8 @@
    "fieldtype": "Autocomplete",
    "in_list_view": 1,
    "label": "Voucher Name",
-   "options": "Item\nItem Group\nParty\nWarehouse\nSales Invoice (Inventory)\nSales Invoice (Non Inventory)\nPurchase Invoice (Inventory)\nPurchase Invoice (Non Inventory)\nPayment Entry Pay\nPayment Entry Receive\nJournal Entry\nContra Entry\nDelivery Note\nPurchase Receipt\nStock Journal\nCredit Note (Inventory)\nCredit Note (Non Inventory)\nDebit Note (Inventory)\nDebit Note (Non Inventory)"
+   "options": "Item\nItem Group\nParty\nWarehouse\nSales Invoice (Inventory)\nSales Invoice (Non Inventory)\nPurchase Invoice (Inventory)\nPurchase Invoice (Non Inventory)\nPayment Entry Pay\nPayment Entry Receive\nJournal Entry\nContra Entry\nDelivery Note\nPurchase Receipt\nStock Journal\nCredit Note (Inventory)\nCredit Note (Non Inventory)\nDebit Note (Inventory)\nDebit Note (Non Inventory)",
+   "read_only": 1
   },
   {
    "columns": 2,
@@ -31,7 +32,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-24 16:21:04.337493",
+ "modified": "2026-03-02 17:41:22.427444",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "Voucher Sync Control",

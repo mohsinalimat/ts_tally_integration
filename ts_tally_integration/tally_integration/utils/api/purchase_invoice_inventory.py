@@ -110,10 +110,10 @@ def get_purchase_invoice(company_id=None):
                         else:
                             # fallback when valuation exists but stock is not updated
                             item_rate = round(item['net_rate'], 2)
-                            item_amount = round(item['net_amount'], 2)
+                            item_amount = round(item['taxable_value'], 2)
                     else:
                         item_rate = round(item['net_rate'], 2)
-                        item_amount = round(item['net_amount'], 2)
+                        item_amount = round(item['taxable_value'], 2)
 
 
                     hsn_desc = frappe.get_value('GST HSN Code', {'name': item.get('gst_hsn_code')}, 'description')
