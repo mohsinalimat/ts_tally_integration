@@ -68,7 +68,7 @@ def credit_note_inv(company_id = None):
         credit_list = frappe.get_all('Sales Invoice',
                                     filters = {'company':company_name,'is_return':1, 'docstatus':1,
                                                'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                    fields = ['*'], limit = 100)
+                                    fields = ['*'], limit = 10)
         for doc in credit_list:
 
             tax_processed = False
@@ -127,7 +127,7 @@ def credit_note_inv(company_id = None):
                             "Voucherid": doc.name,
                             "VoucherNumber": doc.name,
                             "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": 'Credit Note',
+                            "VoucherType": 'ERP Credit Note',
                             "VoucherTypeParent": "Credit Note",
                             "LedgerName": f"{ledgername.split(' - ')[0]} @ {(ledger_suffix)}",
                             "LedgerParent": tally_parent,
@@ -250,7 +250,7 @@ def credit_note_inv(company_id = None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'Credit Note',
+                                        "VoucherType": 'ERP Credit Note',
                                         "VoucherTypeParent": "Credit Note",
                                         "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                         "LedgerParent": tally_parent,
@@ -344,7 +344,7 @@ def credit_note_inv(company_id = None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'Credit Note',
+                                        "VoucherType": 'ERP Credit Note',
                                         "VoucherTypeParent": "Credit Note",
                                         "LedgerName": f"Output Tax SGST @ {item['sgst_rate']}",
                                         "LedgerParent": tally_parent,
@@ -437,7 +437,7 @@ def credit_note_inv(company_id = None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": 'Credit Note',
+                                        "VoucherType": 'ERP Credit Note',
                                         "VoucherTypeParent": "Credit Note",
                                         "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                         "LedgerParent": tally_parent,
@@ -535,7 +535,7 @@ def credit_note_inv(company_id = None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'Credit Note',
+                        "VoucherType": 'ERP Credit Note',
                         "VoucherTypeParent": "Credit Note",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": tally_parent,
@@ -631,7 +631,7 @@ def credit_note_inv(company_id = None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'Credit Note',
+                        "VoucherType": 'ERP Credit Note',
                         "VoucherTypeParent": "Credit Note",
                         "LedgerName": ledgername,
                         "LedgerParent": tally_parent,
@@ -725,7 +725,7 @@ def credit_note_inv(company_id = None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": 'ERP Sales',
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledger['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -820,7 +820,7 @@ def credit_note_inv(company_id = None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": 'ERP Sales',
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledger['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -916,7 +916,7 @@ def credit_note_inv(company_id = None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'Credit Note',
+                        "VoucherType": 'ERP Credit Note',
                         "VoucherTypeParent": "Credit Note",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": tally_parent,
@@ -1050,4 +1050,3 @@ def fetch_response(response):
         "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
-

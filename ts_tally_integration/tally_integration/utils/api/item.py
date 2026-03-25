@@ -28,7 +28,7 @@ def get_item(company_id = None):
 
     start_date = get_datetime(sync_master_from)
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""], 'creation': [">", start_date]}, fields=['*'])
+    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""], 'creation': [">", start_date]}, fields=['*'], limit = 10)
 
     for item in items:
 
@@ -131,6 +131,5 @@ def fetch_response(response=None):
         "message":"Updated successfully"
     }
     return Response(json.dumps(response, default=str), content_type='application/json')
-
 
 

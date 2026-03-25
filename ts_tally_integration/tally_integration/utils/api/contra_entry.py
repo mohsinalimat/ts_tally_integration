@@ -34,7 +34,7 @@ def get_contra(company_id = None):
     journal_list = frappe.get_all('Journal Entry',
                                    filters={'company':company_name,'voucher_type':'Contra Entry', 'cost_center': cost_center,
                                             'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                   fields=['*'], limit = 100)
+                                   fields=['*'], limit = 10)
     for list in journal_list:
         journal_gl_entry = frappe.get_all('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
 
@@ -51,7 +51,7 @@ def get_contra(company_id = None):
                 "Voucherid": "",
                 "VoucherNumber": list['name'],
                 "VoucherDate": list['posting_date'].strftime('%d-%m-%Y'),
-                "VoucherType": 'Contra',
+                "VoucherType": 'ERP Contra',
                 "VoucherTypeParent": "Contra",
                 "LedgerName": (entry['account']).split(" - ")[0],
                 "LedgerParent": parent_account,

@@ -46,7 +46,7 @@ def get_stock_entry(company_id=None):
     stock_entries = frappe.get_all('Stock Entry', 
                                    filters={'company': company_name, 'docstatus': 1,
                                             'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                   fields=['name', 'posting_date'], limit = 100
+                                   fields=['name', 'posting_date'], limit = 10
                                    )
 
     # -------------------------------
@@ -69,7 +69,7 @@ def get_stock_entry(company_id=None):
                 "Voucherid": stock_entry.name,
                 "VoucherNumber": stock_entry.name,
                 "VoucherDate": datetime.strptime(str(stock_entry.posting_date), '%Y-%m-%d').strftime('%Y%m%d'),
-                "VoucherType": "StockJournal",
+                "VoucherType": "ERP StockJournal",
                 "VoucherTypeParent": "StockJournal",
                 "LedgerName": "",
                 "LedgerParent": "",
@@ -174,4 +174,3 @@ def fetch_response(response):
     }
 
     return Response(json.dumps(response, default=str), content_type='application/json')
-

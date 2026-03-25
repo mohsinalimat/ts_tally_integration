@@ -48,7 +48,7 @@ def get_sales_non_inv(company_id = None):
     sales_list = frappe.get_all('Sales Invoice',
                                  filters={'company':company_name,'is_return':0, 'docstatus':1,
                                           'custom_tally_guid': ['in', ['', None]], 'posting_date': ['between', [start_date, end_date]]},
-                                 fields=['*'], limit = 100)
+                                 fields=['*'], limit = 10)
 
     for doc in sales_list:
         tax_processed = False
@@ -108,7 +108,7 @@ def get_sales_non_inv(company_id = None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'sales',
+                        "VoucherType": 'ERP Sales',
                         "VoucherTypeParent": "Sales",
                         "LedgerName": f"{ledgername.split(' - ')[0]} @ {(ledger_suffix)}",
                         "LedgerParent": parent_account,
@@ -232,7 +232,7 @@ def get_sales_non_inv(company_id = None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'sales',
+                                    "VoucherType": 'ERP Sales',
                                     "VoucherTypeParent": "Sales",
                                     "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
@@ -325,7 +325,7 @@ def get_sales_non_inv(company_id = None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'sales',
+                                    "VoucherType": 'ERP Sales',
                                     "VoucherTypeParent": "Sales",
                                     "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
@@ -417,7 +417,7 @@ def get_sales_non_inv(company_id = None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'sales',
+                                    "VoucherType": 'ERP Sales',
                                     "VoucherTypeParent": "Sales",
                                     "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                     "LedgerParent": parent_account,
@@ -514,7 +514,7 @@ def get_sales_non_inv(company_id = None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'sales',
+                    "VoucherType": 'ERP Sales',
                     "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -610,7 +610,7 @@ def get_sales_non_inv(company_id = None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'sales',
+                    "VoucherType": 'ERP Sales',
                     "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername,
                     "LedgerParent": parent_account,
@@ -705,7 +705,7 @@ def get_sales_non_inv(company_id = None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'sales',
+                    "VoucherType": 'ERP Sales',
                     "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -801,7 +801,7 @@ def get_sales_non_inv(company_id = None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'sales',
+                    "VoucherType": 'ERP Sales',
                     "VoucherTypeParent": "Sales",
                     "LedgerName": invoice['account'].split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -897,7 +897,7 @@ def get_sales_non_inv(company_id = None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'sales',
+                    "VoucherType": 'ERP Sales',
                     "VoucherTypeParent": "Sales",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -1032,4 +1032,3 @@ def fetch_response(response):
         }
 
     return Response(json.dumps(response, default=str), content_type='application/json')
-

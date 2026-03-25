@@ -3,9 +3,28 @@
 
 frappe.ui.form.on('TS Tally Settings', {
     refresh: function (frm) {
+        set_child_queries(frm);
         fetch_unmapped_accounts(frm);
     }
 });
+
+frappe.ui.form.on('TS Tally Company', {
+    company_name: function (frm, cdt, cdn) {
+        frappe.model.set_value(cdt, cdn, 'cost_center', '');
+    }
+});
+
+function set_child_queries(frm) {
+    frm.set_query('cost_center', 'company_table', function (doc, cdt, cdn) {
+        const row = locals[cdt][cdn];
+
+        return {
+            filters: {
+                company: row.company_name || ''
+            }
+        };
+    });
+}
 
 
 function fetch_unmapped_accounts(frm) {
@@ -45,5 +64,4 @@ function fetch_unmapped_accounts(frm) {
         });
     }
 }
-
 

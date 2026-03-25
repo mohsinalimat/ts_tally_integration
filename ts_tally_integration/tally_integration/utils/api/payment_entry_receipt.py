@@ -142,7 +142,7 @@ def get_payment_entry_receipt(company_id=None):
                     "Voucherid": "",
                     "VoucherNumber": doc.name,
                     "VoucherDate": posting_date,
-                    "VoucherType": "Receipt",
+                    "VoucherType": "ERP Receipt",
                     "VoucherTypeParent": "Receipt",
 
                     "LedgerName": ledger_name,
@@ -240,4 +240,3 @@ def fetch_response(response):
         "status":True,
         "message":"Updated successfully"
     }), content_type='application/json')
-

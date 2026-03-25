@@ -22,7 +22,8 @@ def get_itemgroup(company_id=None):
     # 1. Fetch ALL groups (we need the full tree to find children of synced parents)
     item_groups = frappe.get_all(
         "Item Group",
-        fields=["name", "parent_item_group", "is_group", "custom_tally_auto_id"]
+        fields=["name", "parent_item_group", "is_group", "custom_tally_auto_id"],
+        limit = 10
     )
 
     def clean_tally_text(text):
