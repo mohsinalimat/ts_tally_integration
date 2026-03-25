@@ -47,7 +47,7 @@ def get_purchase_invoice(company_id=None):
     purchase_list = frappe.get_all('Purchase Invoice',
                                 filters={'company':company_name, 'is_return':0, 'docstatus':1,
                                          'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                fields=['*'], limit = 100)
+                                fields=['*'], limit = 10)
 
     for doc in purchase_list:
         tax_processed = False
@@ -108,7 +108,7 @@ def get_purchase_invoice(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'purchase',
+                        "VoucherType": 'ERP Purchase',
                         "VoucherTypeParent": "purchase",
                         "LedgerName": f"Purchase @ {(ledger_suffix)}",
                         "LedgerParent": 'Purchase Accounts',
@@ -232,7 +232,7 @@ def get_purchase_invoice(company_id=None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'purchase',
+                                    "VoucherType": 'ERP Purchase',
                                     "VoucherTypeParent": "purchase",
                                     "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
@@ -325,7 +325,7 @@ def get_purchase_invoice(company_id=None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'purchase',
+                                    "VoucherType": 'ERP Purchase',
                                     "VoucherTypeParent": "purchase",
                                     "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
@@ -417,7 +417,7 @@ def get_purchase_invoice(company_id=None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'purchase',
+                                    "VoucherType": 'ERP Purchase',
                                     "VoucherTypeParent": "purchase",
                                     "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                     "LedgerParent": parent_account,
@@ -514,7 +514,7 @@ def get_purchase_invoice(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'purchase',
+                    "VoucherType": 'ERP Purchase',
                     "VoucherTypeParent": "purchase",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -610,7 +610,7 @@ def get_purchase_invoice(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'purchase',
+                    "VoucherType": 'ERP Purchase',
                     "VoucherTypeParent": "purchase",
                     "LedgerName": ledgername,
                     "LedgerParent": parent_account,
@@ -705,7 +705,7 @@ def get_purchase_invoice(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'purchase',
+                    "VoucherType": 'ERP Purchase',
                     "VoucherTypeParent": "purchase",
                     "LedgerName": invoice['account'].split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -801,7 +801,7 @@ def get_purchase_invoice(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'purchase',
+                    "VoucherType": 'ERP Purchase',
                     "VoucherTypeParent": "purchase",
                     "LedgerName": invoice['account'].split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -898,7 +898,7 @@ def get_purchase_invoice(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'purchase',
+                    "VoucherType": 'ERP Purchase',
                     "VoucherTypeParent": "purchase",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -1033,4 +1033,3 @@ def fetch_response(response):
         "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
-

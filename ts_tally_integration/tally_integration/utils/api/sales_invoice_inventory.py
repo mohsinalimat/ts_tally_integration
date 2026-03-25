@@ -4,6 +4,17 @@ import json
 from werkzeug.wrappers import Response
 from frappe.utils import getdate, today
 
+EMPTY_ADDRESS = {
+    "city": "",
+    "state": "",
+    "country": "",
+    "pincode": "",
+    "phone": "",
+    "address_line1": "",
+    "address_line2": "",
+    "address_title": "",
+}
+
 
 @frappe.whitelist()
 def get_sales_inv(company_id=None):
@@ -55,7 +66,12 @@ def get_sales_inv(company_id=None):
         cost_center = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['cost_center'])
 
         company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
-        company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
+        company_address = frappe.get_all(
+            'Address',
+            filters={'name': company_address_link[0]['parent']} if company_address_link else {'name': '__missing__'},
+            fields=['*']
+        )
+        company_address = company_address or [EMPTY_ADDRESS.copy()]
         company_gst = frappe.get_value('Company', {'name': company_name}, ['gstin'])
 
         all_vouchers = []
@@ -64,11 +80,10 @@ def get_sales_inv(company_id=None):
 
         start_date = getdate(sync_from)
         end_date = getdate(today())
-
         sales_list = frappe.get_all('Sales Invoice',
                                     filters={'company':company_name, 'is_return':0, 'docstatus':1,'cost_center': cost_center,
                                              'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                    fields=['*'], limit = 100)
+                                    fields=['*'], limit = 10)
 
         for doc in sales_list:
             tax_processed = False
@@ -76,10 +91,16 @@ def get_sales_inv(company_id=None):
                 cus_address = frappe.get_all('Address', filters={'name': doc.customer_address}, fields=['*'])
             else:
                 cus_address = []
+            cus_address = cus_address or [EMPTY_ADDRESS.copy()]
             customer_pan = frappe.get_value('Customer', {'name': doc.customer_name}, ['pan'])
 
             cus_ship_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Customer', 'link_name': doc['customer']}, fields=['parent'])
-            cus_ship_address = frappe.get_all('Address', filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {}, fields=['*'])
+            cus_ship_address = frappe.get_all(
+                'Address',
+                filters={'name': cus_ship_link[0]['parent']} if cus_ship_link else {'name': '__missing__'},
+                fields=['*']
+            )
+            cus_ship_address = cus_ship_address or [EMPTY_ADDRESS.copy()]
 
             cust_gstin = frappe.get_doc('Customer', doc.customer)
 
@@ -127,7 +148,7 @@ def get_sales_inv(company_id=None):
                             "Voucherid": doc.name,
                             "VoucherNumber": doc.name,
                             "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                            "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                            "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                             "VoucherTypeParent": "Sales",
                             "LedgerName": f"{ledgername.split(' - ')[0]} @ {(ledger_suffix)}",
                             "LedgerParent": parent_account,
@@ -251,7 +272,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                         "LedgerParent": parent_account,
@@ -344,7 +365,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
                                         "LedgerParent": parent_account,
@@ -436,7 +457,7 @@ def get_sales_inv(company_id=None):
                                         "Voucherid": doc.name,
                                         "VoucherNumber": doc.name,
                                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                                         "VoucherTypeParent": "Sales",
                                         "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                         "LedgerParent": parent_account,
@@ -533,7 +554,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -629,7 +650,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername,
                         "LedgerParent": parent_account,
@@ -724,7 +745,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": invoice['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -819,7 +840,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": invoice['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -914,7 +935,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": invoice['account'].split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -1010,7 +1031,7 @@ def get_sales_inv(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": "POS Sales" if doc.is_pos else "ERP Sales",
+                        "VoucherType": "ERP POS Sales" if doc.is_pos else "ERP Sales",
                         "VoucherTypeParent": "Sales",
                         "LedgerName": ledgername.split(" - ")[0],
                         "LedgerParent": parent_account,
@@ -1145,4 +1166,3 @@ def fetch_response(response=None):
         "message":"Updated successfully"
     }
     return Response(json.dumps(response, default=str), content_type='application/json')
-

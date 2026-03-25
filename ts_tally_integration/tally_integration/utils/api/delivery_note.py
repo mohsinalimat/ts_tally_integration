@@ -36,7 +36,7 @@ def get_delivery_note(company_id=None):
 
     delivery_notes = frappe.get_all('Delivery Note', filters={
         'company': company_name, 'is_return': 0, 'docstatus': 1
-    }, fields=['*'])
+    }, fields=['*'], limit = 10)
 
     for doc in delivery_notes:
         # Customer address
@@ -64,7 +64,7 @@ def get_delivery_note(company_id=None):
             "Voucherid": doc.name,
             "VoucherNumber": doc.name,
             "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-            "VoucherType": "Delivery Note",
+            "VoucherType": "ERP Delivery Note",
             "VoucherTypeParent": "Delivery Note",
             "LedgerName": doc.customer_name,
             "LedgerParent": "Sundry Debtors",
@@ -162,7 +162,7 @@ def get_delivery_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": "Delivery Note",
+                    "VoucherType": "ERP Delivery Note",
                     "VoucherTypeParent": "Delivery Note",
                     "LedgerName": f"Input CGST @ {item['cgst_rate']}%",
                     "LedgerParent": "Duties & Taxes",
@@ -256,7 +256,7 @@ def get_delivery_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": "Delivery Note",
+                    "VoucherType": "ERP Delivery Note",
                     "VoucherTypeParent": "Delivery Note",
                     "LedgerName":  f"Input SGST @ {item.get('sgst_rate')}%",
                     "LedgerParent": "Duties & Taxes",
@@ -351,7 +351,7 @@ def get_delivery_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": "Delivery Note",
+                    "VoucherType": "ERP Delivery Note",
                     "VoucherTypeParent": "Delivery Note",
                     "LedgerName": f"Input IGST @ {item['igst_rate']}%",
                     "LedgerParent": "Duties & Taxes",
@@ -448,7 +448,7 @@ def get_delivery_note(company_id=None):
                 "Voucherid": doc.name,
                 "VoucherNumber": doc.name,
                 "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                "VoucherType": "Delivery Note",
+                "VoucherType": "ERP Delivery Note",
                 "VoucherTypeParent": "Delivery Note",
                 "LedgerName": ledger_name,
                 "LedgerParent": "Sales Accounts",
@@ -545,7 +545,7 @@ def get_delivery_note(company_id=None):
                 "Voucherid": doc.name,
                 "VoucherNumber": doc.name,
                 "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                "VoucherType": "Delivery Note",
+                "VoucherType": "ERP Delivery Note",
                 "VoucherTypeParent": "Delivery Note",
                 "LedgerName": expense.description,
                 "LedgerParent": parent_account,
@@ -641,7 +641,7 @@ def get_delivery_note(company_id=None):
                 "Voucherid": doc.name,
                 "VoucherNumber": doc.name,
                 "VoucherDate": doc.posting_date.strftime('%d-%m-%Y') if isinstance(doc.posting_date, datetime) else datetime.strptime(str(doc.posting_date), '%Y-%m-%d').strftime('%d-%m-%Y'),
-                "VoucherType": "Delivery Note",
+                "VoucherType": "ERP Delivery Note",
                 "VoucherTypeParent": "Delivery Note",
                 "LedgerName": "Round Off",
                 "LedgerParent": "Indirect Expenses",
@@ -767,4 +767,3 @@ def fetch_response(response):
         "message":"Updated successfully"
         }
     return Response(json.dumps(response, default=str), content_type='application/json')
-

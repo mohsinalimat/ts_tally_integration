@@ -24,7 +24,7 @@ def get_party(company_id = None):
     auto_id = 1
     all_doc = []
 
-    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'])
+    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 10)
 
     for supplier in suppliers:
 
@@ -60,7 +60,7 @@ def get_party(company_id = None):
     start_date = get_datetime(sync_master_from)
 
 
-    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS'], 'creation': [">", start_date]}, fields=['*'])
+    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS'], 'creation': [">", start_date]}, fields=['*'], limit = 10)
 
     for customer in customers:
         if customer.get('customer_primary_address'):
@@ -117,7 +117,7 @@ def get_party(company_id = None):
 
 
     accounts = frappe.get_all('Account',
-                              filters = {'custom_tally_parent_account': ['is', 'set'],'custom_status': ['!=', 'SUCCESS']}, fields=['*'])
+                              filters = {'custom_tally_parent_account': ['is', 'set'],'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 10)
 
     for account in accounts:
 
@@ -231,6 +231,5 @@ def fetch_response(response):
         "status":True,
         "message":"Updated successfully"
     }, default=str), content_type='application/json')
-
 
 

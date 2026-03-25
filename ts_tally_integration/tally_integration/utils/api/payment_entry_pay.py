@@ -55,7 +55,7 @@ def get_payment_entry_pay(company_id=None):
         doc_list = frappe.get_all("Payment Entry",
             filters={"docstatus": 1,"company": company_name,"payment_type": "Pay",
                     "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
-            fields=["*"], limit = 100)
+            fields=["*"], limit = 10)
 
         list_of_entries = []
 
@@ -136,7 +136,7 @@ def get_payment_entry_pay(company_id=None):
                     "Voucherid": "",
                     "VoucherNumber": doc.name,
                     "VoucherDate": posting_date,
-                    "VoucherType": "Payment",
+                    "VoucherType": "ERP Payment",
                     "VoucherTypeParent": "Payment",
                     "LedgerName": ledger_name,
                     "LedgerParent": ledger_parent,
@@ -230,6 +230,5 @@ def fetch_response(response):
         "status":True,
         "message":"Updated successfully"
     }), content_type='application/json')
-
 
 

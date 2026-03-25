@@ -27,7 +27,7 @@ def get_warehouse(company_id = None):
 
     warehouses = frappe.get_all('Warehouse',
                                 filters={'company': company_name, 'custom_tally_auto_id': ["=", ""]},
-                                fields=['*'])
+                                fields=['*'], limit = 10)
 
     for warehouse in warehouses:
         if warehouse.is_group:

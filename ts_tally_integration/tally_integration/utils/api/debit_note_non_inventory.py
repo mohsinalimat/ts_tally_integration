@@ -48,7 +48,7 @@ def get_debit_note(company_id=None):
     purchase_list = frappe.get_all('Purchase Invoice',
                                 filters={'company':company_name, 'is_return':1, 'docstatus':1,
                                          'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                fields=['*'], limit = 100
+                                fields=['*'], limit = 10
                                 )
 
     for doc in purchase_list:
@@ -110,7 +110,7 @@ def get_debit_note(company_id=None):
                         "Voucherid": doc.name,
                         "VoucherNumber": doc.name,
                         "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                        "VoucherType": 'Debit Note',
+                        "VoucherType": 'ERP Debit Note',
                         "VoucherTypeParent": "Debit Note",
                         "LedgerName": f"Purchase @ {(ledger_suffix)}",
                         "LedgerParent": 'Purchase Accounts',
@@ -234,7 +234,7 @@ def get_debit_note(company_id=None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'Debit Note',
+                                    "VoucherType": 'ERP Debit Note',
                                     "VoucherTypeParent": "Debit Note",
                                     "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
@@ -327,7 +327,7 @@ def get_debit_note(company_id=None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'Debit Note',
+                                    "VoucherType": 'ERP Debit Note',
                                     "VoucherTypeParent": "Debit Note",
                                     "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
@@ -419,7 +419,7 @@ def get_debit_note(company_id=None):
                                     "Voucherid": doc.name,
                                     "VoucherNumber": doc.name,
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                                    "VoucherType": 'Debit Note',
+                                    "VoucherType": 'ERP Debit Note',
                                     "VoucherTypeParent": "Debit Note",
                                     "LedgerName": f"{ledgername.split(' - ')[0]} @ {item['igst_rate']}",
                                     "LedgerParent": parent_account,
@@ -516,7 +516,7 @@ def get_debit_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Debit Note',
+                    "VoucherType": 'ERP Debit Note',
                     "VoucherTypeParent": "Debit Note",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -612,7 +612,7 @@ def get_debit_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Debit Note',
+                    "VoucherType": 'ERP Debit Note',
                     "VoucherTypeParent": "Debit Note",
                     "LedgerName": ledgername,
                     "LedgerParent": parent_account,
@@ -707,7 +707,7 @@ def get_debit_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Debit Note',
+                    "VoucherType": 'ERP Debit Note',
                     "VoucherTypeParent": "Debit Note",
                     "LedgerName": invoice['account'].split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -803,7 +803,7 @@ def get_debit_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Debit Note',
+                    "VoucherType": 'ERP Debit Note',
                     "VoucherTypeParent": "Debit Note",
                     "LedgerName": invoice['account'].split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -899,7 +899,7 @@ def get_debit_note(company_id=None):
                     "Voucherid": doc.name,
                     "VoucherNumber": doc.name,
                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
-                    "VoucherType": 'Debit Note',
+                    "VoucherType": 'ERP Debit Note',
                     "VoucherTypeParent": "Debit Note",
                     "LedgerName": ledgername.split(" - ")[0],
                     "LedgerParent": parent_account,
@@ -1036,4 +1036,3 @@ def fetch_response(response):
         "status":True,
         "message":"Updated successfully"
     }), content_type='application/json')
-
