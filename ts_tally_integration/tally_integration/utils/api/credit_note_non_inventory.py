@@ -174,7 +174,7 @@ def credit_note_non_inv(company_id = None):
 
                         "CmpGstRegistrationType":gst_category,
                         "CmpGstin":company_gst,
-                        "CmpGstState":company_address[0]['state'],
+                        "CmpGstState":company_address[0]['state'] if company_address else "",
                         "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
                         "GstOvrdnTypeofsupply":"Goods",
                         "GstHsnName":item['gst_hsn_code'] if item['gst_hsn_code'] else "",
@@ -297,7 +297,7 @@ def credit_note_non_inv(company_id = None):
 
                                     "CmpGstRegistrationType":gst_category,
                                     "CmpGstin":company_gst,
-                                    "CmpGstState":company_address[0]['state'],
+                                    "CmpGstState":company_address[0]['state'] if company_address else "",
                                     "GstOvrdnTaxability":"",
                                     "GstOvrdnTypeofsupply":"",
                                     "GstHsnName":"",
@@ -390,7 +390,7 @@ def credit_note_non_inv(company_id = None):
 
                                     "CmpGstRegistrationType":gst_category,
                                     "CmpGstin":company_gst,
-                                    "CmpGstState":company_address[0]['state'],
+                                    "CmpGstState":company_address[0]['state'] if company_address else "",
                                     "GstOvrdnTaxability":"",
                                     "GstOvrdnTypeofsupply":"",
                                     "GstHsnName":"",
@@ -483,7 +483,7 @@ def credit_note_non_inv(company_id = None):
 
                                     "CmpGstRegistrationType":gst_category,
                                     "CmpGstin":company_gst,
-                                    "CmpGstState":company_address[0]['state'],
+                                    "CmpGstState":company_address[0]['state'] if company_address else "",
                                     "GstOvrdnTaxability":"",
                                     "GstOvrdnTypeofsupply":"",
                                     "GstHsnName":"",
@@ -581,7 +581,7 @@ def credit_note_non_inv(company_id = None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -677,7 +677,7 @@ def credit_note_non_inv(company_id = None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -772,7 +772,7 @@ def credit_note_non_inv(company_id = None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -867,7 +867,7 @@ def credit_note_non_inv(company_id = None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -963,7 +963,7 @@ def credit_note_non_inv(company_id = None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",

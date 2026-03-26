@@ -179,7 +179,7 @@ def get_debit_note(company_id=None):
 
                         "CmpGstRegistrationType":gst_category,
                         "CmpGstin":company_gst,
-                        "CmpGstState":company_address[0]['state'],
+                        "CmpGstState":company_address[0]['state'] if company_address else "",
                         "GstOvrdnTaxability": "Taxable" if item.get('cgst_rate') else "Exempt",
                         "GstOvrdnTypeofsupply":"Goods",
                         "GstHsnName":item['gst_hsn_code'] if item['gst_hsn_code'] else "",
@@ -303,7 +303,7 @@ def get_debit_note(company_id=None):
 
                                     "CmpGstRegistrationType":gst_category,
                                     "CmpGstin":company_gst,
-                                    "CmpGstState":company_address[0]['state'],
+                                    "CmpGstState":company_address[0]['state'] if company_address else "",
                                     "GstOvrdnTaxability":"",
                                     "GstOvrdnTypeofsupply":"",
                                     "GstHsnName":"",
@@ -396,7 +396,7 @@ def get_debit_note(company_id=None):
 
                                     "CmpGstRegistrationType":gst_category,
                                     "CmpGstin":company_gst,
-                                    "CmpGstState":company_address[0]['state'],
+                                    "CmpGstState":company_address[0]['state'] if company_address else "",
                                     "GstOvrdnTaxability":"",
                                     "GstOvrdnTypeofsupply":"",
                                     "GstHsnName":"",
@@ -488,7 +488,7 @@ def get_debit_note(company_id=None):
 
                                     "CmpGstRegistrationType":gst_category,
                                     "CmpGstin":company_gst,
-                                    "CmpGstState":company_address[0]['state'],
+                                    "CmpGstState":company_address[0]['state'] if company_address else "",
                                     "GstOvrdnTaxability":"",
                                     "GstOvrdnTypeofsupply":"",
                                     "GstHsnName":"",
@@ -585,7 +585,7 @@ def get_debit_note(company_id=None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -681,7 +681,7 @@ def get_debit_note(company_id=None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -776,7 +776,7 @@ def get_debit_note(company_id=None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -872,7 +872,7 @@ def get_debit_note(company_id=None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
@@ -968,7 +968,7 @@ def get_debit_note(company_id=None):
 
                     "CmpGstRegistrationType":gst_category,
                     "CmpGstin":company_gst,
-                    "CmpGstState":company_address[0]['state'],
+                    "CmpGstState":company_address[0]['state'] if company_address else "",
                     "GstOvrdnTaxability":"",
                     "GstOvrdnTypeofsupply":"",
                     "GstHsnName":"",
