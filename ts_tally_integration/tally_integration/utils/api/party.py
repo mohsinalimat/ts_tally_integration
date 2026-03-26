@@ -116,28 +116,28 @@ def get_party(company_id = None):
 
 
 
-    accounts = frappe.get_all('Account',
-                              filters = {'custom_tally_parent_account': ['is', 'set'],'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 10)
+    # accounts = frappe.get_all('Account',
+    #                           filters = {'custom_tally_parent_account': ['is', 'set'],'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 10)
 
-    for account in accounts:
+    # for account in accounts:
 
-        account_dict = {
-            "Autoid": auto_id,
-            "CompanyNumber": str(company_id),
-            "LedgerName": account.account_name,
-            "LedgerParent": account.custom_tally_parent_account,
-            "LedgerAddress": "",
-            "LedgerState": '',
-            "LedgerCountry": '',
-            "LedgerPincode": '',
-            "LedgerMobile": '',
-            "LedgerGstReg": "",
-            "LedgerPan": '',
-            "LedgerGstin": '',
-        }
-        auto_id += 1
+    #     account_dict = {
+    #         "Autoid": auto_id,
+    #         "CompanyNumber": str(company_id),
+    #         "LedgerName": account.account_name,
+    #         "LedgerParent": account.custom_tally_parent_account,
+    #         "LedgerAddress": "",
+    #         "LedgerState": '',
+    #         "LedgerCountry": '',
+    #         "LedgerPincode": '',
+    #         "LedgerMobile": '',
+    #         "LedgerGstReg": "",
+    #         "LedgerPan": '',
+    #         "LedgerGstin": '',
+    #     }
+    #     auto_id += 1
 
-        all_doc.append(account_dict)
+    #     all_doc.append(account_dict)
 
 
 
