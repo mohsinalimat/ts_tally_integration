@@ -149,7 +149,7 @@ def credit_note_inv(company_id = None):
                             "Stockitem": item['item_code'],
                             "Godown": item['warehouse'].split('-')[0].strip(),
                             "BatchNo": "",
-                            "Quantity": item['qty'],
+                            "Quantity": abs(item['qty']),
                             "Rate": item['net_rate'],
                             "Discount": "",
                             "Amount": item['taxable_value'],

@@ -127,7 +127,7 @@ def credit_note_non_inv(company_id = None):
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
-                        "Quantity": "",
+                        "Quantity": abs(item['qty']),
                         "Rate": "",
                         "Discount": "",
                         "Amount": abs(item['net_amount']),

@@ -131,7 +131,7 @@ def get_debit_note(company_id=None):
                         "Stockitem": item['item_code'],
                         "Godown": item['warehouse'].split('-')[0].strip(),
                         "BatchNo": "",
-                        "Quantity": item['qty'],
+                        "Quantity": abs(item['qty']),
                         "Rate": item['net_rate'],
                         "Discount": "",
                         "Amount": abs(round(item['qty'] * item['valuation_rate'], 2)),

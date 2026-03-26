@@ -132,7 +132,7 @@ def get_debit_note(company_id=None):
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
-                        "Quantity": "",
+                        "Quantity": abs(item['qty']),
                         "Rate": item['net_amount'],
                         "Discount": "",
                         "Amount": round(item['net_amount'], 2),
