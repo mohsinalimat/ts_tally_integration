@@ -5,6 +5,10 @@ from werkzeug.wrappers import Response
 from frappe.utils import getdate, today
 
 
+def get_tally_cost_center(doc):
+    return doc.cost_center.split("-", 1)[0].strip() if doc.cost_center else ""
+
+
 @frappe.whitelist()
 def credit_note_inv(company_id = None):
 
@@ -145,7 +149,7 @@ def credit_note_inv(company_id = None):
                             "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                             "CrDr": cr_dr,
                             "CostCategory": "",
-                            "CostCentre": doc.company,
+                            "CostCentre": get_tally_cost_center(doc),
                             "Stockitem": item['item_code'],
                             "Godown": item['warehouse'].split('-')[0].strip(),
                             "BatchNo": "",
@@ -268,7 +272,7 @@ def credit_note_inv(company_id = None):
                                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                         "CrDr": cr_dr,
                                         "CostCategory": "",
-                                        "CostCentre": doc.company,
+                                        "CostCentre": get_tally_cost_center(doc),
                                         "Stockitem": "",
                                         "Godown": "",
                                         "BatchNo": "",
@@ -362,7 +366,7 @@ def credit_note_inv(company_id = None):
                                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                         "CrDr": cr_dr,
                                         "CostCategory": "",
-                                        "CostCentre": doc.company,
+                                        "CostCentre": get_tally_cost_center(doc),
                                         "Stockitem": "",
                                         "Godown": "",
                                         "BatchNo": "",
@@ -455,7 +459,7 @@ def credit_note_inv(company_id = None):
                                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                         "CrDr": cr_dr,
                                         "CostCategory": "",
-                                        "CostCentre": doc.company,
+                                        "CostCentre": get_tally_cost_center(doc),
                                         "Stockitem": "",
                                         "Godown": "",
                                         "BatchNo": "",
@@ -553,7 +557,7 @@ def credit_note_inv(company_id = None):
                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": cr_dr,
                         "CostCategory": "",
-                        "CostCentre": doc.company,
+                        "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -649,7 +653,7 @@ def credit_note_inv(company_id = None):
                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": cr_dr,
                         "CostCategory": "",
-                        "CostCentre": doc.company,
+                        "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -743,7 +747,7 @@ def credit_note_inv(company_id = None):
                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": cr_dr,
                         "CostCategory": "",
-                        "CostCentre": doc.company,
+                        "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -838,7 +842,7 @@ def credit_note_inv(company_id = None):
                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": cr_dr,
                         "CostCategory": "",
-                        "CostCentre": doc.company,
+                        "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -934,7 +938,7 @@ def credit_note_inv(company_id = None):
                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": cr_dr,
                         "CostCategory": "",
-                        "CostCentre": doc.company,
+                        "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",

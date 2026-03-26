@@ -5,6 +5,10 @@ from werkzeug.wrappers import Response
 from frappe.utils import getdate, today
 
 
+def get_tally_cost_center(doc):
+    return doc.cost_center.split("-", 1)[0].strip() if doc.cost_center else ""
+
+
 @frappe.whitelist()
 def get_sales_non_inv(company_id = None):
     if company_id == None:
@@ -126,7 +130,7 @@ def get_sales_non_inv(company_id = None):
                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": cr_dr,
                         "CostCategory": "",
-                        "CostCentre": item['cost_center'],
+                        "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": "",
                         "Godown": "",
                         "BatchNo": "",
@@ -250,7 +254,7 @@ def get_sales_non_inv(company_id = None):
                                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                     "CrDr": cr_dr,
                                     "CostCategory": "",
-                                    "CostCentre": doc.company,
+                                    "CostCentre": get_tally_cost_center(doc),
                                     "Stockitem": "",
                                     "Godown": "",
                                     "BatchNo": "",
@@ -343,7 +347,7 @@ def get_sales_non_inv(company_id = None):
                                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                     "CrDr": cr_dr,
                                     "CostCategory": "",
-                                    "CostCentre": doc.company,
+                                    "CostCentre": get_tally_cost_center(doc),
                                     "Stockitem": "",
                                     "Godown": "",
                                     "BatchNo": "",
@@ -435,7 +439,7 @@ def get_sales_non_inv(company_id = None):
                                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                     "CrDr": cr_dr,
                                     "CostCategory": "",
-                                    "CostCentre": doc.company,
+                                    "CostCentre": get_tally_cost_center(doc),
                                     "Stockitem": "",
                                     "Godown": "",
                                     "BatchNo": "",
@@ -532,7 +536,7 @@ def get_sales_non_inv(company_id = None):
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
-                    "CostCentre": doc.company,
+                    "CostCentre": get_tally_cost_center(doc),
                     "Stockitem": "",
                     "Godown": "",
                     "BatchNo": "",
@@ -628,7 +632,7 @@ def get_sales_non_inv(company_id = None):
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
-                    "CostCentre": doc.company,
+                    "CostCentre": get_tally_cost_center(doc),
                     "Stockitem": "",
                     "Godown": "",
                     "BatchNo": "",
@@ -723,7 +727,7 @@ def get_sales_non_inv(company_id = None):
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
-                    "CostCentre": doc.company,
+                    "CostCentre": get_tally_cost_center(doc),
                     "Stockitem": "",
                     "Godown": "",
                     "BatchNo": "",
@@ -819,7 +823,7 @@ def get_sales_non_inv(company_id = None):
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
-                    "CostCentre": doc.company,
+                    "CostCentre": get_tally_cost_center(doc),
                     "Stockitem": "",
                     "Godown": "",
                     "BatchNo": "",
@@ -915,7 +919,7 @@ def get_sales_non_inv(company_id = None):
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
                     "CostCategory": "",
-                    "CostCentre": doc.company,
+                    "CostCentre": get_tally_cost_center(doc),
                     "Stockitem": "",
                     "Godown": "",
                     "BatchNo": "",
