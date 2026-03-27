@@ -1004,7 +1004,7 @@ def get_sales_non_inv(company_id = None):
 @frappe.whitelist()
 def fetch_response(response):
     data = json.loads(response) if isinstance(response, str) else response
-    sales_response = data.get("SALES RESPONSE", [])
+    sales_response = data.get("SALES NONINV RESPONSE", [])
 
     for response in sales_response:
         sales_entry = response.get("AUTOID")

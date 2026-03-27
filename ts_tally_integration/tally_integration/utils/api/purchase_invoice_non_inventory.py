@@ -1007,7 +1007,7 @@ def get_purchase_invoice(company_id=None):
 def fetch_response(response=None):
     frappe.log_error(f"Response:{response}", "Tally Purchase Sync")
     data = json.loads(response) if isinstance(response, str) else response
-    purchase_response = data.get("PURCHASE RESPONSE", [])
+    purchase_response = data.get("PURCHASE NONINV RESPONSE", [])
 
     for response in purchase_response:
         purchase_entry = response.get("AUTOID")
