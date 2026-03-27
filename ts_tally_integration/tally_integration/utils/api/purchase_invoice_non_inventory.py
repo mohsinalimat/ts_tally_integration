@@ -1004,7 +1004,8 @@ def get_purchase_invoice(company_id=None):
 
 
 @frappe.whitelist()
-def fetch_response(response):
+def fetch_response(response=None):
+    frappe.log_error(f"Response:{response}", "Tally Purchase Sync")
     data = json.loads(response) if isinstance(response, str) else response
     purchase_response = data.get("PURCHASE RESPONSE", [])
 
