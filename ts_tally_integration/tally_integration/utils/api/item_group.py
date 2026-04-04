@@ -19,10 +19,14 @@ def get_itemgroup(company_id=None):
             }
         return Response(json.dumps(final_voucher, default=str), content_type='application/json')
 
+    synced_groups = frappe.get_all('Tally Master Sync Log',
+        filters={'parenttype': 'Item Group', 'company_number': company_id, 'status': 'SUCCESS'},
+        pluck='parent')
+
     # 1. Fetch ALL groups (we need the full tree to find children of synced parents)
     item_groups = frappe.get_all(
         "Item Group",
-        fields=["name", "parent_item_group", "is_group", "custom_tally_auto_id"],
+        fields=["name", "parent_item_group", "is_group"],
         limit = 10
     )
 
@@ -48,9 +52,8 @@ def get_itemgroup(company_id=None):
             if child.name in seen_names:
                 continue
 
-            # 4. ONLY ADD TO JSON IF IT IS NOT SYNCED
-            # Checks for None, empty string, or logical False
-            if not child.custom_tally_auto_id:
+            # 4. ONLY ADD TO JSON IF IT IS NOT SYNCED for this company
+            if child.name not in synced_groups:
                 final_list.append({
                     "Autoid": child.name,
                     "CompanyNumber": company_id,
@@ -58,10 +61,10 @@ def get_itemgroup(company_id=None):
                     "Parent": tally_parent_label,
                     "IsGroup": "Yes" if child.is_group else "No"
                 })
-            
+
             seen_names.add(child.name)
 
-            # Keep recursing even if parent was already synced 
+            # Keep recursing even if parent was already synced
             # so we can find unsynced children further down
             if child.name in tree:
                 add_to_list(child.name, child.name)
@@ -80,10 +83,12 @@ def get_itemgroup(company_id=None):
 
 
 @frappe.whitelist()
-def fetch_response(response):
+def fetch_response(response, company_id=None):
 
     data = json.loads(response) if isinstance(response, str) else response
     item_group_list = data.get("STOCKGROUP RESPONSE", [])
+
+    company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'company_name') if company_id else None
 
     for item in item_group_list:
         item_group_name = item.get("AUTOID")
@@ -100,11 +105,37 @@ def fetch_response(response):
             import_time_obj = datetime.strptime(import_time, "%H:%M:%S").time()
             sync_datetime = datetime.combine(import_date_obj, import_time_obj)
 
-            frappe.db.set_value('Item Group', existing_item_group, {
-                'custom_tally_auto_id': item_group_name,
-                'custom_status': status,
-                'custom_sync_time': sync_datetime
-            })
+            existing = frappe.db.get_value('Tally Master Sync Log', {
+                'parent': existing_item_group,
+                'parenttype': 'Item Group',
+                'company_number': company_id
+            }, 'name')
+
+            if existing:
+                frappe.db.set_value('Tally Master Sync Log', existing, {
+                    'tally_auto_id': item_group_name,
+                    'status': status,
+                    'sync_time': sync_datetime
+                })
+            else:
+                max_idx = frappe.db.count('Tally Master Sync Log', {
+                    'parent': existing_item_group,
+                    'parenttype': 'Item Group'
+                })
+
+                sync_log = frappe.new_doc('Tally Master Sync Log')
+                sync_log.parent = existing_item_group
+                sync_log.parenttype = 'Item Group'
+                sync_log.parentfield = 'custom_tally_sync_log'
+                sync_log.idx = max_idx + 1
+                sync_log.company_number = company_id
+                sync_log.company_name = company_name
+                sync_log.tally_auto_id = item_group_name
+                sync_log.status = status
+                sync_log.sync_time = sync_datetime
+                sync_log.db_insert()
+
+            frappe.db.set_value('Item Group', existing_item_group, 'modified', frappe.utils.now())
 
     frappe.db.commit()
 

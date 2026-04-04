@@ -16,7 +16,7 @@ def get_party(company_id = None):
         final_voucher = {
             "status": True,
             "VOUCHERDETAILS": {
-                "LEDGER": all_doc
+                "LEDGER": []
                 }
             }
         return Response(json.dumps(final_voucher, default=str), content_type='application/json')
@@ -24,7 +24,11 @@ def get_party(company_id = None):
     auto_id = 1
     all_doc = []
 
-    suppliers = frappe.get_all('Supplier', filters = {'custom_tally_auto_id': ["=", ""]}, fields=['*'], limit = 10)
+    synced_suppliers = frappe.get_all('Tally Master Sync Log',
+        filters={'parenttype': 'Supplier', 'company_number': company_id, 'status': 'SUCCESS'},
+        pluck='parent')
+
+    suppliers = frappe.get_all('Supplier', filters = {'name': ['not in', synced_suppliers]}, fields=['*'], limit = 10)
 
     for supplier in suppliers:
 
@@ -59,8 +63,11 @@ def get_party(company_id = None):
 
     start_date = get_datetime(sync_master_from)
 
+    synced_customers = frappe.get_all('Tally Master Sync Log',
+        filters={'parenttype': 'Customer', 'company_number': company_id, 'status': 'SUCCESS'},
+        pluck='parent')
 
-    customers = frappe.get_all('Customer', filters = {'custom_status': ['!=', 'SUCCESS'], 'creation': [">", start_date]}, fields=['*'], limit = 10)
+    customers = frappe.get_all('Customer', filters = {'name': ['not in', synced_customers], 'creation': [">", start_date]}, fields=['*'], limit = 10)
 
     for customer in customers:
         if customer.get('customer_primary_address'):
@@ -89,9 +96,11 @@ def get_party(company_id = None):
         all_doc.append(customer_dict)
 
 
+    synced_employees = frappe.get_all('Tally Master Sync Log',
+        filters={'parenttype': 'Employee', 'company_number': company_id, 'status': 'SUCCESS'},
+        pluck='parent')
 
-
-    employees = frappe.get_all('Employee', filters = {'custom_status': ['!=', 'SUCCESS']}, fields=['*'], limit = 10)
+    employees = frappe.get_all('Employee', filters = {'name': ['not in', synced_employees]}, fields=['*'], limit = 10)
 
     for employee in employees:
 
@@ -114,10 +123,12 @@ def get_party(company_id = None):
         all_doc.append(employee_dict)
 
 
-
+    synced_tally_accounts = frappe.get_all('Tally Master Sync Log',
+        filters={'parenttype': 'Tally Account', 'company_number': company_id, 'status': 'SUCCESS'},
+        pluck='parent')
 
     accounts = frappe.get_all('Tally Account',
-                              filters = {'tally_parent': ['is', 'set'],'status': ['!=', 'SUCCESS']}, fields=['*'], limit = 10)
+                              filters = {'tally_parent': ['is', 'set'], 'name': ['not in', synced_tally_accounts]}, fields=['*'], limit = 10)
 
     for account in accounts:
 
@@ -148,7 +159,6 @@ def get_party(company_id = None):
         }
     })
 
-    final_voucher = final_voucher
     final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
     final_voucher.status_code = 200
 
@@ -157,10 +167,51 @@ def get_party(company_id = None):
 
 
 
+
+def _update_sync_log(doctype, docname, parentfield, company_id, company_name, party_name, status, sync_time):
+    existing = frappe.db.get_value('Tally Master Sync Log', {
+        'parent': docname,
+        'parenttype': doctype,
+        'company_number': company_id
+    }, 'name')
+
+    if existing:
+        frappe.db.set_value('Tally Master Sync Log', existing, {
+            'tally_auto_id': party_name,
+            'status': status,
+            'sync_time': sync_time
+        })
+    else:
+        max_idx = frappe.db.count('Tally Master Sync Log', {
+            'parent': docname,
+            'parenttype': doctype
+        })
+
+        sync_log = frappe.new_doc('Tally Master Sync Log')
+        sync_log.parent = docname
+        sync_log.parenttype = doctype
+        sync_log.parentfield = parentfield
+        sync_log.idx = max_idx + 1
+        sync_log.company_number = company_id
+        sync_log.company_name = company_name
+        sync_log.tally_auto_id = party_name
+        sync_log.status = status
+        sync_log.sync_time = sync_time
+        sync_log.db_insert()
+
+    frappe.db.set_value(doctype, docname, 'modified', frappe.utils.now())
+
+
+
+
 @frappe.whitelist()
-def fetch_response(response):
+def fetch_response(response, company_id=None):
+    frappe.log_error(title="Tally fetch_response - Raw Input", message=f"company_id: {company_id}\nresponse type: {type(response).__name__}\nresponse: {response[:5000] if isinstance(response, str) else json.dumps(response, default=str)[:5000]}")
     data = json.loads(response) if isinstance(response, str) else response
     parties = data.get("LEDGER RESPONSE", [])
+    frappe.log_error(title="Tally fetch_response - Parsed Data", message=f"Number of parties: {len(parties)}\nParties: {json.dumps(parties, default=str)[:5000]}")
+
+    company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'company_name') if company_id else None
 
     for party in parties:
         party_name = party.get("AUTOID")
@@ -178,49 +229,27 @@ def fetch_response(response):
         updated = False
 
         if frappe.db.exists("Customer", {"name": party_name}):
-            frappe.db.set_value('Customer', party_name, {
-                'custom_tally_auto_id': party_name,
-                'custom_status': status,
-                'custom_sync_time': sync_time
-            })
+            _update_sync_log('Customer', party_name, 'custom_tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
 
         if frappe.db.exists("Supplier", {"name": party_name}):
-            frappe.db.set_value('Supplier', party_name, {
-                'custom_tally_auto_id': party_name,
-                'custom_status': status,
-                'custom_sync_time': sync_time
-            })
+            _update_sync_log('Supplier', party_name, 'custom_tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
 
         if frappe.db.exists("Employee", {"name": party_name}):
             emp_doc = frappe.db.exists("Employee", {"name": party_name})
-            frappe.db.set_value('Employee', emp_doc, {
-                'custom_tally_auto_id': party_name,
-                'custom_status': status,
-                'custom_sync_time': sync_time
-            })
+            _update_sync_log('Employee', emp_doc, 'custom_tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
 
         if frappe.db.exists("Account", {"account_name": party_name}):
-            emp_doc = frappe.db.exists("Account", {"account_name": party_name})
-            frappe.db.set_value('Account', emp_doc, {
-                'custom_tally_auto_id': party_name,
-                'custom_status': status,
-                'custom_sync_time': sync_time
-            })
+            acc_doc = frappe.db.exists("Account", {"account_name": party_name})
+            _update_sync_log('Account', acc_doc, 'custom_tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
-
 
         if frappe.db.exists("Tally Account", {"name": party_name}):
             acc = frappe.db.exists("Tally Account", {"name": party_name})
-            frappe.db.set_value('Tally Account', acc, {
-                'tally_auto_id': party_name,
-                'status': status,
-                'sync_time': sync_time
-            })
+            _update_sync_log('Tally Account', acc, 'tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
-
 
         if not updated:
             frappe.log_error(f"Neither Customer nor Supplier found for Tally AUTOID: {party_name}", "Tally Sync Error")
@@ -231,5 +260,3 @@ def fetch_response(response):
         "status":True,
         "message":"Updated successfully"
     }, default=str), content_type='application/json')
-
-
