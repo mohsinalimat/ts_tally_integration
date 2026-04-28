@@ -28,7 +28,11 @@ def get_item(company_id = None):
 
     start_date = get_datetime(sync_master_from)
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'custom_tally_auto_id': ["=", ""], 'creation': [">", start_date]}, fields=['*'], limit = 10)
+    synced_items = frappe.get_all('Tally Master Sync Log',
+        filters={'parenttype': 'Item', 'company_number': company_id, 'status': 'SUCCESS'},
+        pluck='parent')
+
+    items = frappe.get_all('Item', filters={'disabled': 0, 'name': ['not in', synced_items], 'creation': [">", start_date]}, fields=['*'], limit = 10)
 
     for item in items:
 
@@ -91,14 +95,17 @@ def get_item(company_id = None):
     final_voucher = Response(json.dumps(final_voucher, default=str), content_type='application/json')
     final_voucher.status_code = 200
 
+
     return final_voucher
 
 
 
 @frappe.whitelist()
-def fetch_response(response=None):
+def fetch_response(response=None, company_id=None):
     data = json.loads(response) if isinstance(response, str) else response
     items = data.get("STOCKITEM RESPONSE", [])
+
+    company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'company_name') if company_id else None
 
     for item in items:
         item_name = item.get("AUTOID")
@@ -112,17 +119,42 @@ def fetch_response(response=None):
         item_docname = frappe.db.get_value("Item", {"item_code": item_name}, "name")
 
         if item_docname:
-            frappe.db.set_value("Item",item_docname,
-                {
-                    "custom_tally_auto_id": item_name,
-                    "custom_status": status,
-                    "custom_sync_time": datetime.combine(
-                        datetime.strptime(import_date, "%Y%m%d").date(),
-                        datetime.strptime(import_time, "%H:%M:%S").time()
-                    )
-                },
-                update_modified=True
+            sync_time = datetime.combine(
+                datetime.strptime(import_date, "%Y%m%d").date(),
+                datetime.strptime(import_time, "%H:%M:%S").time()
             )
+
+            existing = frappe.db.get_value('Tally Master Sync Log', {
+                'parent': item_docname,
+                'parenttype': 'Item',
+                'company_number': company_id
+            }, 'name')
+
+            if existing:
+                frappe.db.set_value('Tally Master Sync Log', existing, {
+                    'tally_auto_id': item_name,
+                    'status': status,
+                    'sync_time': sync_time
+                })
+            else:
+                max_idx = frappe.db.count('Tally Master Sync Log', {
+                    'parent': item_docname,
+                    'parenttype': 'Item'
+                })
+
+                sync_log = frappe.new_doc('Tally Master Sync Log')
+                sync_log.parent = item_docname
+                sync_log.parenttype = 'Item'
+                sync_log.parentfield = 'custom_tally_sync_log'
+                sync_log.idx = max_idx + 1
+                sync_log.company_number = company_id
+                sync_log.company_name = company_name
+                sync_log.tally_auto_id = item_name
+                sync_log.status = status
+                sync_log.sync_time = sync_time
+                sync_log.db_insert()
+
+            frappe.db.set_value('Item', item_docname, 'modified', frappe.utils.now())
 
     frappe.db.commit()
 
@@ -131,5 +163,3 @@ def fetch_response(response=None):
         "message":"Updated successfully"
     }
     return Response(json.dumps(response, default=str), content_type='application/json')
-
-

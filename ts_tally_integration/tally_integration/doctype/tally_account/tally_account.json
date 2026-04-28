@@ -8,9 +8,7 @@
  "field_order": [
   "account",
   "tally_parent",
-  "tally_auto_id",
-  "status",
-  "sync_time"
+  "tally_sync_log"
  ],
  "fields": [
   {
@@ -25,19 +23,10 @@
    "label": "Tally Parent"
   },
   {
-   "fieldname": "tally_auto_id",
-   "fieldtype": "Data",
-   "label": "Tally Auto ID"
-  },
-  {
-   "fieldname": "status",
-   "fieldtype": "Data",
-   "label": "Status"
-  },
-  {
-   "fieldname": "sync_time",
-   "fieldtype": "Datetime",
-   "label": "Sync Time"
+   "fieldname": "tally_sync_log",
+   "fieldtype": "Table",
+   "label": "Tally Sync Log",
+   "options": "Tally Master Sync Log"
   }
  ],
  "grid_page_length": 50,
