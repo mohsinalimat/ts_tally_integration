@@ -271,6 +271,159 @@ def get_not_synced_data(company):
 
 
 @frappe.whitelist()
+def get_sync_dashboard_data():
+	"""
+	Returns dashboard stats for the Sync Dashboard tab.
+
+	Shape:
+	{
+		"global_masters": [ {doctype, pending, synced, last_sync, last_failure}, ... ],
+		"companies": [
+			{
+				"company": "Thirvusoft",
+				"sync_from": "...", "cost_center": "...",
+				"masters": [ {...} ],
+				"vouchers": [ {...} ]
+			}, ...
+		]
+	}
+	"""
+	settings = frappe.get_single("TS Tally Settings")
+
+	def master_stats(parent_doctype, base_filters=None):
+		base_filters = base_filters or {}
+		synced_names = frappe.get_all(
+			"Tally Master Sync Log",
+			filters={"parenttype": parent_doctype, "status": "SUCCESS"},
+			pluck="parent",
+			distinct=True,
+		)
+		pending_filters = dict(base_filters)
+		pending_filters["name"] = ["not in", synced_names or [""]]
+		pending = frappe.db.count(parent_doctype, filters=pending_filters)
+
+		synced_filters = dict(base_filters)
+		synced_filters["name"] = ["in", synced_names] if synced_names else ["in", [""]]
+		synced = frappe.db.count(parent_doctype, filters=synced_filters) if synced_names else 0
+
+		last_sync = frappe.db.sql(
+			"""
+			select max(sync_time) from `tabTally Master Sync Log`
+			where parenttype=%s and status='SUCCESS'
+			""",
+			(parent_doctype,),
+		)
+		last_sync = last_sync[0][0] if last_sync and last_sync[0] else None
+
+		last_fail = frappe.db.sql(
+			"""
+			select parent, sync_time from `tabTally Master Sync Log`
+			where parenttype=%s and status!='SUCCESS'
+			order by sync_time desc limit 1
+			""",
+			(parent_doctype,),
+			as_dict=True,
+		)
+		last_failure = None
+		if last_fail:
+			last_failure = {"name": last_fail[0]["parent"], "time": last_fail[0]["sync_time"]}
+
+		return {
+			"doctype": parent_doctype,
+			"pending": pending,
+			"synced": synced,
+			"last_sync": last_sync,
+			"last_failure": last_failure,
+		}
+
+	def voucher_stats(doctype, company, sync_from, cost_center, extra_pending_filters=None,
+					  cost_center_in_child=False):
+		base = {"company": company, "docstatus": 1}
+		if extra_pending_filters:
+			base.update(extra_pending_filters)
+
+		pending_filters = dict(base)
+		pending_filters["custom_tally_guid"] = ["is", "not set"]
+		if sync_from:
+			pending_filters["posting_date"] = [">=", sync_from]
+		if cost_center and not cost_center_in_child:
+			pending_filters["cost_center"] = cost_center
+
+		synced_filters = dict(base)
+		synced_filters["custom_tally_guid"] = ["is", "set"]
+		if cost_center and not cost_center_in_child:
+			synced_filters["cost_center"] = cost_center
+
+		if cost_center and cost_center_in_child:
+			# Journal Entry case — cost_center lives on Journal Entry Account
+			matching = frappe.get_all(
+				"Journal Entry Account",
+				filters={"parenttype": doctype, "cost_center": cost_center},
+				pluck="parent",
+				distinct=True,
+			) or [""]
+			pending_filters["name"] = ["in", matching]
+			synced_filters["name"] = ["in", matching]
+
+		pending = frappe.db.count(doctype, filters=pending_filters)
+		synced = frappe.db.count(doctype, filters=synced_filters)
+
+		last_sync_row = frappe.get_all(
+			doctype,
+			filters=synced_filters,
+			fields=["modified"],
+			order_by="modified desc",
+			limit=1,
+		)
+		last_sync = last_sync_row[0]["modified"] if last_sync_row else None
+
+		return {
+			"doctype": doctype,
+			"pending": pending,
+			"synced": synced,
+			"last_sync": last_sync,
+			"last_failure": None,
+		}
+
+	global_masters = [
+		master_stats("Item"),
+		master_stats("Item Group", {"is_group": 0}),
+		master_stats("Customer"),
+		master_stats("Supplier"),
+	]
+
+	companies = []
+	for row in settings.company_table:
+		company = row.company_name
+		sync_from = row.sync_from
+		cost_center = row.cost_center
+
+		masters = [master_stats("Warehouse", {"company": company, "is_group": 0})]
+
+		vouchers = [
+			voucher_stats("Sales Invoice", company, sync_from, cost_center,
+						  {"is_opening": ["!=", "Yes"]}),
+			voucher_stats("Purchase Invoice", company, sync_from, cost_center,
+						  {"is_opening": ["!=", "Yes"]}),
+			voucher_stats("Payment Entry", company, sync_from, cost_center),
+			voucher_stats("Journal Entry", company, sync_from, cost_center,
+						  {"is_opening": ["!=", "Yes"]}, cost_center_in_child=True),
+			voucher_stats("Stock Entry", company, sync_from, None,
+						  {"is_opening": ["!=", "Yes"]}),
+		]
+
+		companies.append({
+			"company": company,
+			"sync_from": sync_from,
+			"cost_center": cost_center,
+			"masters": masters,
+			"vouchers": vouchers,
+		})
+
+	return {"global_masters": global_masters, "companies": companies}
+
+
+@frappe.whitelist()
 def get_unmapped_accounts():
 	unmapped_account = frappe.db.get_list('Account', filters={'custom_tally_parent_account':['=',''], 'is_group':0}, fields=['name', 'company'])
 	return unmapped_account

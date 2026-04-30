@@ -11,6 +11,8 @@
   "unmapped_accounts",
   "voucher_sync_control_tab",
   "voucher_sync_control",
+  "sync_dashboard_tab",
+  "sync_dashboard_html",
   "not_synced_data_tab",
   "not_synced_company",
   "not_synced_cost_center_column",
@@ -81,6 +83,16 @@
    "fieldname": "voucher_sync_control_tab",
    "fieldtype": "Tab Break",
    "label": "Voucher Sync Control"
+  },
+  {
+   "fieldname": "sync_dashboard_tab",
+   "fieldtype": "Tab Break",
+   "label": "Sync Dashboard"
+  },
+  {
+   "fieldname": "sync_dashboard_html",
+   "fieldtype": "HTML",
+   "label": "Sync Dashboard"
   },
   {
    "fieldname": "not_synced_data_tab",
