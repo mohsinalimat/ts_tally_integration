@@ -32,7 +32,7 @@ def get_item(company_id = None):
         filters={'parenttype': 'Item', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'name': ['not in', synced_items], 'creation': [">", start_date]}, fields=['*'], limit = 10)
+    items = frappe.get_all('Item', filters={'disabled': 0, 'has_variants': 0, 'name': ['not in', synced_items], 'creation': [">", start_date]}, fields=['*'], limit = 10)
 
     for item in items:
 
@@ -163,3 +163,4 @@ def fetch_response(response=None, company_id=None):
         "message":"Updated successfully"
     }
     return Response(json.dumps(response, default=str), content_type='application/json')
+

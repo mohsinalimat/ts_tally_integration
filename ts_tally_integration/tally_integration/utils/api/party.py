@@ -29,7 +29,6 @@ def get_party(company_id = None):
         pluck='parent')
 
     suppliers = frappe.get_all('Supplier', filters = {'name': ['not in', synced_suppliers]}, fields=['*'], limit = 10)
-
     for supplier in suppliers:
 
         if supplier.get('supplier_primary_address'):
