@@ -11,8 +11,12 @@
   "unmapped_accounts",
   "voucher_sync_control_tab",
   "voucher_sync_control",
+  "sync_dashboard_tab",
+  "sync_dashboard_html",
   "not_synced_data_tab",
   "not_synced_company",
+  "not_synced_cost_center_column",
+  "not_synced_cost_center",
   "not_synced_data_section",
   "not_synced_data_html",
   "api_tab",
@@ -81,6 +85,16 @@
    "label": "Voucher Sync Control"
   },
   {
+   "fieldname": "sync_dashboard_tab",
+   "fieldtype": "Tab Break",
+   "label": "Sync Dashboard"
+  },
+  {
+   "fieldname": "sync_dashboard_html",
+   "fieldtype": "HTML",
+   "label": "Sync Dashboard"
+  },
+  {
    "fieldname": "not_synced_data_tab",
    "fieldtype": "Tab Break",
    "label": "Not Synced Data"
@@ -90,6 +104,17 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
+  },
+  {
+   "fieldname": "not_synced_cost_center_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.not_synced_company",
+   "fieldname": "not_synced_cost_center",
+   "fieldtype": "Data",
+   "label": "Cost Center",
+   "read_only": 1
   },
   {
    "fieldname": "not_synced_data_section",
