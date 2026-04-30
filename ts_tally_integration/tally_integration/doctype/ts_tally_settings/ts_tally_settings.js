@@ -6,17 +6,27 @@ frappe.ui.form.on('TS Tally Settings', {
         set_child_queries(frm);
         fetch_unmapped_accounts(frm);
         if (frm.doc.not_synced_company) {
+            set_cost_center_for_company(frm);
             fetch_not_synced_data(frm);
         }
     },
     not_synced_company: function (frm) {
         if (frm.doc.not_synced_company) {
+            set_cost_center_for_company(frm);
             fetch_not_synced_data(frm);
         } else {
+            frm.set_value('not_synced_cost_center', '');
             frm.fields_dict['not_synced_data_html'].html('');
         }
     }
 });
+
+function set_cost_center_for_company(frm) {
+    const row = (frm.doc.company_table || []).find(
+        r => r.company_name === frm.doc.not_synced_company
+    );
+    frm.set_value('not_synced_cost_center', (row && row.cost_center) || '');
+}
 
 frappe.ui.form.on('TS Tally Company', {
     company_name: function (frm, cdt, cdn) {

@@ -157,7 +157,7 @@ def get_not_synced_data(company):
 			"is_opening": ["!=", "Yes"],
 			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
 		}),
-		fields=["name", "customer_name", "posting_date", "grand_total"],
+		fields=["name", "customer_name", "cost_center", "posting_date", "grand_total"],
 		order_by="posting_date desc"
 	)
 	if not_synced_si:
@@ -173,7 +173,7 @@ def get_not_synced_data(company):
 			"is_opening": ["!=", "Yes"],
 			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
 		}),
-		fields=["name", "supplier_name", "posting_date", "grand_total"],
+		fields=["name", "supplier_name", "cost_center", "posting_date", "grand_total"],
 		order_by="posting_date desc"
 	)
 	if not_synced_pi:
@@ -188,7 +188,7 @@ def get_not_synced_data(company):
 			"docstatus": 1,
 			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
 		}),
-		fields=["name", "payment_type", "party_name", "posting_date", "paid_amount"],
+		fields=["name", "payment_type", "party_name", "cost_center", "posting_date", "paid_amount"],
 		order_by="posting_date desc"
 	)
 	if not_synced_pe:
@@ -217,7 +217,25 @@ def get_not_synced_data(company):
 		order_by="posting_date desc"
 	)
 	if not_synced_je:
-		result["Journal Entry"] = not_synced_je
+		je_cc_rows = frappe.get_all(
+			"Journal Entry Account",
+			filters={
+				"parenttype": "Journal Entry",
+				"parent": ["in", [je["name"] for je in not_synced_je]],
+				"cost_center": ["is", "set"]
+			},
+			fields=["parent", "cost_center"]
+		)
+		cc_by_je = {}
+		for row in je_cc_rows:
+			cc_by_je.setdefault(row["parent"], []).append(row["cost_center"])
+		for je in not_synced_je:
+			je["cost_center"] = ", ".join(sorted(set(cc_by_je.get(je["name"], []))))
+		result["Journal Entry"] = [
+			{"name": je["name"], "voucher_type": je["voucher_type"], "cost_center": je["cost_center"],
+			 "posting_date": je["posting_date"], "total_debit": je["total_debit"]}
+			for je in not_synced_je
+		]
 
 	# Transactional Data - Stock Entry
 	not_synced_se = frappe.get_all(
