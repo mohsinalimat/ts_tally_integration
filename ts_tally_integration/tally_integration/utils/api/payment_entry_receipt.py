@@ -41,6 +41,7 @@ def get_payment_entry_receipt(company_id=None):
             return Response(json.dumps(final_voucher, default=str), content_type='application/json')
 
         company_name = frappe.get_value("TS Tally Company",{"company_number": company_id},fieldname="company_name")
+        cost_center = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'cost_center')
 
         sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
 
@@ -54,7 +55,7 @@ def get_payment_entry_receipt(company_id=None):
         # Fetch all Payment Entries which are not yet synced with Tally
         doc_list = frappe.get_all(
             "Payment Entry",
-            filters={"docstatus": 1,"company": company_name,"payment_type": "Receive",
+            filters={"docstatus": 1,"company": company_name,"payment_type": "Receive", "cost_center": cost_center,
                     "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
             fields=["*"], limit = 10
         )

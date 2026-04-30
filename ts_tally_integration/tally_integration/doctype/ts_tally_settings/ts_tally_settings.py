@@ -33,6 +33,226 @@ class TSTallySettings(Document):
 
 
 @frappe.whitelist()
+def get_not_synced_data(company):
+	if not company:
+		return {}
+
+	settings = frappe.get_single("TS Tally Settings")
+	company_row = None
+	for row in settings.company_table:
+		if row.company_name == company:
+			company_row = row
+			break
+
+	if not company_row:
+		frappe.throw(f"Company {company} is not configured in TS Tally Settings")
+
+	sync_from = company_row.sync_from
+	sync_master_from = company_row.sync_master_from
+	cost_center = company_row.cost_center
+	result = {}
+
+	def with_cost_center(filters):
+		if cost_center:
+			filters["cost_center"] = cost_center
+		return filters
+
+	# Master Data - Items
+	synced_items = frappe.get_all(
+		"Tally Master Sync Log",
+		filters={"parenttype": "Item", "status": "SUCCESS"},
+		pluck="parent"
+	)
+	not_synced_items = frappe.get_all(
+		"Item",
+		filters={
+			"name": ["not in", synced_items],
+			"creation": [">=", sync_master_from] if sync_master_from else ["is", "set"]
+		},
+		fields=["name", "item_name", "creation"],
+		order_by="creation desc"
+	)
+	if not_synced_items:
+		result["Item"] = not_synced_items
+
+	# Master Data - Item Group
+	synced_item_groups = frappe.get_all(
+		"Tally Master Sync Log",
+		filters={"parenttype": "Item Group", "status": "SUCCESS"},
+		pluck="parent"
+	)
+	not_synced_item_groups = frappe.get_all(
+		"Item Group",
+		filters={
+			"name": ["not in", synced_item_groups],
+			"is_group": 0
+		},
+		fields=["name", "creation"],
+		order_by="creation desc"
+	)
+	if not_synced_item_groups:
+		result["Item Group"] = not_synced_item_groups
+
+	# Master Data - Warehouse
+	synced_warehouses = frappe.get_all(
+		"Tally Master Sync Log",
+		filters={"parenttype": "Warehouse", "status": "SUCCESS"},
+		pluck="parent"
+	)
+	not_synced_warehouses = frappe.get_all(
+		"Warehouse",
+		filters={
+			"name": ["not in", synced_warehouses],
+			"company": company,
+			"is_group": 0
+		},
+		fields=["name", "creation"],
+		order_by="creation desc"
+	)
+	if not_synced_warehouses:
+		result["Warehouse"] = not_synced_warehouses
+
+	# Master Data - Supplier
+	synced_suppliers = frappe.get_all(
+		"Tally Master Sync Log",
+		filters={"parenttype": "Supplier", "status": "SUCCESS"},
+		pluck="parent"
+	)
+	not_synced_suppliers = frappe.get_all(
+		"Supplier",
+		filters={
+			"name": ["not in", synced_suppliers]
+		},
+		fields=["name", "supplier_name", "creation"],
+		order_by="creation desc"
+	)
+	if not_synced_suppliers:
+		result["Supplier"] = not_synced_suppliers
+
+	# Master Data - Customer
+	synced_customers = frappe.get_all(
+		"Tally Master Sync Log",
+		filters={"parenttype": "Customer", "status": "SUCCESS"},
+		pluck="parent"
+	)
+	not_synced_customers = frappe.get_all(
+		"Customer",
+		filters={
+			"name": ["not in", synced_customers],
+			"creation": [">=", sync_master_from] if sync_master_from else ["is", "set"]
+		},
+		fields=["name", "customer_name", "creation"],
+		order_by="creation desc"
+	)
+	if not_synced_customers:
+		result["Customer"] = not_synced_customers
+
+	# Transactional Data - Sales Invoice
+	not_synced_si = frappe.get_all(
+		"Sales Invoice",
+		filters=with_cost_center({
+			"custom_tally_guid": ["is", "not set"],
+			"company": company,
+			"docstatus": 1,
+			"is_opening": ["!=", "Yes"],
+			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+		}),
+		fields=["name", "customer_name", "posting_date", "grand_total"],
+		order_by="posting_date desc"
+	)
+	if not_synced_si:
+		result["Sales Invoice"] = not_synced_si
+
+	# Transactional Data - Purchase Invoice
+	not_synced_pi = frappe.get_all(
+		"Purchase Invoice",
+		filters=with_cost_center({
+			"custom_tally_guid": ["is", "not set"],
+			"company": company,
+			"docstatus": 1,
+			"is_opening": ["!=", "Yes"],
+			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+		}),
+		fields=["name", "supplier_name", "posting_date", "grand_total"],
+		order_by="posting_date desc"
+	)
+	if not_synced_pi:
+		result["Purchase Invoice"] = not_synced_pi
+
+	# Transactional Data - Payment Entry
+	not_synced_pe = frappe.get_all(
+		"Payment Entry",
+		filters=with_cost_center({
+			"custom_tally_guid": ["is", "not set"],
+			"company": company,
+			"docstatus": 1,
+			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+		}),
+		fields=["name", "payment_type", "party_name", "posting_date", "paid_amount"],
+		order_by="posting_date desc"
+	)
+	if not_synced_pe:
+		result["Payment Entry"] = not_synced_pe
+
+	# Transactional Data - Journal Entry
+	je_filters = {
+		"custom_tally_guid": ["is", "not set"],
+		"company": company,
+		"docstatus": 1,
+		"is_opening": ["!=", "Yes"],
+		"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+	}
+	if cost_center:
+		je_names_with_cc = frappe.get_all(
+			"Journal Entry Account",
+			filters={"cost_center": cost_center, "parenttype": "Journal Entry"},
+			pluck="parent",
+			distinct=True
+		)
+		je_filters["name"] = ["in", je_names_with_cc] if je_names_with_cc else ["in", [""]]
+	not_synced_je = frappe.get_all(
+		"Journal Entry",
+		filters=je_filters,
+		fields=["name", "voucher_type", "posting_date", "total_debit"],
+		order_by="posting_date desc"
+	)
+	if not_synced_je:
+		result["Journal Entry"] = not_synced_je
+
+	# Transactional Data - Stock Entry
+	not_synced_se = frappe.get_all(
+		"Stock Entry",
+		filters={
+			"custom_tally_guid": ["is", "not set"],
+			"company": company,
+			"docstatus": 1,
+			"is_opening": ["!=", "Yes"],
+			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+		},
+		fields=["name", "stock_entry_type", "posting_date"],
+		order_by="posting_date desc"
+	)
+	if not_synced_se:
+		result["Stock Entry"] = not_synced_se
+
+	# not_synced_dn = frappe.get_all(
+	# 	"Delivery Note",
+	# 	filters={
+	# 		"custom_tally_guid": ["is", "not set"],
+	# 		"company": company,
+	# 		"docstatus": 1,
+	# 		"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+	# 	},
+	# 	fields=["name", "customer_name", "posting_date", "grand_total"],
+	# 	order_by="posting_date desc"
+	# )
+	# if not_synced_dn:
+	# 	result["Delivery Note"] = not_synced_dn
+
+	return result
+
+
+@frappe.whitelist()
 def get_unmapped_accounts():
 	unmapped_account = frappe.db.get_list('Account', filters={'custom_tally_parent_account':['=',''], 'is_group':0}, fields=['name', 'company'])
 	return unmapped_account

@@ -36,6 +36,7 @@ def get_purchase_invoice(company_id=None):
         return Response(json.dumps(final_voucher, default=str), content_type='application/json')
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
+    cost_center = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['cost_center'])
 
     sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
 
@@ -49,7 +50,7 @@ def get_purchase_invoice(company_id=None):
     all_vouchers = []
 
     purchase_list = frappe.get_all('Purchase Invoice',
-                                filters={'company':company_name, 'is_return':0, 'docstatus':1,
+                                filters={'company':company_name, 'is_return':0, 'docstatus':1, 'cost_center': cost_center, 'is_opening': 'No',
                                          'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
                                 fields=['*'], limit = 10)
 

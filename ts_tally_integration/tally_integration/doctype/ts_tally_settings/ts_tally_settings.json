@@ -11,6 +11,10 @@
   "unmapped_accounts",
   "voucher_sync_control_tab",
   "voucher_sync_control",
+  "not_synced_data_tab",
+  "not_synced_company",
+  "not_synced_data_section",
+  "not_synced_data_html",
   "api_tab",
   "api_details",
   "response_api_details",
@@ -75,6 +79,26 @@
    "fieldname": "voucher_sync_control_tab",
    "fieldtype": "Tab Break",
    "label": "Voucher Sync Control"
+  },
+  {
+   "fieldname": "not_synced_data_tab",
+   "fieldtype": "Tab Break",
+   "label": "Not Synced Data"
+  },
+  {
+   "fieldname": "not_synced_company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "not_synced_data_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "not_synced_data_html",
+   "fieldtype": "HTML",
+   "label": "Not Synced Data"
   }
  ],
  "index_web_pages_for_search": 1,

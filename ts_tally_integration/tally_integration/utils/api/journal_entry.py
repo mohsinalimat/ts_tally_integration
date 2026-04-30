@@ -22,6 +22,7 @@ def get_journal(company_id = None):
         return Response(json.dumps(final_voucher, default=str), content_type='application/json')
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
+    cost_center = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['cost_center'])
 
     all_vouchers = []
 
@@ -32,11 +33,16 @@ def get_journal(company_id = None):
     start_date = getdate(sync_from)
     end_date = getdate(today())
 
+    matching_je_names = frappe.get_all('Journal Entry Account',
+                                       filters={'cost_center': cost_center},
+                                       pluck='parent', distinct=True) if cost_center else []
+
     journal_list = frappe.get_all('Journal Entry',
                                    filters={'company':company_name,'voucher_type': ['!=', 'Contra Entry'],
+                                            'name': ['in', matching_je_names],
                                             'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
                                    fields=['*'], limit = 10
-                                   )
+                                   ) if matching_je_names else []
 
     for list in journal_list:
         journal_gl_entry = frappe.get_all('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])
