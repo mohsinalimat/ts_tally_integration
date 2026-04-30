@@ -49,7 +49,13 @@ def get_not_synced_data(company):
 
 	sync_from = company_row.sync_from
 	sync_master_from = company_row.sync_master_from
+	cost_center = company_row.cost_center
 	result = {}
+
+	def with_cost_center(filters):
+		if cost_center:
+			filters["cost_center"] = cost_center
+		return filters
 
 	# Master Data - Items
 	synced_items = frappe.get_all(
@@ -144,12 +150,13 @@ def get_not_synced_data(company):
 	# Transactional Data - Sales Invoice
 	not_synced_si = frappe.get_all(
 		"Sales Invoice",
-		filters={
+		filters=with_cost_center({
 			"custom_tally_guid": ["is", "not set"],
 			"company": company,
 			"docstatus": 1,
+			"is_opening": ["!=", "Yes"],
 			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
-		},
+		}),
 		fields=["name", "customer_name", "posting_date", "grand_total"],
 		order_by="posting_date desc"
 	)
@@ -159,12 +166,13 @@ def get_not_synced_data(company):
 	# Transactional Data - Purchase Invoice
 	not_synced_pi = frappe.get_all(
 		"Purchase Invoice",
-		filters={
+		filters=with_cost_center({
 			"custom_tally_guid": ["is", "not set"],
 			"company": company,
 			"docstatus": 1,
+			"is_opening": ["!=", "Yes"],
 			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
-		},
+		}),
 		fields=["name", "supplier_name", "posting_date", "grand_total"],
 		order_by="posting_date desc"
 	)
@@ -174,12 +182,12 @@ def get_not_synced_data(company):
 	# Transactional Data - Payment Entry
 	not_synced_pe = frappe.get_all(
 		"Payment Entry",
-		filters={
+		filters=with_cost_center({
 			"custom_tally_guid": ["is", "not set"],
 			"company": company,
 			"docstatus": 1,
 			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
-		},
+		}),
 		fields=["name", "payment_type", "party_name", "posting_date", "paid_amount"],
 		order_by="posting_date desc"
 	)
@@ -187,14 +195,24 @@ def get_not_synced_data(company):
 		result["Payment Entry"] = not_synced_pe
 
 	# Transactional Data - Journal Entry
+	je_filters = {
+		"custom_tally_guid": ["is", "not set"],
+		"company": company,
+		"docstatus": 1,
+		"is_opening": ["!=", "Yes"],
+		"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+	}
+	if cost_center:
+		je_names_with_cc = frappe.get_all(
+			"Journal Entry Account",
+			filters={"cost_center": cost_center, "parenttype": "Journal Entry"},
+			pluck="parent",
+			distinct=True
+		)
+		je_filters["name"] = ["in", je_names_with_cc] if je_names_with_cc else ["in", [""]]
 	not_synced_je = frappe.get_all(
 		"Journal Entry",
-		filters={
-			"custom_tally_guid": ["is", "not set"],
-			"company": company,
-			"docstatus": 1,
-			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
-		},
+		filters=je_filters,
 		fields=["name", "voucher_type", "posting_date", "total_debit"],
 		order_by="posting_date desc"
 	)
@@ -208,6 +226,7 @@ def get_not_synced_data(company):
 			"custom_tally_guid": ["is", "not set"],
 			"company": company,
 			"docstatus": 1,
+			"is_opening": ["!=", "Yes"],
 			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
 		},
 		fields=["name", "stock_entry_type", "posting_date"],
