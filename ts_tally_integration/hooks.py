@@ -43,8 +43,18 @@ required_apps = ["frappe/erpnext"]
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_js = {
+	"Sales Invoice": "tally_integration/utils/js/sales_invoice.js",
+	"Purchase Invoice": "tally_integration/utils/js/purchase_invoice.js",
+	"Journal Entry": "tally_integration/utils/js/journal_entry.js",
+	"Payment Entry": "tally_integration/utils/js/payment_entry.js",
+}
+doctype_list_js = {
+	"Sales Invoice": "tally_integration/utils/js/sales_invoice_list.js",
+	"Purchase Invoice": "tally_integration/utils/js/purchase_invoice_list.js",
+	"Journal Entry": "tally_integration/utils/js/journal_entry_list.js",
+	"Payment Entry": "tally_integration/utils/js/payment_entry_list.js",
+}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 

@@ -123,6 +123,7 @@ function fetch_not_synced_data(frm) {
                             <tbody>
                 `;
 
+                const date_cols = new Set(['creation', 'modified', 'posting_date']);
                 records.forEach((row, idx) => {
                     html += '<tr>';
                     html += `<td style="border:1px solid #ddd; padding:8px;">${idx + 1}</td>`;
@@ -130,6 +131,8 @@ function fetch_not_synced_data(frm) {
                         let val = row[col] || '';
                         if (col === 'name') {
                             val = `<a href="/app/${frappe.router.slug(doctype)}/${row[col]}" target="_blank">${row[col]}</a>`;
+                        } else if (date_cols.has(col) && row[col]) {
+                            val = frappe.datetime.str_to_user(row[col]);
                         }
                         html += `<td style="border:1px solid #ddd; padding:8px;">${val}</td>`;
                     });
@@ -177,7 +180,7 @@ function render_sync_dashboard(data) {
     let html = refresh_btn;
 
     if (data.global_masters && data.global_masters.length) {
-        html += render_dashboard_section('Global Masters (Company Independent)', data.global_masters, true);
+        html += render_dashboard_section('Global Masters (Company Independent)', data.global_masters);
     }
 
     (data.companies || []).forEach(c => {
@@ -194,10 +197,10 @@ function render_sync_dashboard(data) {
                 ${meta_html}
         `;
         if (c.masters && c.masters.length) {
-            html += render_dashboard_section('Master Data', c.masters, true);
+            html += render_dashboard_section('Master Data', c.masters);
         }
         if (c.vouchers && c.vouchers.length) {
-            html += render_dashboard_section('Voucher Data', c.vouchers, false);
+            html += render_dashboard_section('Voucher Data', c.vouchers);
         }
         html += `</div>`;
     });
@@ -205,25 +208,12 @@ function render_sync_dashboard(data) {
     return html;
 }
 
-function render_dashboard_section(title, rows, show_failure) {
-    const failure_header = show_failure
-        ? `<th style="border:1px solid #ddd; padding:8px; text-align:left;">Last Failure</th>`
-        : '';
-
+function render_dashboard_section(title, rows) {
     let body = '';
     rows.forEach(r => {
         const total = (r.pending || 0) + (r.synced || 0);
         const pending_color = (r.pending && r.pending > 0) ? '#c0392b' : '#2c3e50';
         const last_sync = r.last_sync ? frappe.datetime.str_to_user(r.last_sync) : '—';
-
-        let last_failure = '—';
-        if (show_failure && r.last_failure) {
-            const slug = frappe.router.slug(r.doctype);
-            const name = frappe.utils.escape_html(r.last_failure.name || '');
-            const t = r.last_failure.time ? frappe.datetime.str_to_user(r.last_failure.time) : '';
-            last_failure = `<a href="/app/${slug}/${encodeURIComponent(r.last_failure.name)}" target="_blank">${name}</a>`
-                + (t ? ` <span style="color:#888;">(${t})</span>` : '');
-        }
 
         body += `
             <tr>
@@ -232,7 +222,6 @@ function render_dashboard_section(title, rows, show_failure) {
                 <td style="border:1px solid #ddd; padding:8px; text-align:right; color:#27ae60; font-weight:600;">${r.synced || 0}</td>
                 <td style="border:1px solid #ddd; padding:8px; text-align:right; color:#666;">${total}</td>
                 <td style="border:1px solid #ddd; padding:8px;">${last_sync}</td>
-                ${show_failure ? `<td style="border:1px solid #ddd; padding:8px;">${last_failure}</td>` : ''}
             </tr>
         `;
     });
@@ -247,7 +236,6 @@ function render_dashboard_section(title, rows, show_failure) {
                     <th style="border:1px solid #ddd; padding:8px; text-align:right;">Synced</th>
                     <th style="border:1px solid #ddd; padding:8px; text-align:right;">Total</th>
                     <th style="border:1px solid #ddd; padding:8px; text-align:left;">Last Sync</th>
-                    ${failure_header}
                 </tr>
             </thead>
             <tbody>${body}</tbody>

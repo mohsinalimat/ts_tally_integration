@@ -43,10 +43,10 @@ def get_stock_entry(company_id=None):
     start_date = getdate(sync_from)
     end_date = getdate(today())
 
-    stock_entries = frappe.get_all('Stock Entry', 
+    stock_entries = frappe.get_all('Stock Entry',
                                    filters={'company': company_name, 'docstatus': 1,
                                             'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                   fields=['name', 'posting_date'], limit = 10
+                                   fields=['name', 'posting_date'], order_by='posting_date asc', limit = 10
                                    )
 
     # -------------------------------

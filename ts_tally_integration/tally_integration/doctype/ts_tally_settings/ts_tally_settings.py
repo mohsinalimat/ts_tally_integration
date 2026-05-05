@@ -50,6 +50,7 @@ def get_not_synced_data(company):
 	sync_from = company_row.sync_from
 	sync_master_from = company_row.sync_master_from
 	cost_center = company_row.cost_center
+	company_number = company_row.company_number
 	result = {}
 
 	def with_cost_center(filters):
@@ -60,7 +61,7 @@ def get_not_synced_data(company):
 	# Master Data - Items
 	synced_items = frappe.get_all(
 		"Tally Master Sync Log",
-		filters={"parenttype": "Item", "status": "SUCCESS"},
+		filters={"parenttype": "Item", "status": "SUCCESS", "company_number": company_number},
 		pluck="parent"
 	)
 	not_synced_items = frappe.get_all(
@@ -69,7 +70,7 @@ def get_not_synced_data(company):
 			"name": ["not in", synced_items],
 			"creation": [">=", sync_master_from] if sync_master_from else ["is", "set"]
 		},
-		fields=["name", "item_name", "creation"],
+		fields=["name", "item_name"],
 		order_by="creation desc"
 	)
 	if not_synced_items:
@@ -78,7 +79,7 @@ def get_not_synced_data(company):
 	# Master Data - Item Group
 	synced_item_groups = frappe.get_all(
 		"Tally Master Sync Log",
-		filters={"parenttype": "Item Group", "status": "SUCCESS"},
+		filters={"parenttype": "Item Group", "status": "SUCCESS", "company_number": company_number},
 		pluck="parent"
 	)
 	not_synced_item_groups = frappe.get_all(
@@ -87,7 +88,7 @@ def get_not_synced_data(company):
 			"name": ["not in", synced_item_groups],
 			"is_group": 0
 		},
-		fields=["name", "creation"],
+		fields=["name"],
 		order_by="creation desc"
 	)
 	if not_synced_item_groups:
@@ -96,7 +97,7 @@ def get_not_synced_data(company):
 	# Master Data - Warehouse
 	synced_warehouses = frappe.get_all(
 		"Tally Master Sync Log",
-		filters={"parenttype": "Warehouse", "status": "SUCCESS"},
+		filters={"parenttype": "Warehouse", "status": "SUCCESS", "company_number": company_number},
 		pluck="parent"
 	)
 	not_synced_warehouses = frappe.get_all(
@@ -106,7 +107,7 @@ def get_not_synced_data(company):
 			"company": company,
 			"is_group": 0
 		},
-		fields=["name", "creation"],
+		fields=["name"],
 		order_by="creation desc"
 	)
 	if not_synced_warehouses:
@@ -115,7 +116,7 @@ def get_not_synced_data(company):
 	# Master Data - Supplier
 	synced_suppliers = frappe.get_all(
 		"Tally Master Sync Log",
-		filters={"parenttype": "Supplier", "status": "SUCCESS"},
+		filters={"parenttype": "Supplier", "status": "SUCCESS", "company_number": company_number},
 		pluck="parent"
 	)
 	not_synced_suppliers = frappe.get_all(
@@ -123,7 +124,7 @@ def get_not_synced_data(company):
 		filters={
 			"name": ["not in", synced_suppliers]
 		},
-		fields=["name", "supplier_name", "creation"],
+		fields=["name", "supplier_name"],
 		order_by="creation desc"
 	)
 	if not_synced_suppliers:
@@ -132,7 +133,7 @@ def get_not_synced_data(company):
 	# Master Data - Customer
 	synced_customers = frappe.get_all(
 		"Tally Master Sync Log",
-		filters={"parenttype": "Customer", "status": "SUCCESS"},
+		filters={"parenttype": "Customer", "status": "SUCCESS", "company_number": company_number},
 		pluck="parent"
 	)
 	not_synced_customers = frappe.get_all(
@@ -141,11 +142,30 @@ def get_not_synced_data(company):
 			"name": ["not in", synced_customers],
 			"creation": [">=", sync_master_from] if sync_master_from else ["is", "set"]
 		},
-		fields=["name", "customer_name", "creation"],
+		fields=["name", "customer_name"],
 		order_by="creation desc"
 	)
 	if not_synced_customers:
 		result["Customer"] = not_synced_customers
+
+	# Master Data - Account
+	synced_accounts = frappe.get_all(
+		"Tally Master Sync Log",
+		filters={"parenttype": "Account", "status": "SUCCESS", "company_number": company_number},
+		pluck="parent"
+	)
+	not_synced_accounts = frappe.get_all(
+		"Account",
+		filters={
+			"name": ["not in", synced_accounts],
+			"company": company,
+			"is_group": 0
+		},
+		fields=["name", "account_name"],
+		order_by="creation desc"
+	)
+	if not_synced_accounts:
+		result["Account"] = not_synced_accounts
 
 	# Transactional Data - Sales Invoice
 	not_synced_si = frappe.get_all(
@@ -290,11 +310,15 @@ def get_sync_dashboard_data():
 	"""
 	settings = frappe.get_single("TS Tally Settings")
 
-	def master_stats(parent_doctype, base_filters=None):
+	def master_stats(parent_doctype, base_filters=None, company_number=None):
 		base_filters = base_filters or {}
+		log_filters = {"parenttype": parent_doctype, "status": "SUCCESS"}
+		if company_number is not None:
+			log_filters["company_number"] = company_number
+
 		synced_names = frappe.get_all(
 			"Tally Master Sync Log",
-			filters={"parenttype": parent_doctype, "status": "SUCCESS"},
+			filters=log_filters,
 			pluck="parent",
 			distinct=True,
 		)
@@ -306,34 +330,29 @@ def get_sync_dashboard_data():
 		synced_filters["name"] = ["in", synced_names] if synced_names else ["in", [""]]
 		synced = frappe.db.count(parent_doctype, filters=synced_filters) if synced_names else 0
 
-		last_sync = frappe.db.sql(
-			"""
-			select max(sync_time) from `tabTally Master Sync Log`
-			where parenttype=%s and status='SUCCESS'
-			""",
-			(parent_doctype,),
-		)
+		if company_number is not None:
+			last_sync = frappe.db.sql(
+				"""
+				select max(sync_time) from `tabTally Master Sync Log`
+				where parenttype=%s and status='SUCCESS' and company_number=%s
+				""",
+				(parent_doctype, company_number),
+			)
+		else:
+			last_sync = frappe.db.sql(
+				"""
+				select max(sync_time) from `tabTally Master Sync Log`
+				where parenttype=%s and status='SUCCESS'
+				""",
+				(parent_doctype,),
+			)
 		last_sync = last_sync[0][0] if last_sync and last_sync[0] else None
-
-		last_fail = frappe.db.sql(
-			"""
-			select parent, sync_time from `tabTally Master Sync Log`
-			where parenttype=%s and status!='SUCCESS'
-			order by sync_time desc limit 1
-			""",
-			(parent_doctype,),
-			as_dict=True,
-		)
-		last_failure = None
-		if last_fail:
-			last_failure = {"name": last_fail[0]["parent"], "time": last_fail[0]["sync_time"]}
 
 		return {
 			"doctype": parent_doctype,
 			"pending": pending,
 			"synced": synced,
 			"last_sync": last_sync,
-			"last_failure": last_failure,
 		}
 
 	def voucher_stats(doctype, company, sync_from, cost_center, extra_pending_filters=None,
@@ -382,23 +401,25 @@ def get_sync_dashboard_data():
 			"pending": pending,
 			"synced": synced,
 			"last_sync": last_sync,
-			"last_failure": None,
 		}
 
-	global_masters = [
-		master_stats("Item"),
-		master_stats("Item Group", {"is_group": 0}),
-		master_stats("Customer"),
-		master_stats("Supplier"),
-	]
+	global_masters = []
 
 	companies = []
 	for row in settings.company_table:
 		company = row.company_name
+		company_number = row.company_number
 		sync_from = row.sync_from
 		cost_center = row.cost_center
 
-		masters = [master_stats("Warehouse", {"company": company, "is_group": 0})]
+		masters = [
+			master_stats("Item", company_number=company_number),
+			master_stats("Item Group", {"is_group": 0}, company_number=company_number),
+			master_stats("Customer", company_number=company_number),
+			master_stats("Supplier", company_number=company_number),
+			master_stats("Account", {"company": company, "is_group": 0}, company_number=company_number),
+			master_stats("Warehouse", {"company": company, "is_group": 0}, company_number=company_number),
+		]
 
 		vouchers = [
 			voucher_stats("Sales Invoice", company, sync_from, cost_center,
