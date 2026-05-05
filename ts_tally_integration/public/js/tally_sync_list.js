@@ -1,0 +1,56 @@
+frappe.provide("ts_tally_integration");
+
+ts_tally_integration.add_bulk_remove_sync_action = function (listview) {
+	if (frappe.session.user !== "Administrator") return;
+
+	listview.page.add_actions_menu_item(
+		__("Remove Tally Sync Data"),
+		function () {
+			const selected = listview.get_checked_items();
+			if (!selected || !selected.length) {
+				frappe.msgprint(__("Please select at least one record"));
+				return;
+			}
+
+			const names = selected.map((d) => d.name);
+
+			frappe.confirm(
+				__("Remove Tally sync data from {0} selected {1}?", [
+					names.length,
+					__(listview.doctype),
+				]),
+				function () {
+					frappe.call({
+						method: "ts_tally_integration.tally_integration.utils.py.remove_sync_data.bulk_remove_sync_data",
+						args: {
+							doctype: listview.doctype,
+							names: names,
+						},
+						freeze: true,
+						freeze_message: __("Removing Tally sync data..."),
+						callback: function (r) {
+							const msg = r.message || {};
+							const cleared = (msg.cleared || []).length;
+							const failed = (msg.failed || []).length;
+
+							if (cleared) {
+								frappe.show_alert({
+									message: __("Removed sync data from {0} record(s)", [cleared]),
+									indicator: "green",
+								});
+							}
+							if (failed) {
+								frappe.show_alert({
+									message: __("Failed for {0} record(s)", [failed]),
+									indicator: "red",
+								});
+							}
+							listview.refresh();
+						},
+					});
+				}
+			);
+		},
+		false
+	);
+};
