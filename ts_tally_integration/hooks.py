@@ -26,10 +26,7 @@ required_apps = ["frappe/erpnext"]
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/ts_tally_integration/css/ts_tally_integration.css"
-app_include_js = [
-	"/assets/ts_tally_integration/js/tally_sync_form.js",
-	"/assets/ts_tally_integration/js/tally_sync_list.js",
-]
+# app_include_js = "/assets/ts_tally_integration/js/ts_tally_integration.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/ts_tally_integration/css/ts_tally_integration.css"
@@ -47,16 +44,16 @@ app_include_js = [
 
 # include js in doctype views
 doctype_js = {
-	"Sales Invoice": "public/js/sales_invoice.js",
-	"Purchase Invoice": "public/js/purchase_invoice.js",
-	"Journal Entry": "public/js/journal_entry.js",
-	"Payment Entry": "public/js/payment_entry.js",
+	"Sales Invoice": "tally_integration/utils/js/sales_invoice.js",
+	"Purchase Invoice": "tally_integration/utils/js/purchase_invoice.js",
+	"Journal Entry": "tally_integration/utils/js/journal_entry.js",
+	"Payment Entry": "tally_integration/utils/js/payment_entry.js",
 }
 doctype_list_js = {
-	"Sales Invoice": "public/js/sales_invoice_list.js",
-	"Purchase Invoice": "public/js/purchase_invoice_list.js",
-	"Journal Entry": "public/js/journal_entry_list.js",
-	"Payment Entry": "public/js/payment_entry_list.js",
+	"Sales Invoice": "tally_integration/utils/js/sales_invoice_list.js",
+	"Purchase Invoice": "tally_integration/utils/js/purchase_invoice_list.js",
+	"Journal Entry": "tally_integration/utils/js/journal_entry_list.js",
+	"Payment Entry": "tally_integration/utils/js/payment_entry_list.js",
 }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

@@ -41,7 +41,7 @@ def get_journal(company_id = None):
                                    filters={'company':company_name,'voucher_type': ['!=', 'Contra Entry'],
                                             'name': ['in', matching_je_names],
                                             'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                   fields=['*'], limit = 10
+                                   fields=['*'], order_by='posting_date asc', limit = 10
                                    ) if matching_je_names else []
 
     for list in journal_list:

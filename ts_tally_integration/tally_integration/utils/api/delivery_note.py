@@ -36,7 +36,7 @@ def get_delivery_note(company_id=None):
 
     delivery_notes = frappe.get_all('Delivery Note', filters={
         'company': company_name, 'is_return': 0, 'docstatus': 1
-    }, fields=['*'], limit = 10)
+    }, fields=['*'], order_by='posting_date asc', limit = 10)
 
     for doc in delivery_notes:
         # Customer address

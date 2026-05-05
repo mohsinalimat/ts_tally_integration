@@ -52,7 +52,7 @@ def get_debit_note(company_id=None):
     purchase_list = frappe.get_all('Purchase Invoice',
                                 filters={'company':company_name, 'is_return':1, 'docstatus':1,
                                          'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                fields=['*'], limit = 10
+                                fields=['*'], order_by='posting_date asc', limit = 10
                                 )
 
     for doc in purchase_list:
