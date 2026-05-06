@@ -37,6 +37,7 @@ def get_purchase_invoice(company_id=None):
 
     company_name = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['company_name'])
     cost_center = frappe.get_value('TS Tally Company', {'company_number': company_id}, ['cost_center'])
+    default_warehouse = frappe.db.get_single_value('TS Tally Settings', 'default_warehouse')
 
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
     company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
@@ -159,7 +160,7 @@ def get_purchase_invoice(company_id=None):
                         "CostCategory": "",
                         "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": item['item_name'],
-                        "Godown": item['warehouse'].split('-')[0].strip(),
+                        "Godown": (item.get('warehouse') or default_warehouse).split('-')[0].strip() if (item.get('warehouse') or default_warehouse) else None,
                         "BatchNo": "",
                         "Quantity": item['qty'],
                         "Rate": item_rate,

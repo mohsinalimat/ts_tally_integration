@@ -23,7 +23,9 @@
   "api_details",
   "response_api_details",
   "tab_break_gruq",
-  "redirect_tally_function"
+  "redirect_tally_function",
+  "default_tab",
+  "default_warehouse"
  ],
  "fields": [
   {
@@ -124,12 +126,22 @@
    "fieldname": "not_synced_data_html",
    "fieldtype": "HTML",
    "label": "Not Synced Data"
+  },
+  {
+   "fieldname": "default_tab",
+   "fieldtype": "Tab Break",
+   "label": "Default"
+  },
+  {
+   "fieldname": "default_warehouse",
+   "fieldtype": "Data",
+   "label": "Default Warehouse"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-02-24 16:12:49.249782",
+ "modified": "2026-05-06 12:27:17.818510",
  "modified_by": "Administrator",
  "module": "Tally Integration",
  "name": "TS Tally Settings",
