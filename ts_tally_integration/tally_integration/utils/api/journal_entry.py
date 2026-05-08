@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
@@ -41,7 +42,7 @@ def get_journal(company_id = None):
                                    filters={'company':company_name,'voucher_type': ['!=', 'Contra Entry'],
                                             'name': ['in', matching_je_names],
                                             'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                   fields=['*'], order_by='posting_date asc', limit = 10
+                                   fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit()
                                    ) if matching_je_names else []
 
     for list in journal_list:

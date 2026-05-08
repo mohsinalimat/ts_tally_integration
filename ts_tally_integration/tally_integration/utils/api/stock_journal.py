@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
@@ -46,7 +47,7 @@ def get_stock_entry(company_id=None):
     stock_entries = frappe.get_all('Stock Entry',
                                    filters={'company': company_name, 'docstatus': 1,
                                             'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                   fields=['name', 'posting_date'], order_by='posting_date asc', limit = 10
+                                   fields=['name', 'posting_date'], order_by='posting_date asc', limit=get_voucher_sync_limit()
                                    )
 
     # -------------------------------

@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_master_sync_limit
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
@@ -28,7 +29,7 @@ def get_party(company_id = None):
         filters={'parenttype': 'Supplier', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    suppliers = frappe.get_all('Supplier', filters = {'name': ['not in', synced_suppliers]}, fields=['*'], limit = 10)
+    suppliers = frappe.get_all('Supplier', filters = {'name': ['not in', synced_suppliers]}, fields=['*'], limit=get_master_sync_limit())
     for supplier in suppliers:
 
         if supplier.get('supplier_primary_address'):
@@ -66,7 +67,7 @@ def get_party(company_id = None):
         filters={'parenttype': 'Customer', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    customers = frappe.get_all('Customer', filters = {'name': ['not in', synced_customers], 'creation': [">", start_date]}, fields=['*'], limit = 10)
+    customers = frappe.get_all('Customer', filters = {'name': ['not in', synced_customers], 'creation': [">", start_date]}, fields=['*'], limit=get_master_sync_limit())
 
     for customer in customers:
         if customer.get('customer_primary_address'):
@@ -99,7 +100,7 @@ def get_party(company_id = None):
         filters={'parenttype': 'Employee', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    employees = frappe.get_all('Employee', filters = {'name': ['not in', synced_employees]}, fields=['*'], limit = 10)
+    employees = frappe.get_all('Employee', filters = {'name': ['not in', synced_employees]}, fields=['*'], limit=get_master_sync_limit())
 
     for employee in employees:
 
@@ -127,7 +128,7 @@ def get_party(company_id = None):
         pluck='parent')
 
     accounts = frappe.get_all('Tally Account',
-                              filters = {'tally_parent': ['is', 'set'], 'name': ['not in', synced_tally_accounts]}, fields=['*'], limit = 10)
+                              filters = {'tally_parent': ['is', 'set'], 'name': ['not in', synced_tally_accounts]}, fields=['*'], limit=get_master_sync_limit())
 
     for account in accounts:
 

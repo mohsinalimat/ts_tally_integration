@@ -1,4 +1,5 @@
 import frappe, importlib
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
@@ -51,7 +52,7 @@ def get_debit_note(company_id=None):
     purchase_list = frappe.get_all('Purchase Invoice',
                                 filters={'company':company_name, 'is_return':1, 'docstatus':1,
                                          'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                fields=['*'], order_by='posting_date asc', limit = 10
+                                fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit()
                                 )
 
     for doc in purchase_list:

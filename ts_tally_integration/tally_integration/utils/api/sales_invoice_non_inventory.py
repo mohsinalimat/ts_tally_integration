@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
@@ -53,7 +54,7 @@ def get_sales_non_inv(company_id = None):
     sales_list = frappe.get_all('Sales Invoice',
                                  filters={'company':company_name,'is_return':0, 'docstatus':1,'cost_center': cost_center, 'is_opening': 'No',
                                           'custom_tally_guid': ['in', ['', None]], 'posting_date': ['between', [start_date, end_date]]},
-                                 fields=['*'], order_by='posting_date asc', limit = 10)
+                                 fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit())
 
     for doc in sales_list:
         tax_processed = False

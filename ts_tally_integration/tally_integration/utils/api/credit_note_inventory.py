@@ -1,4 +1,5 @@
 import frappe, importlib
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
@@ -72,7 +73,7 @@ def credit_note_inv(company_id = None):
         credit_list = frappe.get_all('Sales Invoice',
                                     filters = {'company':company_name,'is_return':1, 'docstatus':1,
                                                'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                    fields = ['*'], order_by='posting_date asc', limit = 10)
+                                    fields = ['*'], order_by='posting_date asc', limit=get_voucher_sync_limit())
         for doc in credit_list:
 
             tax_processed = False

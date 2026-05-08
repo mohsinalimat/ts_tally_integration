@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_master_sync_limit
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
@@ -31,7 +32,7 @@ def get_warehouse(company_id = None):
 
     warehouses = frappe.get_all('Warehouse',
                                 filters={'company': company_name, 'name': ['not in', synced_warehouses]},
-                                fields=['*'], limit = 10)
+                                fields=['*'], limit=get_master_sync_limit())
 
     for warehouse in warehouses:
         if warehouse.is_group:

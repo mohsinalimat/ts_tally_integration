@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_master_sync_limit
 import json
 from werkzeug.wrappers import Response
 from datetime import datetime
@@ -27,7 +28,7 @@ def get_itemgroup(company_id=None):
     item_groups = frappe.get_all(
         "Item Group",
         fields=["name", "parent_item_group", "is_group"],
-        limit = 10
+        limit=get_master_sync_limit()
     )
 
     def clean_tally_text(text):

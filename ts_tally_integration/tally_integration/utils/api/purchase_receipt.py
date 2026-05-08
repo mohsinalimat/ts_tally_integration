@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
 from datetime import datetime
 import json
 from werkzeug.wrappers import Response
@@ -37,7 +38,7 @@ def get_purchsase_receipt(company_id=None):
 
     delivery_notes = frappe.get_all('Purchase Receipt', filters={
         'company': company_name, 'is_return': 0, 'docstatus': 1
-    }, fields=['*'], order_by='posting_date asc', limit = 10)
+    }, fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit())
 
     for doc in delivery_notes:
         # Customer address

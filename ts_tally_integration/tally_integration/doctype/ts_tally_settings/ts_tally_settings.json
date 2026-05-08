@@ -10,6 +10,8 @@
   "company_table",
   "unmapped_accounts",
   "voucher_sync_control_tab",
+  "master_limit",
+  "voucher_limit",
   "voucher_sync_control",
   "sync_dashboard_tab",
   "sync_dashboard_html",
@@ -80,6 +82,18 @@
    "fieldtype": "Table",
    "label": "Voucher Sync Control",
    "options": "Voucher Sync Control"
+  },
+  {
+   "default": "10",
+   "fieldname": "master_limit",
+   "fieldtype": "Int",
+   "label": "Master Limit"
+  },
+  {
+   "default": "10",
+   "fieldname": "voucher_limit",
+   "fieldtype": "Int",
+   "label": "Voucher Limit"
   },
   {
    "fieldname": "voucher_sync_control_tab",
