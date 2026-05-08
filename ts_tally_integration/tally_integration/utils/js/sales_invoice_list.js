@@ -10,6 +10,52 @@ frappe.listview_settings["Sales Invoice"] = frappe.listview_settings["Sales Invo
 		if (frappe.session.user !== "Administrator") return;
 
 		listview.page.add_actions_menu_item(
+			__("Set Manual Tally Sync Data"),
+			function () {
+				const selected = listview.get_checked_items();
+				if (!selected || !selected.length) {
+					frappe.msgprint(__("Please select at least one record"));
+					return;
+				}
+				const names = selected.map((d) => d.name);
+
+				frappe.confirm(
+					__("Set Tally sync data manually for {0} selected {1}?", [
+						names.length,
+						__(listview.doctype),
+					]),
+					function () {
+						frappe.call({
+							method: "ts_tally_integration.tally_integration.utils.py.remove_sync_data.bulk_manual_sync_data",
+							args: { doctype: listview.doctype, names: names },
+							freeze: true,
+							freeze_message: __("Setting Tally sync data..."),
+							callback: function (r) {
+								const msg = r.message || {};
+								const updated = (msg.updated || []).length;
+								const failed = (msg.failed || []).length;
+								if (updated) {
+									frappe.show_alert({
+										message: __("Set manual sync data for {0} record(s)", [updated]),
+										indicator: "green",
+									});
+								}
+								if (failed) {
+									frappe.show_alert({
+										message: __("Failed for {0} record(s)", [failed]),
+										indicator: "red",
+									});
+								}
+								listview.refresh();
+							},
+						});
+					}
+				);
+			},
+			false
+		);
+
+		listview.page.add_actions_menu_item(
 			__("Remove Tally Sync Data"),
 			function () {
 				const selected = listview.get_checked_items();

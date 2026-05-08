@@ -1,4 +1,5 @@
 import frappe
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_master_sync_limit
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
@@ -32,7 +33,7 @@ def get_item(company_id = None):
         filters={'parenttype': 'Item', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    items = frappe.get_all('Item', filters={'disabled': 0, 'has_variants': 0, 'name': ['not in', synced_items], 'creation': [">", start_date]}, fields=['*'], limit = 10)
+    items = frappe.get_all('Item', filters={'disabled': 0, 'has_variants': 0, 'name': ['not in', synced_items], 'creation': [">", start_date]}, fields=['*'], limit=get_master_sync_limit())
 
     for item in items:
 
@@ -116,7 +117,7 @@ def fetch_response(response=None, company_id=None):
         if not item_name:
             continue
 
-        item_docname = frappe.db.get_value("Item", {"item_code": item_name}, "name")
+        item_docname = frappe.db.get_value("Item", {"item_name": item_name}, "name")
 
         if item_docname:
             sync_time = datetime.combine(

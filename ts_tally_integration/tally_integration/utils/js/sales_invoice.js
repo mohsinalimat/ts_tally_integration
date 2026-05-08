@@ -3,6 +3,33 @@ frappe.ui.form.on("Sales Invoice", {
 		if (frm.is_new()) return;
 		if (frappe.session.user !== "Administrator") return;
 
+		frm.add_custom_button(
+			__("Set Manual Sync Data"),
+			function () {
+				frappe.confirm(
+					__("Set Tally sync data manually for this {0}?", [__(frm.doctype)]),
+					function () {
+						frappe.call({
+							method: "ts_tally_integration.tally_integration.utils.py.remove_sync_data.manual_sync_data",
+							args: { doctype: frm.doctype, name: frm.doc.name },
+							freeze: true,
+							freeze_message: __("Setting Tally sync data..."),
+							callback: function (r) {
+								if (r.message && r.message.status === "success") {
+									frappe.show_alert({
+										message: __("Tally sync data set manually"),
+										indicator: "green",
+									});
+									frm.reload_doc();
+								}
+							},
+						});
+					}
+				);
+			},
+			__("Tally")
+		);
+
 		const has_sync_data =
 			frm.doc.custom_tally_auto_id ||
 			frm.doc.custom_tally_refno ||

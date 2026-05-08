@@ -1,4 +1,5 @@
 import frappe, importlib
+from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
@@ -57,7 +58,7 @@ def get_payment_entry_receipt(company_id=None):
             "Payment Entry",
             filters={"docstatus": 1,"company": company_name,"payment_type": "Receive", "cost_center": cost_center,
                     "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
-            fields=["*"], order_by='posting_date asc', limit = 10
+            fields=["*"], order_by='posting_date asc', limit=get_voucher_sync_limit()
         )
 
         list_of_entries = []
