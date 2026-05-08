@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import now_datetime
 
 
 ALLOWED_DOCTYPES = {
@@ -27,6 +28,19 @@ def _clear_sync_fields(doctype, name):
         frappe.throw(_("Remove Sync Data is not supported for {0}").format(doctype))
 
     updates = {field: None for field in SYNC_FIELDS}
+    frappe.db.set_value(doctype, name, updates, update_modified=False)
+
+
+def _set_manual_sync_fields(doctype, name):
+    if doctype not in ALLOWED_DOCTYPES:
+        frappe.throw(_("Manual Sync Data is not supported for {0}").format(doctype))
+
+    updates = {
+        "custom_tally_auto_id": name,
+        "custom_tally_refno": name,
+        "custom_tally_guid": "Manual Sync",
+        "custom_sync_time": now_datetime(),
+    }
     frappe.db.set_value(doctype, name, updates, update_modified=False)
 
 
@@ -60,3 +74,35 @@ def bulk_remove_sync_data(doctype, names):
 
     frappe.db.commit()
     return {"cleared": cleared, "failed": failed}
+
+
+@frappe.whitelist()
+def manual_sync_data(doctype, name):
+    _ensure_administrator()
+    _set_manual_sync_fields(doctype, name)
+    frappe.db.commit()
+    return {"status": "success", "name": name}
+
+
+@frappe.whitelist()
+def bulk_manual_sync_data(doctype, names):
+    _ensure_administrator()
+
+    if isinstance(names, str):
+        names = frappe.parse_json(names)
+
+    if not names:
+        frappe.throw(_("No records selected"))
+
+    updated = []
+    failed = []
+    for name in names:
+        try:
+            _set_manual_sync_fields(doctype, name)
+            updated.append(name)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), f"Tally Manual Sync Data failed for {doctype} {name}")
+            failed.append(name)
+
+    frappe.db.commit()
+    return {"updated": updated, "failed": failed}
