@@ -54,6 +54,12 @@ doctype_list_js = {
 	"Purchase Invoice": "tally_integration/utils/js/purchase_invoice_list.js",
 	"Journal Entry": "tally_integration/utils/js/journal_entry_list.js",
 	"Payment Entry": "tally_integration/utils/js/payment_entry_list.js",
+	"Customer": "tally_integration/utils/js/master_sync_log_list.js",
+	"Supplier": "tally_integration/utils/js/master_sync_log_list.js",
+	"Item": "tally_integration/utils/js/master_sync_log_list.js",
+	"Account": "tally_integration/utils/js/master_sync_log_list.js",
+	"Item Group": "tally_integration/utils/js/master_sync_log_list.js",
+	"Warehouse": "tally_integration/utils/js/master_sync_log_list.js",
 }
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
