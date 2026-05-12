@@ -123,35 +123,6 @@ def get_party(company_id = None):
         all_doc.append(employee_dict)
 
 
-    synced_tally_accounts = frappe.get_all('Tally Master Sync Log',
-        filters={'parenttype': 'Tally Account', 'company_number': company_id, 'status': 'SUCCESS'},
-        pluck='parent')
-
-    accounts = frappe.get_all('Tally Account',
-                              filters = {'tally_parent': ['is', 'set'], 'name': ['not in', synced_tally_accounts]}, fields=['*'], limit=get_master_sync_limit())
-
-    for account in accounts:
-
-        account_dict = {
-            "Autoid": auto_id,
-            "CompanyNumber": str(company_id),
-            "LedgerName": account.name,
-            "LedgerParent": account.tally_parent,
-            "LedgerAddress": "",
-            "LedgerState": '',
-            "LedgerCountry": '',
-            "LedgerPincode": '',
-            "LedgerMobile": '',
-            "LedgerGstReg": "",
-            "LedgerPan": '',
-            "LedgerGstin": '',
-        }
-        auto_id += 1
-
-        all_doc.append(account_dict)
-
-
-
     final_voucher = ({
         "status": True,
         "VOUCHERDETAILS": {
@@ -244,11 +215,6 @@ def fetch_response(response, company_id=None):
         if frappe.db.exists("Account", {"account_name": party_name}):
             acc_doc = frappe.db.exists("Account", {"account_name": party_name})
             _update_sync_log('Account', acc_doc, 'custom_tally_sync_log', company_id, company_name, party_name, status, sync_time)
-            updated = True
-
-        if frappe.db.exists("Tally Account", {"name": party_name}):
-            acc = frappe.db.exists("Tally Account", {"name": party_name})
-            _update_sync_log('Tally Account', acc, 'tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
 
         if not updated:
