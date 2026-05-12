@@ -28,7 +28,7 @@ def _clear_sync_fields(doctype, name):
         frappe.throw(_("Remove Sync Data is not supported for {0}").format(doctype))
 
     updates = {field: None for field in SYNC_FIELDS}
-    frappe.db.set_value(doctype, name, updates, update_modified=False)
+    frappe.db.set_value(doctype, name, updates)
 
 
 def _set_manual_sync_fields(doctype, name):
@@ -41,7 +41,7 @@ def _set_manual_sync_fields(doctype, name):
         "custom_tally_guid": "Manual Sync",
         "custom_sync_time": now_datetime(),
     }
-    frappe.db.set_value(doctype, name, updates, update_modified=False)
+    frappe.db.set_value(doctype, name, updates)
 
 
 @frappe.whitelist()
