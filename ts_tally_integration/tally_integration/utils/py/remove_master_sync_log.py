@@ -35,6 +35,7 @@ def _clear_sync_log_for_record(doctype, name, company):
             "company_name": company,
         },
     )
+    frappe.db.set_value(doctype, name, "modified", frappe.utils.now())
 
 
 @frappe.whitelist()
