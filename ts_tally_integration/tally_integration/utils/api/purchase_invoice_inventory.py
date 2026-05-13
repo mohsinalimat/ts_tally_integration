@@ -85,7 +85,9 @@ def get_purchase_invoice(company_id=None):
             amount = invoice['credit'] if 'credit' in invoice and invoice['credit'] else invoice['debit']
             cr_dr = "Cr" if 'credit' in invoice and invoice['credit'] else "Dr"
 
-            account_type = frappe.get_value('Account', invoice['account'], 'account_type')
+            account_info = frappe.get_value('Account', invoice['account'], ['account_type', 'root_type'], as_dict=True) or {}
+            account_type = account_info.get('account_type')
+            root_type = account_info.get('root_type')
             account = (invoice.get("account") or "").split(" - ")[0]
             if account in ["Stock In Hand", "Cost of Goods Sold", "Stock Received But Not Billed",]:
 
@@ -727,8 +729,20 @@ def get_purchase_invoice(company_id=None):
                 all_vouchers.append(ledger_dict)
 
 
-            elif account_type == "Expense Account":
-                
+            elif (
+                account_type in ("Expense Account", "Indirect Expense", "Direct Expense", "Depreciation")
+                or (
+                    root_type == "Expense"
+                    and account_type not in (
+                        "Tax", "Bank", "Payable", "Chargeable", "Round Off",
+                        "Stock In Hand", "Cost of Goods Sold",
+                        "Stock Received But Not Billed", "Stock Adjustment",
+                        "Expenses Included In Valuation",
+                        "Expenses Included In Asset Valuation",
+                    )
+                )
+            ):
+
                 if invoice.get("debit"):
                     ledgername = invoice['account']
                     amount = invoice['debit']
@@ -825,7 +839,7 @@ def get_purchase_invoice(company_id=None):
                         "Narration": ""
                     }
 
-                all_vouchers.append(ledger_dict)
+                    all_vouchers.append(ledger_dict)
 
 
 
@@ -926,7 +940,7 @@ def get_purchase_invoice(company_id=None):
                         "Narration": ""
                     }
 
-                all_vouchers.append(ledger_dict)
+                    all_vouchers.append(ledger_dict)
 
 
 
