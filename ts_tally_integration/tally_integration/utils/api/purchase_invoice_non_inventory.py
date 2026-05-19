@@ -193,6 +193,8 @@ def get_purchase_invoice(company_id=None):
                         "IgstGstRateDutyhead":"IGST",
                         "IgstGstRateValuationtype":"Based on Value",
                         "IgstGstRate": item['sgst_rate'] + item['cgst_rate'] if item['sgst_rate'] and item['cgst_rate'] else "",
+                        "Reference": doc.bill_no if doc.get('bill_no') else "",
+                        "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                         "Narration": ""
                     }
 
@@ -317,6 +319,8 @@ def get_purchase_invoice(company_id=None):
                                     "IgstGstRateDutyhead":"",
                                     "IgstGstRateValuationtype":"",
                                     "IgstGstRate":"",
+                                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                                     "Narration": ""
                                     }
 
@@ -410,6 +414,8 @@ def get_purchase_invoice(company_id=None):
                                     "IgstGstRateDutyhead":"",
                                     "IgstGstRateValuationtype":"",
                                     "IgstGstRate":"",
+                                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                                     "Narration": ""
                                     }
 
@@ -502,6 +508,8 @@ def get_purchase_invoice(company_id=None):
                                     "IgstGstRateDutyhead":"",
                                     "IgstGstRateValuationtype":"",
                                     "IgstGstRate":"",
+                                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                                     "Narration": ""
                                     }
 
@@ -599,6 +607,8 @@ def get_purchase_invoice(company_id=None):
                     "IgstGstRateDutyhead":"",
                     "IgstGstRateValuationtype":"",
                     "IgstGstRate":"",
+                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                     "Narration": ""
                 }
 
@@ -695,6 +705,8 @@ def get_purchase_invoice(company_id=None):
                     "IgstGstRateDutyhead":"",
                     "IgstGstRateValuationtype":"",
                     "IgstGstRate":"",
+                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                     "Narration": ""
                 }
 
@@ -790,6 +802,8 @@ def get_purchase_invoice(company_id=None):
                     "IgstGstRateDutyhead":"",
                     "IgstGstRateValuationtype":"",
                     "IgstGstRate":"",
+                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                     "Narration": ""
                 }
 
@@ -886,6 +900,8 @@ def get_purchase_invoice(company_id=None):
                     "IgstGstRateDutyhead":"",
                     "IgstGstRateValuationtype":"",
                     "IgstGstRate":"",
+                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                     "Narration": ""
                 }
 
@@ -983,6 +999,8 @@ def get_purchase_invoice(company_id=None):
                     "IgstGstRateDutyhead":"",
                     "IgstGstRateValuationtype":"",
                     "IgstGstRate":"",
+                    "Reference": doc.bill_no if doc.get('bill_no') else "",
+                    "ReferenceDate": datetime.strptime(str(doc.bill_date), '%Y-%m-%d').strftime('%d-%m-%Y') if doc.get('bill_date') else "",
                     "Narration": ""
                 }
 
