@@ -242,7 +242,7 @@ def get_purchase_invoice(company_id=None):
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                     "VoucherType": 'ERP Purchase',
                                     "VoucherTypeParent": "purchase",
-                                    "LedgerName": f"Output Tax CGST @ {item['cgst_rate']}",
+                                    "LedgerName": f"Input Tax CGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
 
                                     "LedgerAddress": cus_address[0]['city'] if cus_address and parent_account== "Sundry Creditors" else "", 
@@ -337,7 +337,7 @@ def get_purchase_invoice(company_id=None):
                                     "VoucherDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                                     "VoucherType": 'ERP Purchase',
                                     "VoucherTypeParent": "purchase",
-                                    "LedgerName": f"Output Tax SGST @ {item['cgst_rate']}",
+                                    "LedgerName": f"Input Tax SGST @ {item['cgst_rate']}",
                                     "LedgerParent": parent_account,
 
                                     "LedgerAddress": cus_address[0]['city'] if cus_address and parent_account== "Sundry Creditors" else "", 
