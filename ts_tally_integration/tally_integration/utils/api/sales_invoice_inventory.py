@@ -173,7 +173,7 @@ def get_sales_inv(company_id=None):
                             "CrDr": cr_dr,
                             "CostCategory": "",
                             "CostCentre": get_tally_cost_center(doc),
-                            "Stockitem": item['item_name'],
+                            "Stockitem": item['item_code'],
                             "Godown": (item.get('warehouse') or default_warehouse).split('-')[0].strip() if (item.get('warehouse') or default_warehouse) else None,
                             "BatchNo": "",
                             "Quantity": item['qty'],
