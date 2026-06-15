@@ -59,7 +59,7 @@ def get_item(company_id = None):
         cgst = "{:.1f}".format(item_tax_template[0]['gst_rate'] / 2) if item_tax_template and is_gst_applicable == 'Applicable' else ""
         sgst = "{:.1f}".format(item_tax_template[0]['gst_rate'] / 2) if item_tax_template and is_gst_applicable == 'Applicable' else ""
         igst = "{:.1f}".format(item_tax_template[0]['gst_rate']) if item_tax_template and is_gst_applicable == 'Applicable' else ""
-        clean_item_name = item.item_name.strip() if item.item_name else item.name.strip()
+        clean_item_name = item.item_code.strip() if item.item_code else item.name.strip()
         item_dict = {
             "Autoid": clean_item_name,
             "CompanyNumber": str(company_id),
