@@ -54,10 +54,13 @@ def get_payment_entry_receipt(company_id=None):
                             content_type='application/json', status=404)
 
         # Fetch all Payment Entries which are not yet synced with Tally
+        pe_filters = {"docstatus": 1, "company": company_name, "payment_type": "Receive",
+                    "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]}
+        if cost_center:
+            pe_filters["cost_center"] = cost_center
         doc_list = frappe.get_all(
             "Payment Entry",
-            filters={"docstatus": 1,"company": company_name,"payment_type": "Receive", "cost_center": cost_center,
-                    "custom_tally_guid": ["is", "not set"], 'posting_date': ['between', [start_date, end_date]]},
+            filters=pe_filters,
             fields=["*"], order_by='posting_date asc', limit=get_voucher_sync_limit()
         )
 

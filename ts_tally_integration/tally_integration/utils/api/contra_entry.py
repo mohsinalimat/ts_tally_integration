@@ -32,9 +32,12 @@ def get_contra(company_id = None):
 
     all_vouchers = []
 
+    contra_filters = {'company':company_name,'voucher_type':'Contra Entry',
+                                            'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]}
+    if cost_center:
+        contra_filters['cost_center'] = cost_center
     journal_list = frappe.get_all('Journal Entry',
-                                   filters={'company':company_name,'voucher_type':'Contra Entry', 'cost_center': cost_center,
-                                            'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
+                                   filters=contra_filters,
                                    fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit())
     for list in journal_list:
         journal_gl_entry = frappe.get_all('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])

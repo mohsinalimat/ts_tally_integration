@@ -34,16 +34,18 @@ def get_journal(company_id = None):
     start_date = getdate(sync_from)
     end_date = getdate(today())
 
-    matching_je_names = frappe.get_all('Journal Entry Account',
-                                       filters={'cost_center': cost_center},
-                                       pluck='parent', distinct=True) if cost_center else []
+    je_filters = {'company':company_name,'voucher_type': ['!=', 'Contra Entry'],
+                  'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]}
+    if cost_center:
+        matching_je_names = frappe.get_all('Journal Entry Account',
+                                           filters={'cost_center': cost_center},
+                                           pluck='parent', distinct=True)
+        # No matching entries for this cost center -> force empty result
+        je_filters['name'] = ['in', matching_je_names or ['']]
 
     journal_list = frappe.get_all('Journal Entry',
-                                   filters={'company':company_name,'voucher_type': ['!=', 'Contra Entry'],
-                                            'name': ['in', matching_je_names],
-                                            'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
-                                   fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit()
-                                   ) if matching_je_names else []
+                                   filters=je_filters,
+                                   fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit())
 
     for list in journal_list:
         journal_gl_entry = frappe.get_all('GL Entry', filters = {'voucher_no':list.name}, fields = ['*'])

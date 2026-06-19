@@ -51,9 +51,12 @@ def get_sales_non_inv(company_id = None):
     start_date = getdate(sync_from)
     end_date = getdate(today())
 
+    sales_filters = {'company':company_name,'is_return':0, 'docstatus':1, 'is_opening': 'No',
+                                          'custom_tally_guid': ['in', ['', None]], 'posting_date': ['between', [start_date, end_date]]}
+    if cost_center:
+        sales_filters['cost_center'] = cost_center
     sales_list = frappe.get_all('Sales Invoice',
-                                 filters={'company':company_name,'is_return':0, 'docstatus':1,'cost_center': cost_center, 'is_opening': 'No',
-                                          'custom_tally_guid': ['in', ['', None]], 'posting_date': ['between', [start_date, end_date]]},
+                                 filters=sales_filters,
                                  fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit())
 
     for doc in sales_list:
