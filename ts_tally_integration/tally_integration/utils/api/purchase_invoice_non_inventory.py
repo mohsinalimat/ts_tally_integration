@@ -42,7 +42,8 @@ def get_purchase_invoice(company_id=None):
     sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
 
     start_date = getdate(sync_from)
-    end_date = getdate(today())
+    sync_to = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'sync_to')
+    end_date = getdate(sync_to) if sync_to else getdate(today())
 
     company_address_link = frappe.get_all('Dynamic Link', filters={'link_doctype': 'Company', 'link_name': company_name}, fields=['parent'])
     company_address = frappe.get_all('Address', filters={'name': company_address_link[0]['parent']} if company_address_link else {}, fields=['*'])
@@ -50,9 +51,12 @@ def get_purchase_invoice(company_id=None):
 
     all_vouchers = []
 
+    purchase_filters = {'company':company_name, 'is_return':0, 'docstatus':1, 'is_opening': 'No',
+                                         'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]}
+    if cost_center:
+        purchase_filters['cost_center'] = cost_center
     purchase_list = frappe.get_all('Purchase Invoice',
-                                filters={'company':company_name, 'is_return':0, 'docstatus':1, 'cost_center': cost_center, 'is_opening': 'No',
-                                         'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]},
+                                filters=purchase_filters,
                                 fields=['*'], order_by='posting_date asc', limit=get_voucher_sync_limit())
 
     for doc in purchase_list:
@@ -517,7 +521,7 @@ def get_purchase_invoice(company_id=None):
                 # --------------------------------- The ABOVE block of code is only for TAX ---------------------------------------------
 
 
-            elif account_type == 'Bank':
+            elif account_type in ('Bank', 'Fixed Asset'):
                 ledgername = invoice['account']
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
