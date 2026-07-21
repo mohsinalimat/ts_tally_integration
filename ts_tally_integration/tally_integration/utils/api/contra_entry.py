@@ -28,7 +28,8 @@ def get_contra(company_id = None):
     sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
 
     start_date = getdate(sync_from)
-    end_date = getdate(today())
+    sync_to = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'sync_to')
+    end_date = getdate(sync_to) if sync_to else getdate(today())
 
     all_vouchers = []
 

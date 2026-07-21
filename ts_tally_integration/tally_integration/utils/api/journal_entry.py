@@ -32,7 +32,8 @@ def get_journal(company_id = None):
         'sync_from')
 
     start_date = getdate(sync_from)
-    end_date = getdate(today())
+    sync_to = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'sync_to')
+    end_date = getdate(sync_to) if sync_to else getdate(today())
 
     je_filters = {'company':company_name,'voucher_type': ['!=', 'Contra Entry'],
                   'custom_tally_guid': ['is', 'not set'], 'posting_date': ['between', [start_date, end_date]]}

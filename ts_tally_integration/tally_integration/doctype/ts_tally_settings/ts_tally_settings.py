@@ -48,10 +48,18 @@ def get_not_synced_data(company):
 		frappe.throw(f"Company {company} is not configured in TS Tally Settings")
 
 	sync_from = company_row.sync_from
+	sync_to = company_row.sync_to
 	sync_master_from = company_row.sync_master_from
 	cost_center = company_row.cost_center
 	company_number = company_row.company_number
 	result = {}
+
+	if sync_from and sync_to:
+		posting_date_filter = ["between", [sync_from, sync_to]]
+	elif sync_from:
+		posting_date_filter = [">=", sync_from]
+	else:
+		posting_date_filter = ["is", "set"]
 
 	def with_cost_center(filters):
 		if cost_center:
@@ -175,7 +183,7 @@ def get_not_synced_data(company):
 			"company": company,
 			"docstatus": 1,
 			"is_opening": ["!=", "Yes"],
-			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+			"posting_date": posting_date_filter
 		}),
 		fields=["name", "customer_name", "cost_center", "posting_date", "grand_total"],
 		order_by="posting_date desc"
@@ -191,7 +199,7 @@ def get_not_synced_data(company):
 			"company": company,
 			"docstatus": 1,
 			"is_opening": ["!=", "Yes"],
-			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+			"posting_date": posting_date_filter
 		}),
 		fields=["name", "supplier_name", "cost_center", "posting_date", "grand_total"],
 		order_by="posting_date desc"
@@ -206,7 +214,7 @@ def get_not_synced_data(company):
 			"custom_tally_guid": ["is", "not set"],
 			"company": company,
 			"docstatus": 1,
-			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+			"posting_date": posting_date_filter
 		}),
 		fields=["name", "payment_type", "party_name", "cost_center", "posting_date", "paid_amount"],
 		order_by="posting_date desc"
@@ -220,7 +228,7 @@ def get_not_synced_data(company):
 		"company": company,
 		"docstatus": 1,
 		"is_opening": ["!=", "Yes"],
-		"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+		"posting_date": posting_date_filter
 	}
 	if cost_center:
 		je_names_with_cc = frappe.get_all(
@@ -265,7 +273,7 @@ def get_not_synced_data(company):
 			"company": company,
 			"docstatus": 1,
 			"is_opening": ["!=", "Yes"],
-			"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+			"posting_date": posting_date_filter
 		},
 		fields=["name", "stock_entry_type", "posting_date"],
 		order_by="posting_date desc"
@@ -279,7 +287,7 @@ def get_not_synced_data(company):
 	# 		"custom_tally_guid": ["is", "not set"],
 	# 		"company": company,
 	# 		"docstatus": 1,
-	# 		"posting_date": [">=", sync_from] if sync_from else ["is", "set"]
+	# 		"posting_date": posting_date_filter
 	# 	},
 	# 	fields=["name", "customer_name", "posting_date", "grand_total"],
 	# 	order_by="posting_date desc"
@@ -356,14 +364,16 @@ def get_sync_dashboard_data():
 		}
 
 	def voucher_stats(doctype, company, sync_from, cost_center, extra_pending_filters=None,
-					  cost_center_in_child=False):
+					  cost_center_in_child=False, sync_to=None):
 		base = {"company": company, "docstatus": 1}
 		if extra_pending_filters:
 			base.update(extra_pending_filters)
 
 		pending_filters = dict(base)
 		pending_filters["custom_tally_guid"] = ["is", "not set"]
-		if sync_from:
+		if sync_from and sync_to:
+			pending_filters["posting_date"] = ["between", [sync_from, sync_to]]
+		elif sync_from:
 			pending_filters["posting_date"] = [">=", sync_from]
 		if cost_center and not cost_center_in_child:
 			pending_filters["cost_center"] = cost_center
@@ -410,6 +420,7 @@ def get_sync_dashboard_data():
 		company = row.company_name
 		company_number = row.company_number
 		sync_from = row.sync_from
+		sync_to = row.sync_to
 		cost_center = row.cost_center
 
 		masters = [
@@ -423,14 +434,14 @@ def get_sync_dashboard_data():
 
 		vouchers = [
 			voucher_stats("Sales Invoice", company, sync_from, cost_center,
-						  {"is_opening": ["!=", "Yes"]}),
+						  {"is_opening": ["!=", "Yes"]}, sync_to=sync_to),
 			voucher_stats("Purchase Invoice", company, sync_from, cost_center,
-						  {"is_opening": ["!=", "Yes"]}),
-			voucher_stats("Payment Entry", company, sync_from, cost_center),
+						  {"is_opening": ["!=", "Yes"]}, sync_to=sync_to),
+			voucher_stats("Payment Entry", company, sync_from, cost_center, sync_to=sync_to),
 			voucher_stats("Journal Entry", company, sync_from, cost_center,
-						  {"is_opening": ["!=", "Yes"]}, cost_center_in_child=True),
+						  {"is_opening": ["!=", "Yes"]}, cost_center_in_child=True, sync_to=sync_to),
 			voucher_stats("Stock Entry", company, sync_from, None,
-						  {"is_opening": ["!=", "Yes"]}),
+						  {"is_opening": ["!=", "Yes"]}, sync_to=sync_to),
 		]
 
 		companies.append({

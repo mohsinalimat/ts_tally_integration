@@ -13,6 +13,7 @@
   "fiscal_year",
   "cost_center",
   "sync_from",
+  "sync_to",
   "sync_master_from"
  ],
  "fields": [
@@ -66,6 +67,13 @@
    "in_list_view": 1,
    "label": "Sync From",
    "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sync_to",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Sync To"
   },
   {
    "columns": 2,

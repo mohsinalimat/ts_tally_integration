@@ -49,7 +49,8 @@ def get_sales_non_inv(company_id = None):
         'sync_from')
 
     start_date = getdate(sync_from)
-    end_date = getdate(today())
+    sync_to = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'sync_to')
+    end_date = getdate(sync_to) if sync_to else getdate(today())
 
     sales_filters = {'company':company_name,'is_return':0, 'docstatus':1, 'is_opening': 'No',
                                           'custom_tally_guid': ['in', ['', None]], 'posting_date': ['between', [start_date, end_date]]}

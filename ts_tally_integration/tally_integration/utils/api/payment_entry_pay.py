@@ -48,7 +48,8 @@ def get_payment_entry_pay(company_id=None):
         sync_from = frappe.get_value('TS Tally Company',{'company_number': company_id},'sync_from')
 
         start_date = getdate(sync_from)
-        end_date = getdate(today())
+        sync_to = frappe.get_value('TS Tally Company', {'company_number': company_id}, 'sync_to')
+        end_date = getdate(sync_to) if sync_to else getdate(today())
 
         if not company_name:
             return Response(json.dumps("Company is not found!", default=str),content_type='application/json', status=404)
