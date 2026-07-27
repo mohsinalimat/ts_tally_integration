@@ -365,7 +365,7 @@ def get_sync_dashboard_data():
 		}
 
 	def voucher_stats(doctype, company, sync_from, cost_center, extra_pending_filters=None,
-					  cost_center_in_child=False, sync_to=None):
+					  cost_center_in_child=False, sync_to=None, label=None):
 		base = {"company": company, "docstatus": 1}
 		if extra_pending_filters:
 			base.update(extra_pending_filters)
@@ -408,7 +408,7 @@ def get_sync_dashboard_data():
 		last_sync = last_sync_row[0]["modified"] if last_sync_row else None
 
 		return {
-			"doctype": doctype,
+			"doctype": label or doctype,
 			"pending": pending,
 			"synced": synced,
 			"last_sync": last_sync,
@@ -435,9 +435,13 @@ def get_sync_dashboard_data():
 
 		vouchers = [
 			voucher_stats("Sales Invoice", company, sync_from, cost_center,
-						  {"is_opening": ["!=", "Yes"]}, sync_to=sync_to),
+						  {"is_opening": ["!=", "Yes"], "is_return": 0}, sync_to=sync_to),
+			voucher_stats("Sales Invoice", company, sync_from, cost_center,
+						  {"is_return": 1}, sync_to=sync_to, label="Credit Note"),
 			voucher_stats("Purchase Invoice", company, sync_from, cost_center,
-						  {"is_opening": ["!=", "Yes"]}, sync_to=sync_to),
+						  {"is_opening": ["!=", "Yes"], "is_return": 0}, sync_to=sync_to),
+			voucher_stats("Purchase Invoice", company, sync_from, cost_center,
+						  {"is_return": 1}, sync_to=sync_to, label="Debit Note"),
 			voucher_stats("Payment Entry", company, sync_from, cost_center, sync_to=sync_to),
 			voucher_stats("Journal Entry", company, sync_from, cost_center,
 						  {"is_opening": ["!=", "Yes"]}, cost_center_in_child=True, sync_to=sync_to),
