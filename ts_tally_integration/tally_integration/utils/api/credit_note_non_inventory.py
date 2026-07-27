@@ -6,8 +6,14 @@ from werkzeug.wrappers import Response
 from frappe.utils import getdate, today
 
 
+DEFAULT_COST_CATEGORY = "Primary Cost Category"
+
+
 def get_tally_cost_center(doc):
     return doc.cost_center.split("-", 1)[0].strip() if doc.cost_center else ""
+
+def get_tally_cost_category(doc):
+    return DEFAULT_COST_CATEGORY if get_tally_cost_center(doc) else ""
 
 
 @frappe.whitelist()
@@ -128,7 +134,7 @@ def credit_note_non_inv(company_id = None):
                         "BillName": "711",
                         "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                         "CrDr": cr_dr,
-                        "CostCategory": "",
+                        "CostCategory": get_tally_cost_category(doc),
                         "CostCentre": get_tally_cost_center(doc),
                         "Stockitem": "",
                         "Godown": "",
@@ -631,7 +637,7 @@ def credit_note_non_inv(company_id = None):
                     "BillName": "711",
                     "BillDate": datetime.strptime(str(doc.posting_date),'%Y-%m-%d').strftime('%d-%m-%Y'),
                     "CrDr": cr_dr,
-                    "CostCategory": "",
+                    "CostCategory": get_tally_cost_category(doc),
                     "CostCentre": get_tally_cost_center(doc),
                     "Stockitem": "",
                     "Godown": "",
