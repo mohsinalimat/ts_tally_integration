@@ -75,6 +75,7 @@ def get_not_synced_data(company):
 	not_synced_items = frappe.get_all(
 		"Item",
 		filters={
+			"has_variants": 0,
 			"name": ["not in", synced_items],
 			"creation": [">=", sync_master_from] if sync_master_from else ["is", "set"]
 		},
@@ -424,7 +425,7 @@ def get_sync_dashboard_data():
 		cost_center = row.cost_center
 
 		masters = [
-			master_stats("Item", company_number=company_number),
+			master_stats("Item", {"has_variants": 0}, company_number=company_number),
 			master_stats("Item Group", {"is_group": 0}, company_number=company_number),
 			master_stats("Customer", company_number=company_number),
 			master_stats("Supplier", company_number=company_number),
