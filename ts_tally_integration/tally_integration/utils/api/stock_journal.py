@@ -26,7 +26,7 @@ def get_stock_entry(company_id=None):
             }
         }, default=str), content_type='application/json')
 
-    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Journal Entry'}, ['enable_sync'])
+    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Stock Journal'}, ['enable_sync'])
     if not enable_sync:
         final_voucher = {
             "status": True,

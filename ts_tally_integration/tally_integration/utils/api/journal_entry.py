@@ -1,6 +1,7 @@
 import frappe
 from ts_tally_integration.tally_integration.utils.api.sync_settings import company_filters, company_sync_required
 from ts_tally_integration.tally_integration.utils.api.sync_settings import get_voucher_sync_limit
+from ts_tally_integration.tally_integration.utils.api.party import get_party_name
 import json
 from datetime import datetime
 from werkzeug.wrappers import Response
@@ -14,7 +15,7 @@ def get_journal(company_id = None):
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
 
 
-    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Contra Entry'}, ['enable_sync'])
+    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Journal Entry'}, ['enable_sync'])
     if not enable_sync:
         final_voucher = {
             "status": True,
@@ -62,9 +63,9 @@ def get_journal(company_id = None):
 
             # Use party name for Debtors or Creditors
             if account_name in ["Debtors", "Creditors"]:
-                ledger_name = entry.get("party") or account_name
+                ledger_name = get_party_name(entry.get("party_type"), entry.get("party")) if entry.get("party") else account_name
             elif account_name in ["Payroll Payable"]:
-                ledger_name = frappe.get_value('Employee', entry['party'], 'employee_name')
+                ledger_name = get_party_name('Employee', entry['party'])
             else:
                 ledger_name = frappe.get_value('Account', entry['account'], 'account_name')
 

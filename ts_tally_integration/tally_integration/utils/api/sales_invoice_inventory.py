@@ -668,7 +668,7 @@ def get_sales_inv(company_id=None):
 
 
                 elif account_type == 'Receivable':
-                    ledgername = doc.customer
+                    ledgername = doc.customer_name
                     parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                     ledger_dict = {

@@ -645,7 +645,7 @@ def credit_note_inv(company_id = None):
 
 
                 elif account_type == 'Receivable':
-                    ledgername = doc.customer
+                    ledgername = doc.customer_name
                     tally_parent = frappe.get_value('Account', ledger['account'], 'custom_tally_parent_account')
 
                     ledger_dict = {
