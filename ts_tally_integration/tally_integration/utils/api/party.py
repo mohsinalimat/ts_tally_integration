@@ -7,6 +7,10 @@ from werkzeug.wrappers import Response
 from frappe.utils import get_datetime
 
 
+def is_sync_enabled(voucher_name):
+    return frappe.get_value('Voucher Sync Control', {'voucher_name': voucher_name}, 'enable_sync')
+
+
 @frappe.whitelist()
 @company_sync_required("LEDGER")
 def get_party(company_id = None):
@@ -14,24 +18,13 @@ def get_party(company_id = None):
     if company_id == None:
         return Response(json.dumps("Company number not found!", default=str), content_type='application/json')
 
-    enable_sync = frappe.get_value('Voucher Sync Control', {'voucher_name': 'Party'}, ['enable_sync'])
-    if not enable_sync:
-        final_voucher = {
-            "status": True,
-            "VOUCHERDETAILS": {
-                "LEDGER": []
-                }
-            }
-        return Response(json.dumps(final_voucher, default=str), content_type='application/json')
-
-    auto_id = 1
     all_doc = []
 
     synced_suppliers = frappe.get_all('Tally Master Sync Log',
         filters={'parenttype': 'Supplier', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    suppliers = frappe.get_all('Supplier', filters = {'name': ['not in', synced_suppliers]}, fields=['*'], limit=get_master_sync_limit())
+    suppliers = frappe.get_all('Supplier', filters = {'name': ['not in', synced_suppliers]}, fields=['*'], limit=get_master_sync_limit()) if is_sync_enabled('Supplier') else []
     for supplier in suppliers:
 
         if supplier.get('supplier_primary_address'):
@@ -56,7 +49,6 @@ def get_party(company_id = None):
                 "LedgerPan": supplier.pan if supplier_address and supplier_address[0]['gstin'] else '',
                 "LedgerGstin": supplier_address[0]['gstin'] if supplier_address and supplier_address[0]['gstin'] else '',
             }
-        auto_id += 1
 
         all_doc.append(supplier_dict)
 
@@ -69,7 +61,7 @@ def get_party(company_id = None):
         filters={'parenttype': 'Customer', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    customers = frappe.get_all('Customer', filters = {'name': ['not in', synced_customers], 'creation': [">", start_date]}, fields=['*'], limit=get_master_sync_limit())
+    customers = frappe.get_all('Customer', filters = {'name': ['not in', synced_customers], 'creation': [">", start_date]}, fields=['*'], limit=get_master_sync_limit()) if is_sync_enabled('Customer') else []
 
     for customer in customers:
         if customer.get('customer_primary_address'):
@@ -80,7 +72,7 @@ def get_party(company_id = None):
             customer_address = []
 
         customer_dict = {
-            "Autoid": auto_id,
+            "Autoid": customer.name,
             "CompanyNumber": str(company_id),
             "LedgerName": customer.name,
             "LedgerParent": "Sundry Debtors",
@@ -93,7 +85,6 @@ def get_party(company_id = None):
             "LedgerPan": customer.pan if customer_address and customer_address[0]['gstin'] else '',
             "LedgerGstin": customer_address[0]['gstin'] if customer_address and customer_address[0]['gstin'] else '',
         }
-        auto_id += 1
 
         all_doc.append(customer_dict)
 
@@ -102,12 +93,12 @@ def get_party(company_id = None):
         filters={'parenttype': 'Employee', 'company_number': company_id, 'status': 'SUCCESS'},
         pluck='parent')
 
-    employees = frappe.get_all('Employee', filters = {'name': ['not in', synced_employees]}, fields=['*'], limit=get_master_sync_limit())
+    employees = frappe.get_all('Employee', filters = {'name': ['not in', synced_employees]}, fields=['*'], limit=get_master_sync_limit()) if is_sync_enabled('Employee') else []
 
     for employee in employees:
 
         employee_dict = {
-            "Autoid": auto_id,
+            "Autoid": employee.name,
             "CompanyNumber": str(company_id),
             "LedgerName": employee.name,
             "LedgerParent": "Sundry Debtors",
@@ -120,9 +111,44 @@ def get_party(company_id = None):
             "LedgerPan": employee.pan_number if employee.pan_number else '',
             "LedgerGstin": '',
         }
-        auto_id += 1
 
         all_doc.append(employee_dict)
+
+
+    company_name = frappe.get_value('TS Tally Company', company_filters(company_id), 'company_name')
+
+    synced_accounts = frappe.get_all('Tally Master Sync Log',
+        filters={'parenttype': 'Account', 'company_number': company_id, 'status': 'SUCCESS'},
+        pluck='parent')
+
+    # Debtors / Creditors accounts are sent as the party ledger in vouchers, so skip them.
+    accounts = frappe.get_all('Account', filters = {
+        'name': ['not in', synced_accounts],
+        'company': company_name,
+        'is_group': 0,
+        'disabled': 0,
+        'account_type': ['not in', ['Receivable', 'Payable']],
+        'custom_tally_parent_account': ['is', 'set'],
+    }, fields=['name', 'account_name', 'custom_tally_parent_account'], limit=get_master_sync_limit()) if is_sync_enabled('Account') else []
+
+    for account in accounts:
+
+        account_dict = {
+            "Autoid": account.account_name,
+            "CompanyNumber": str(company_id),
+            "LedgerName": account.account_name,
+            "LedgerParent": account.custom_tally_parent_account,
+            "LedgerAddress": "",
+            "LedgerState": '',
+            "LedgerCountry": '',
+            "LedgerPincode": '',
+            "LedgerMobile": '',
+            "LedgerGstReg": "",
+            "LedgerPan": '',
+            "LedgerGstin": '',
+        }
+
+        all_doc.append(account_dict)
 
 
     final_voucher = ({
@@ -214,8 +240,11 @@ def fetch_response(response, company_id=None):
             _update_sync_log('Employee', emp_doc, 'custom_tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
 
-        if frappe.db.exists("Account", {"account_name": party_name}):
-            acc_doc = frappe.db.exists("Account", {"account_name": party_name})
+        account_filters = {"account_name": party_name}
+        if company_name:
+            account_filters["company"] = company_name
+        acc_doc = frappe.db.exists("Account", account_filters)
+        if acc_doc:
             _update_sync_log('Account', acc_doc, 'custom_tally_sync_log', company_id, company_name, party_name, status, sync_time)
             updated = True
 
