@@ -512,7 +512,10 @@ def append_voucher_sync_control():
     vouchers = [
         "Item",
         "Item Group",
-        "Party",
+        "Customer",
+        "Supplier",
+        "Employee",
+        "Account",
         "Warehouse",
         "Sales Invoice (Inventory)",
         "Sales Invoice (Non Inventory)",
@@ -533,13 +536,20 @@ def append_voucher_sync_control():
 
     settings = frappe.get_single("TS Tally Settings")
 
+    # The old single "Party" row is split into Customer / Supplier / Employee / Account,
+    # each starting with the Party row's setting.
+    party_rows = [d for d in settings.voucher_sync_control if d.voucher_name == "Party"]
+    party_sync = party_rows[0].enable_sync if party_rows else 0
+    for row in party_rows:
+        settings.remove(row)
+
     existing_vouchers = [d.voucher_name for d in settings.voucher_sync_control]
 
     for voucher in vouchers:
         if voucher not in existing_vouchers:
             settings.append("voucher_sync_control", {
                 "voucher_name": voucher,
-                "enable_sync": 0
+                "enable_sync": party_sync if voucher in ("Customer", "Supplier", "Employee", "Account") else 0
             })
 
     settings.save(ignore_permissions=True)
