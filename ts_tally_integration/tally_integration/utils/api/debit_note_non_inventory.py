@@ -626,7 +626,7 @@ def get_debit_note(company_id=None):
 
 
             elif account_type == 'Payable':
-                ledgername = doc.supplier
+                ledgername = doc.supplier_name
                 parent_account = frappe.get_value('Account', invoice['account'], 'custom_tally_parent_account')
 
                 ledger_dict = {

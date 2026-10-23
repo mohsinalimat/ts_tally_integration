@@ -622,7 +622,7 @@ def credit_note_non_inv(company_id = None):
 
 
             elif account_type == 'Receivable':
-                ledgername = doc.customer
+                ledgername = doc.customer_name
                 parent_account = "Sundry Debtors"
 
                 ledger_dict = {
